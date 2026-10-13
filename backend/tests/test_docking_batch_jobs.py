@@ -23,6 +23,7 @@ import threading
 import time
 from pathlib import Path
 
+import engine_hold as EH
 import psutil
 import pytest
 from fastapi.testclient import TestClient
@@ -165,11 +166,13 @@ def _no_strays(run: Run) -> None:
         if event["type"] == "job_worker_started" and process_identity.matches(event["pid"], event["start_identity"]):
             assert psutil.Process(event["pid"]).status() == psutil.STATUS_ZOMBIE, "worker survived"
     jobs = str(run.run_dir / "jobs")
-    for proc in psutil.process_iter(["name"]):
+    # Nothing is prefetched: a prefetch runs inside process_iter, outside the try, where psutil's SystemError from a
+    # process ending mid-read escaped under load; it means the process is gone, as psutil.Error does (M28/M29 T2).
+    for proc in psutil.process_iter():
         try:
-            if proc.info["name"] == "qvina2" and proc.cwd().startswith(jobs):
+            if proc.name() == "qvina2" and proc.cwd().startswith(jobs):
                 raise AssertionError(f"stray qvina2 {proc.pid}")
-        except (psutil.Error, OSError):
+        except (psutil.Error, OSError, SystemError):
             continue
 
 
@@ -454,10 +457,13 @@ def test_cancel_mid_batch_keeps_finished_rows_then_a_rerun_reuses_them(base, tmp
     _raise(run)
     used = run.budget.expensive_calls
     args = _args(base, IDS)
+    held: list[dict] = []
     with monkeypatch.context() as patch:
-        patch.setattr(JobQueue, "_record_control",
-                      _when_row_starts(1, lambda queue, job_id, _pid: queue.request_cancel(job_id)))
+        # M29 T2: row 1's qvina2 is held until the cancel reaches the worker (engine_hold.hold_then_cancel): a row
+        # here ends in about a second, and under Stop-hook load the cancel can take longer to reach the worker.
+        EH.hold_then_cancel(patch, "qvina2", "rows/1.started", "rows/1.status.json", held)
         cancelled = _batch(run, args)
+    assert len(held) == 1 and "error" not in held[0], (held, cancelled)
     assert cancelled["status"] == "cancelled" and cancelled["output_handles"] == [], cancelled
     _, content = _summary(run, cancelled)
     assert content["status"] == "partial" and content["stop_reason"] == "cancelled"

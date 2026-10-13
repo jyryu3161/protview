@@ -1,0 +1,72 @@
+{
+  "label": "fixture: verbatim subset of kbase_kinase processed reference snapshot rows (SIFTS 8VF6, KLIFS STK33, UniProt Q9BYT3); not experimental evidence and not used at runtime",
+  "kbase_repo_commit": "77354f94b844a8c64e7cd47691ac20a2e96214b3",
+  "licenses": {
+    "sifts": "EMBL-EBI-terms (PDBe/SIFTS data as processed by kbase_kinase)",
+    "klifs": "none-stated (KLIFS data as processed by kbase_kinase)",
+    "uniprot": "CC-BY-4.0 (UniProt data as processed by kbase_kinase)"
+  },
+  "extraction_rule": "Each listed row copied byte-for-byte as one JSONL line from the local reference snapshot set (same source files and sha256 as backend/tests/fixtures/reference/*/provenance_fixture.json), in the listed order, each followed by one newline. No field was changed.",
+  "generator": "one-off extraction script (not committed); verify with the per-line sha256 values against the source file lines",
+  "purpose": "M29 T7 M20 hand-off tests (backend/tests/test_structure_repair_handoff.py): appended to the M15 fixture rows by reference_fixture_set.build_fixture_set(replace=...) so map_residue_numbering / annotate_reference_sites run for 8VF6 chains A and B (Q9BYT3) without .deps",
+  "files": [
+    {
+      "file": "sifts_residues_8vf6.jsonl",
+      "sha256": "1cec3b550e75a280c1a7e4d9fcce2ffc95c31b8f186fa938b3f69fb5ca9301cf",
+      "bytes": 10698,
+      "source_path": "kbase_kinase/ref/sifts/2026-09-20/residues.jsonl",
+      "source_sha256": "df65714811e60c08470b509c3b5cda19d3d838f26aed881041bc3f56ec4a3874",
+      "snapshot_id": "SNAP-sifts-2026-09-20",
+      "extracted_ids": [
+        "8VF6:A",
+        "8VF6:B"
+      ],
+      "extracted_line_sha256": {
+        "8VF6:A": "a749caa13bace7c4602e578322f03340414115f5ea0ee46cb9106cf3b2244617",
+        "8VF6:B": "03890f062190152bf18e1f598cf1828008fc9c5e1986838100f47fdda902be10"
+      }
+    },
+    {
+      "file": "sifts_segments_8vf6.jsonl",
+      "sha256": "d3bf526ad14a1e2fc8f33c196e05de558789b04f5638e631c625e3fbc34f56cc",
+      "bytes": 331,
+      "source_path": "kbase_kinase/ref/sifts/2026-09-20/segments.jsonl",
+      "source_sha256": "95b45306e0acbba420601fcca727c61fdfed10daab55a8f236b957f8b1e3d57b",
+      "snapshot_id": "SNAP-sifts-2026-09-20",
+      "extracted_ids": [
+        "8VF6"
+      ],
+      "extracted_line_sha256": {
+        "8VF6": "d88a0d767b3731def9f246d82d2889c61b51861911f4d0ce004ba9d0e826e882"
+      }
+    },
+    {
+      "file": "klifs_kinases_stk33.jsonl",
+      "sha256": "dc98b16e9ddc1b2334b5f403d3209df4d5220c20569c62401a55ac3775052467",
+      "bytes": 297,
+      "source_path": "kbase_kinase/ref/klifs/2026-09-19/kinases.jsonl",
+      "source_sha256": "bf60b1ce50fe194a1540485701d79622ec0534294ebba8a41ff07ebd4b82a444",
+      "snapshot_id": "SNAP-klifs-2026-09-19",
+      "extracted_ids": [
+        "Q9BYT3"
+      ],
+      "extracted_line_sha256": {
+        "Q9BYT3": "330008d106eb20c1b409373ae1931c46c1f6c59fe27ca21c9ea6c5e56ef202cc"
+      }
+    },
+    {
+      "file": "uniprot_entries_q9byt3.jsonl",
+      "sha256": "42687ea8837e5e4960cc877a66758bd4c68f9f7ee2b05b00ba97d7011f2f7b0b",
+      "bytes": 927,
+      "source_path": "kbase_kinase/ref/uniprot/2026-09-15/entries.jsonl",
+      "source_sha256": "8ec2ce992820246ddbd9af6ff9d4bdc0c867c300f3e7582d282446dbfcd4ed80",
+      "snapshot_id": "SNAP-uniprot-2026-09-15",
+      "extracted_ids": [
+        "Q9BYT3"
+      ],
+      "extracted_line_sha256": {
+        "Q9BYT3": "c2da84875d78fd9d0ae5e8390391213e4f08e08130e6f5ecc605c93accb0b93d"
+      }
+    }
+  ]
+}

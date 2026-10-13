@@ -5,7 +5,7 @@ import { api, ApiError, type RunSummary, type SavedReportRef } from "@/lib/api";
 import type { DockingAcknowledgementKey, DockingBoxSource, DockingCapability, DockingJob, DockingLigandSource,
   DockingPrerequisites, MutationCandidateRow, MutationModelCapability,
   MutationModelContactPage, MutationModelDetail, MutationModelDockingPairs, MutationModelJob, MutationModelList,
-  MutationModelReportArtifact, MutationModelSide } from "@/lib/contracts";
+  MutationModelReportArtifact, MutationModelSide, StructureOrigin } from "@/lib/contracts";
 import { ACKNOWLEDGEMENT_KEYS, ACKNOWLEDGEMENT_LABEL, BOX_FRAME_NOTE, BOX_SIDE_MAX_A, BOX_SIDE_MIN_A, BOX_SOURCES,
   boxSourceLabel, dockingCancelEnabled, dockingJobActive, dockingRequestErrorText,
   dockingResponseCurrent, ENERGY_RANGE_MAX, ENERGY_RANGE_MIN, EXHAUSTIVENESS_MAX, EXHAUSTIVENESS_MIN, importsOfKind,
@@ -38,7 +38,9 @@ import { Button } from "./primitives";
  */
 export interface ModelStartRequest { runId: string; candidateSet: string; candidate: MutationCandidateRow; seq: number;
   /** M26: the set's "촉매 잔기 검사 안 함" mark (UK2 and its detail) as the M20 area made it; null / absent = checked. */
-  catalytic?: { text: string; detail: string } | null }
+  catalytic?: { text: string; detail: string } | null;
+  /** M29: the set's `structure_origin` (SO1) when it is on a repaired structure; null / absent otherwise. */
+  origin?: StructureOrigin | null }
 
 export interface MutationModelPanelProps {
   /** Current run of the structure analysis screen (run selection lives only there); null when none. */
@@ -53,6 +55,8 @@ export interface MutationModelPanelProps {
   onObjectsChanged: (runId: string) => void;
   /** After a report was created: the page re-reads the knowledge-tab report list. */
   onReportCreated: (runId: string) => void;
+  /** M29: "보완 기록 열기" of a model on a repaired structure (the page opens it in the repair area). */
+  onOpenRepairRecord?: (runId: string, record: string) => void;
 }
 
 type Load<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string };
@@ -105,18 +109,36 @@ export function MutationModelPanel(p: MutationModelPanelProps) {
     </section>;
   }
   return <ModelWorkspace run={p.run} capability={p.capability} dockingCapability={p.dockingCapability}
-    startRequest={p.startRequest} onObjectsChanged={p.onObjectsChanged} onReportCreated={p.onReportCreated} />;
+    startRequest={p.startRequest} onObjectsChanged={p.onObjectsChanged} onReportCreated={p.onReportCreated}
+    onOpenRepairRecord={p.onOpenRepairRecord} />;
 }
 
-function ModelWorkspace({ run, capability, dockingCapability, startRequest, onObjectsChanged, onReportCreated }: {
+/** M29: SO1 as the server gave it, the repair record and "보완 기록 열기" (a result on a repaired structure only). */
+function RepairOrigin({ origin, testId, onOpen }: { origin: StructureOrigin | null | undefined; testId: string;
+  onOpen?: (record: string) => void }) {
+  if (!origin) return null;
+  return <div className="mw-mutation-notice" role="status" data-testid={testId} data-repair-record={origin.repair_record}
+    data-repaired-structure={origin.repaired_structure} data-source-structure={origin.source_structure}>
+    <span className="mw-catalytic-badge">보완 구조</span>
+    {origin.statements.map(item => <p key={item.id} data-statement={item.id}>{item.text}</p>)}
+    <p className="mw-mono">보완 기록 {shortHandle(origin.repair_record)} · 원본 {shortHandle(origin.source_structure)}</p>
+    {onOpen && <Button size="sm" data-testid={`${testId}-open`} onClick={() => onOpen(origin.repair_record)}>
+      보완 기록 열기</Button>}
+  </div>;
+}
+
+function ModelWorkspace({ run, capability, dockingCapability, startRequest, onObjectsChanged, onReportCreated,
+  onOpenRepairRecord }: {
   run: RunSummary; capability: MutationModelCapability; dockingCapability: DockingCapability | null | undefined;
   startRequest: ModelStartRequest | null; onObjectsChanged: (runId: string) => void;
-  onReportCreated: (runId: string) => void }) {
+  onReportCreated: (runId: string) => void; onOpenRepairRecord?: (runId: string, record: string) => void }) {
   const runId = run.run_id;
+  const openRecord = onOpenRepairRecord ? (record: string) => onOpenRepairRecord(runId, record) : undefined;
   // ---- model request and job ----
   const [form, setForm] = useState<ModelForm>(initialModelForm);
   const [picked, setPicked] = useState<MutationCandidateRow | null>(null);
   const [pickedCatalytic, setPickedCatalytic] = useState<{ text: string; detail: string } | null>(null);
+  const [pickedOrigin, setPickedOrigin] = useState<StructureOrigin | null>(null);
   const [job, setJob] = useState<MutationModelJob | null>(null);
   const [jobFocus, setJobFocus] = useState(false);
   const [approvalPending, setApprovalPending] = useState(false);
@@ -244,6 +266,7 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
     setForm(previous => modelFormForCandidate(previous, startRequest.candidateSet, startRequest.candidate.index));
     setPicked(startRequest.candidate);
     setPickedCatalytic(startRequest.catalytic ?? null);
+    setPickedOrigin(startRequest.origin ?? null);
     setJobError(null); setNotice("");
     document.querySelector('[data-testid="mutation-model-panel"] [data-mutation-model-area="request"]')
       ?.scrollIntoView({ block: "start" });
@@ -606,6 +629,8 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
           </span>}</p>
         : <p className="mw-mutation-note" data-testid="mutation-model-no-candidate">
           위 변이 후보 표의 후보 행에서 &quot;변이 구조 모델링&quot;을 누르면 그 후보가 여기에 들어옵니다(자동으로 고르지 않음).</p>}
+      {picked && form.candidateSet && <RepairOrigin origin={pickedOrigin} testId="mutation-model-request-repair-origin"
+        onOpen={openRecord} />}
       <div className="mw-mutation-inline">
         <label className="mw-mutation-check">seed (필수, 정수)
           <input className="mw-mutation-input" data-testid="mutation-model-seed" aria-label="모델링 seed" inputMode="numeric"
@@ -673,6 +698,8 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
               disabled={!row.valid || !!switchBlocked}
               aria-label={`모델 ${shortHandle(row.handle)}`} onChange={() => openModel(row.handle)} />
             <span className="mw-mono">{modelListRowText(row)} · {shortHandle(row.handle)}</span>
+            {row.structure_origin && <span className="mw-catalytic-mark" data-testid="mutation-model-list-repaired"
+              data-repair-record={row.structure_origin.repair_record}><span className="mw-catalytic-badge">보완 구조</span></span>}
           </label>)}
         </fieldset>)}
       {switchBlocked && <p className="mw-mutation-note" role="status" data-testid="mutation-model-switch-blocked">
@@ -685,6 +712,7 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
     </Section>
 
     {opened && <Section area="detail" title="③ 결과">
+      <RepairOrigin origin={opened.structure_origin} testId="mutation-model-repair-origin" onOpen={openRecord} />
       <ModelSummary detail={opened} runId={runId} />
 
       <div className="mw-mutation-group" aria-label="접촉 행" data-testid="mutation-model-contacts-area">

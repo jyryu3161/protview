@@ -29,8 +29,9 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
   - altloc: `highest_occupancy`(기본), `first`. highest_occupancy는 점유율이 같을 때 안정적인 순서로 동점을 깨고, 공유 원자는 유지한다.
   - waters: `keep_all`(기본), `strip_all`.
   - hydrogens: `strip`(기본), `keep`.
-  - missing_residues는 `leave_gaps`, symmetry_mates는 `ignore`만 가능하다.
-- protonation, 누락 원자 재구성, 대칭 확장, bridging water는 지원하지 않는다. 요청하면 `input_invalid`로 거부한다. 요청만 기록해 두고 적용한 것처럼 보이게 하는 것은 금지다.
+  - missing_residues는 `leave_gaps`, symmetry_mates는 `ignore`만 가능하다(전처리 요청 값. M29 보완 구조의 manifest에만 틈을 메웠을 때 `modeled_internal_gaps`가 들어가며, 전처리 요청은 여전히 `leave_gaps`만 받는다).
+- protonation, 누락 원자 재구성, 대칭 확장, bridging water는 불러오기·전처리에서 지원하지 않는다. 요청하면 `input_invalid`로 거부한다. 요청만 기록해 두고 적용한 것처럼 보이게 하는 것은 금지다. 불러오기·전처리는 M29 뒤에도 원자를 만들지 않는다(입력 원자를 고르거나 지울 뿐이다).
+- 예외(M29): M7 사전 검사에 막히는 전처리 구조의 승인된 결손(곁사슬 중원자, C 말단 OXT, 내부 틈 잔기, 같은 저자 체인 이름의 조각 분리, MSE)은 사용자가 승인한 작업 `repair_structure` 하나만이 PDBFixer로 보완해 **새** `prepared_structure@1`(보완 구조)로 만들 수 있다. 원본 전처리 구조와 불러온 구조의 객체는 바뀌지 않고, 보완 구조는 manifest의 `repair` 키로 표시되며 모델링 경로에서만 쓴다(아래 "구조 보완 (M29, `repair_structure`)").
 - 전처리 결과는 항상 `preparation_manifest`에 연결된다. manifest에는 선택한 모델, 원본 structure handle, 제거 개수, 모든 정책 값이 들어간다. identifier를 잃지 않도록 전처리 출력은 mmCIF로 보존할 수 있다. 모든 입력을 PDB로 변환하는 것은 허용하지 않는다.
 
 ## 기하 접촉 (`compute_interactions`)
@@ -369,6 +370,10 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 - 점수는 `Decimal(str(v))`를 0.1 `ROUND_HALF_UP`, 거리·상자는 0.01, 개수는 정확히 일치. 틀린 반올림, 다른 statement의 필드 인용, 계산하지 않은 값을 0으로 쓰기는 거부한다.
 - 해석 금지어: M17 목록(M15·M16 포함)에 순위·최고·개선·결합 강도·rank·best·improve·stronger를 더해 모든 줄을 검사한다. 고정 한계 문장과 문자 그대로 같은 줄은 건너뛰고, 그 밖의 줄은 고정 점수 문구(`SCORE_LABEL`, 금지어 "친화"를 포함)만 지운 뒤 나머지를 검사한다(명세의 "한계 문장 줄만 제외"보다 한 가지 넓음, 결정 0026).
 
+### 보완 구조 (M29)
+- 보완 구조는 M18 수용체로 직접 들어오지 않는다(가져온 수용체는 M11 `chemical_raw_input@1`이고, 보완 구조를 받는 곳은 모델링 경로뿐이다). 보완 구조의 후보 집합에서 만든 M21 변이 모델이나 M23 개체 모델(`mutation_set_model@1`)을 `receptor_source`로 쓸 때만 보완 구조 기반 수용체가 된다. 도킹 규칙·닫힌 이유·한계 문장·점수 문구·원자 수 상한 10,000은 그대로다(8VF6 보완 구조의 수용체 원자 수 9,143은 상한 안이지만 M21 모델이 시간 안에 끝나지 않아 도킹하지 못했다).
+- 그런 결과의 읽기(목록 행·상세·접촉 페이지)에 `structure_origin`이 붙고(수용체 출처 모델 → 후보 집합 → 구조, M23 개체 모델은 → 서열 GA 결과 → 후보 집합 → 구조), 새 보고서는 `ligand_docking_markdown@2`("## 구조 출처" 절)다. 가져온 수용체와 보완 구조가 아닌 모델의 결과는 응답·보고서가 바이트 그대로이고 이미 저장된 `@1` 보고서는 같은 바이트로 다시 열린다. 규칙은 "구조 보완 (M29, `repair_structure`)"의 "하류 표시"와 "보고서".
+
 ### 의미하지 않는 것
 결합 친화도·결합 자유 에너지·ΔΔG·결합 강도, 후보·포즈의 순위나 개선, 실험으로 확인한 결합 자세, 수소결합·염다리 판정, 약물 유사성·활성·합성 가능성. 점수는 같은 수용체·상자·seed·방식·값에서 나온 것끼리만 나란히 볼 수 있다. 수용체는 입력 그대로의 강체이고, 후보의 3D 좌표·수소는 RDKit이 만든 것이다.
 
@@ -670,6 +675,10 @@ M20의 "촉매 잔기 데이터베이스" 칸을 M26 반응 지식 결과로 켠
 - **후보 집합을 고르는 다른 곳**(M20 목록, M21 요청 영역, M23 패널, M24 `JevPanel` 변이 소스, M25 루프 패널 변이 풀): `catalytic_status`가 `checked`가 아닌 집합에 "촉매 잔기 검사 안 함" 표시와 UK2를 단다. 배지와 문구는 세대가 아니라 `catalytic_residue_database.status`로 정한다(`not_available`(v1)과 `not_checked`(v2)는 같은 표시이고 상세 이유는 따로). 계산·전송·루프 규칙은 그대로다.
 - **소비자와 호출 키**: M21·M23·M25 계산과 M24 전송은 두 세대를 모두 받고, 이미 저장된 계산 결과·보고서·제안·루프 기록은 바뀌지 않는다. `mutation_candidates.py`는 M21·M23 호출 키에 해시가 들어가는 파일이라 M26의 변경으로 M26 전 M21 변이 모델·M23 서열 GA 저장 결과의 자동 재사용이 끝났다(사용자 수용, 영향은 `docs/engineering-notes.md`의 M26 함정).
 
+### 보완 구조 (M29)
+- `structure`는 보완 구조(manifest에 `repair` 키가 있는 `prepared_structure@1`)일 수 있다. `generate_mutation_candidates`는 보완 구조를 받는 유일한 `Run.call` 도구다. 입장은 보완 구조를 읽기·보고서와 같은 검사(보완 기록의 완료된 게시 하나와 원본에서 다시 만든 기록, 게시된 구조 = 이 구조)로 확인하고 통과하지 못하면 `structure_invalid`(게시 증거 없이 남은 보완 구조 포함), 환경이 없으면 412 `precondition`이다. `structure_mismatch`는 보완 구조의 원본 전처리 구조(`repair.source`)에서 만든 포켓 결과·번호 대응·주석·반응 결과도 받는다. 바뀐 곳은 `tools/mutations.py`의 입장 검사와 읽기 계층뿐이고 해시 파일 `mutation_candidates.py`·후보 집합 형식·호출 키 규칙·닫힌 집합은 그대로다.
+- 원본 기준 결과의 행은 잔기 7필드 정확 일치로만 이어지므로 모델링 잔기(틈 잔기, MSE→MET 치환 잔기)는 저장값에서 "검사함, 해당 없음"(`not_in_map`·`[]`)으로 남는다. 읽기(`repair_handoff`, 위치 행 `modeled_basis`·`reference_not_checked`)·화면·새 보고서 `mutation_candidates_markdown@3`이 그 위치를 "검사 안 함(모델링 잔기)"로 덮어 보인다. 그래서 M20 렌더 형식은 M29부터 셋이며(보완 구조 집합의 새 보고서는 늘 `@3`), 위 M28 절의 다시 열기가 받는 형식에도 `@3`이 더해졌다. 화면의 구조 선택에는 보완 구조가 "보완 구조" 배지와 함께 들어가고, 보완 구조를 고르면 참조 결과 목록이 원본 구조의 결과도 보인다. 규칙·한계는 "구조 보완 (M29, `repair_structure`)"의 "M20 참조 결과 인계", "모델링 원자 표시 `modeled_basis`", "보고서".
+
 ### 의미하지 않는 것
 변이의 효과(안정성·결합·활성·특이성), ΔΔG·친화도·에너지, 순위·추천·우선순위, 보호 판정의 "안전", 촉매 잔기 여부(v2의 `catalytic_residue`는 M-CSA가 적은 PDB·체인·번호·잔기 이름이 맞는 행이 있다는 뜻뿐이며 잔기의 역할을 판정하지 않는다), 변이 구조의 형태·양성자 상태. 리간드·금속까지 거리는 기하 사실이며 결합·상호작용을 뜻하지 않는다. KLIFS 부위 이름표·UniProt 번호·M-CSA 항목 ID는 참조값이다.
 
@@ -748,6 +757,11 @@ M20 변이 후보 하나를 골라, 같은 작업 안에서 같은 절차로 야
 - 같은 조건 도킹 영역은 M18 순수 입력 로직(`lib/docking.ts`)으로 SDF 리간드·상자(리간드 범위 또는 직접 입력, 인스턴스 범위는 이유와 함께 막힘)·값·확인 세 항목을 받고 2단위 확인 뒤 한 번의 동작으로 작업 둘을 보낸다. 짝 표는 서버 `docking_pairs` 그대로이며 점수 이름은 M18 문구다. 짝 동작이 진행 중이면 다른 모델을 열 수 없다(이유 표시).
 - 다섯 상태(불러오는 중·준비·빈 결과·실패·사용할 수 없음). capability가 없으면 숫자·컨트롤 없이 이유만. 늦은 응답은 run + 모델 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 뷰어·저장된 보기·브리지는 건드리지 않는다.
 
+### 보완 구조 (M29)
+- 후보 집합의 구조가 보완 구조여도 같은 입장·절차로 받는다(보완 구조는 `prepared_structure@1`이고 게시 전에 M7 사전 검사를 통과한 것만 게시된다). 모델링 입력에는 PDBFixer가 만든 보완 원자가 관측 원자와 함께 들어가며 M21은 둘을 구분하지 않는다. 결과의 `added_heavy_atoms`는 M21 변이 단계에서 더한 원자뿐이고 보완 원자는 보완 기록에 있다. 입장 검사·닫힌 집합·한계 문장 L1–L7·호출 키 해시 파일·시간 상한(기본 120초, 최대 240초)은 그대로다(사용자 결정 2026-10-13).
+- 결과 읽기(목록 행·상세·접촉 페이지·같은 조건 도킹 짝)에 `structure_origin`(SO1)이 붙고 새 보고서는 `mutation_model_markdown@2`("## 구조 출처" 절)다. 보완 구조가 아닌 모델의 응답·보고서는 바이트 그대로이고 저장된 `@1` 보고서는 같은 바이트로 다시 열린다.
+- 시간: T1 측정(부하가 있던 한 기계, M21 작업 하나)에서 보완 뒤 단백질 중원자 2,594개 이상인 1M17·1A4I·8VF6은 M21 작업 하나가 240초를 넘었다(310·992·1,035초. 수락에서 실제로 돌린 것은 8VF6 하나). 2,160개인 1MQ4는 233초로 끝났지만 여유가 약 7초라, 약 2,100개를 넘는 구조는 240초 안에 끝나지 않을 수 있다. "구조 보완 (M29, `repair_structure`)"의 "검증 범위와 알려진 한계".
+
 ### 의미하지 않는 것
 안정성·ΔΔG·결합 친화도·효소 활성·변이 효과, 두 구조 값의 차이나 개선, 순위·추천·점수, 수렴한 구조나 실험 구조, 수소결합·상호작용 판정. OpenMM 전위는 각 구조의 값이며 서열이 다른 두 구조는 서로 비교할 수 없다. 같은 조건 도킹 점수는 M18 qvina 점수이며 짝은 두 값을 나란히 둘 뿐이다.
 
@@ -809,6 +823,9 @@ S1 항상: "서열 GA는 변이 조합 공간에서 어떤 조합을 모델링·
 ### 화면 규칙
 - 단백질 공학 탭에서 M20 변이 후보·M21 변이 구조 모델링 영역 아래 "서열 GA 설계" 영역(구조 분석 탭은 숨긴 채 유지, 선택된 동안에만 렌더링, run마다 `key`로 새로, 탭에 들어올 때 읽기만). 입력(후보 집합·SDF 리간드·상자·도킹 값·평가 seed·확인 항목)은 자동 선택·자동 제출·기본 승인이 없고 M18·M21 입력 로직을 재사용한다. 파라미터 편집은 열한 칸에 범위·기본값·칸별 이유를 보이고 범위를 벗어나면 시작 전 확인·시작을 막으며 "기본값으로"는 GA seed를 그대로 둔다. 조합 공간 크기·유효 `max_mutations`·예약 단위는 서버 시작 전 확인 응답 값만 보이고 브라우저가 계산하지 않는다. 증액은 사람이 단추를 누를 때만 한다.
 - 결과: 야생형 기준 행은 값만 보이는 "야생형 기준(참고)"로 개체 표와 따로, 세대 탭, 개체 표(변이 한 줄 표기 + 펼친 7필드·출처 "초기/이어받음/교차/편집(연산)/무작위"·재사용 여부·qvina 점수·상태), 점수 없는 행은 "—"와 이유이며 모든 정렬에서 끝, 세대별 최솟값·최댓값(값만), 종료 이유("점수 최솟값 변화 없음" 등), 서버 저장 문장 S1–S6. 개체 상세는 모델 값만(변이 목록, OpenMM 전위와 S5, HIS·CYS 상태와 기준과 다른 목록, 이황화·추가 원자, mmCIF 내려받기)과 M18 결과 상세(`m18_detail`) 값이다. 차이·증감·순위·막대·색 비교·"최고"·"개선"이 없다. 한 번에 한 GA만 진행하고(진행 중이면 다른 요약 열기를 이유와 함께 막음) 늦은 응답은 run + 요약 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 다섯 상태, 사용할 수 없을 때는 숫자 없이 이유만.
+
+### 보완 구조 (M29)
+- 후보 집합의 구조가 보완 구조여도 같은 규칙으로 돈다는 것은 코드 경로의 설명이고 보완 구조로 M23을 실제로 돌린 적은 없다(개체 모델링은 M21 함수, 한 개체 모델링 상한 240초 `MODEL_STEP_S`). 큰 보완 구조(1M17·1A4I·8VF6)에서 M23을 돌린 시간은 측정하지 않았다(M21 작업은 두 구조를 만들고 M23 개체 모델은 한 구조라 M21 측정값을 그대로 옮길 수 없다). M23 읽기·보고서 모듈(`sequence_ga_reads.py`·`sequence_ga_reports.py`)은 바이트 고정 해시 파일이라 바꾸지 않았다: 요약 목록 행·상세·개체 상세의 `structure_origin`은 서버 응답 계층(`app.py`)이 더하고, 화면은 "보완 구조" 배지와 SO1을 보이며, 보고서 `sequence_ga_markdown@1`은 보완 사실을 담지 않는다(후보 집합·구조 handle을 인용할 뿐). 보완 사실은 같은 후보 집합의 M20 `@3` 보고서와 보완 보고서가 싣는다. 개체 도킹 결과(M18)의 새 보고서는 수용체가 보완 구조 기반 개체 모델이면 `ligand_docking_markdown@2`다.
 
 ### 의미하지 않는 것
 결합 친화도·ΔΔG·안정성·효소 활성·변이 효과, 점수 정렬·선택 표시의 순위·추천·개선·"더 잘 결합", 야생형 대비 차이, 서열이 다른 구조의 OpenMM 전위 비교, 수렴한 구조나 실험 구조, 수소결합·상호작용 판정. 개체 점수는 개체마다 다른 수용체의 qvina 값이며 같은 수용체 안의 비교가 아니다. 부모–자식 연결의 선택 이유는 서버가 재계산하지 않았다.
@@ -902,6 +919,10 @@ J1 항상: "JEV 판정은 외부 모델이 보낸 후보 목록에서 고른 하
 - 확신도·확률은 `decimalHalfUp` 소수 셋째 자리 표시 반올림만 하고 저장값은 바뀌지 않는다. 정렬·막대·색 비교·"최고"·"추천"·응답끼리의 비교·합치기가 없다. JEV 선택을 도킹·모델링 요청 칸으로 넘기는 단추는 없다. 늦은 응답은 run + 투영·전송 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 진행 중 전송이 기록에 있으면 2초마다 기록·상태를 다시 읽는다(읽기만). 사용할 수 없을 때는 숫자 없이 이유만.
 - 전역 줄의 `.mw-app-run` 바깥에 현재 run의 과학 전송 동의가 켜졌을 때만 "과학 전송 허용" 표시를 둔다(기존 `local_only`·`online`은 뷰어 모델 해석 모드이며 과학 전송 동의와 별개라는 설명을 함께). 구조 분석·리간드·단백질 공학 탭은 바뀌지 않는다(M24 범위. M25가 리간드·단백질 공학 탭에 더한 "JEV 루프" 영역은 아래 "JEV 설계 루프 (M25)").
 
+### 보완 구조 (M29)
+- 변이 투영의 소스 후보 집합이 보완 구조에서 만든 것이어도 같은 입장·와이어 규칙으로 투영하고 보낸다(`structure_unavailable` 판정에서 보완 구조도 이 run의 `prepared_structure@1`이다). 와이어 허용 필드·질문·본문·`jev_choice@1`·감사 열·저장 이벤트·골든은 바뀌지 않고 본문은 보완 사실을 담지 않는다. 구간·이웃·거리에는 모델링 잔기·원자가 섞일 수 있다(MET로 바꾼 MSE는 ATOM 단백질 잔기가 되어 구간에 들어간다).
+- 미리보기 응답에 `structure_origin`과 `repair_warning`(JW1), 승인·전송 응답에 `repair_warning`, 전송 목록·상세에 `structure_origin`이 붙고 화면은 미리보기·승인 자리에 JW1을 보인다. 변이 종류의 새 보고서는 `jev_choice_markdown@2`("## 구조 출처" 절)이고 리간드 종류와 보완 구조가 아닌 보고서는 `@1` 바이트 그대로다. 규칙은 "구조 보완 (M29, `repair_structure`)"의 "JEV 전송 경고 JW1".
+
 ### 의미하지 않는 것
 JEV 판정은 후보의 순위·추천·예측·점수가 아니며 결합·활성·친화도·안정성·ΔΔG·합성 가능성·안전성·치환 효과에 대한 판단이 아니다. 고른 이유는 알 수 없다. 확신도·확률은 모델이 보고한 값이며 과학 값이 아니고 후보를 줄 세우지 않는다. 같은 목록을 다시 보낸 응답을 합치거나 다수결·최신을 정답으로 쓰지 않는다. 모델 선택은 목록 순서(로컬 저장 순서)의 영향을 받을 수 있다(J4). 와이어의 거리·구간·이웃은 저장 좌표의 기하이며 상호작용이 아니고, `protection_released: false`는 수행한 검사가 보호를 적용하지 않았다는 뜻일 뿐 잔기가 중요하지 않다는 뜻이 아니다.
 
@@ -915,6 +936,7 @@ JEV 판정은 후보의 순위·추천·예측·점수가 아니며 결합·활�
   - 단백질 `setup`: `ligand`(`{source: "sdf", sdf_handle}`만), `box`(M18 상자, 인스턴스 범위는 거절), `parameters`(M18 자유 도킹 값, `seed`는 모델링 seed로도 같은 값), `selection_policy: "protein_only"`, `hydrogen_policy: "rebuild_pH7"`, `acknowledgement`(M18 세 항목), `contact_cutoff_A`(2.5–6.0 유한수, 기본 4.0, M21 입력이며 점수·와이어에 쓰이지 않음).
 - 입장 검사(작업·예산 없음, 이 순서, 첫 실패만, `detail.reason_code`가 이 이름): `unknown_field`(422) → `loop_id_invalid`(422) → (run 실행 잠금 안) 같은 `loop_id`가 이미 있으면 정규화한 요청이 같을 때 기존 기록을 200으로, 다르면 409 `loop_id_conflict` → `dry_run`(412, 연습용 run에서는 루프를 만들 수 없다) → `branch_invalid`(422) → `capability_unavailable`(412, 그 갈래의 엔진이 없음: 리간드는 도킹 작업 환경과 qvina, 단백질은 OpenMM·PDBFixer 다음 도킹 환경. `detail.capability{reason_code, reason}`) → `loop_active`(409, 이 run에 같은 갈래의 끝나지 않은 루프가 있음. 다른 갈래는 동시에 열 수 있다) → `pool_invalid`(422: 이 run의 게시된 해당 종류가 아님·검증 실패, 개수 2–20 밖, 중복, 집합에 없는 후보, 필터 탈락, 필터 형식 오류) → `goal_invalid` → `seed_invalid` → `iteration_cap_invalid` → `setup_invalid`(모두 422). 실행 잠금을 잡지 못하면 503 `busy`이고 아무것도 쓰지 않는다.
 - `setup_invalid`는 `detail.setup_reason`에 새 이름 없이 기존 닫힌 이름을 담는다: 리간드 = `docking_constants.REASONS` ∪ `ADMISSION_ONLY_REASONS`, 단백질 = 그 합집합 ∪ `mutation_model_constants.ADMISSION_REASON_CODES`(cutoff 오류는 `argument_invalid`, 설정 안의 알 수 없는 키는 M18의 `invalid_job_arguments`). 서버가 작업 모듈 없이 판정할 수 있는 것, 즉 첫 풀 후보로 첫 단계 작업을 제출할 때 서버가 거절할 이유만 거절한다: 리간드는 `docking_batch_inputs.row_request`(mode `free`) → `docking_bundle.submission`, 단백질은 M18 순수 인자 점검(자리표시 모델), 같은 run `ligand_sdf` 가져오기 확인, M21 `mutation_model_bundle.admission`과 M7 사전 검사(`selection`). 그래서 M7 사전 검사를 통과하지 못하는 구조의 단백질 풀은 만들기에서 `setup_invalid`/`setup_reason: "openmm_preflight_failed"`로 거절된다(해석 N1. 로컬 공개 구조 중 M7을 통과하는 것은 1UBQ뿐이고 1MQ4 풀은 이 거절을 받는다).
+- (M29) 위 N1의 "M7을 통과하는 것은 1UBQ뿐"은 원본 전처리 구조에 대한 M28 시점의 사실이며 원본 1MQ4 풀은 지금도 이 거절을 받는다. 보완 구조는 게시 전 검증에서 M7 사전 검사를 통과한 것만 게시되므로 보완 구조의 후보 집합으로 만든 단백질 풀은 이 거절을 받지 않는다(M29 수락에서 1M17·1MQ4·1A30·1A4I·1HSG·8VF6과 RCSB 추가 구조 1RNH·4INS·1CLL이 두 물 정책 모두, 1AY7이 `keep_all`에서 보완·게시되었고(`docs/qa/m29-repair-20261013/acceptance/classification-table.md`) 8VF6 보완 구조로 단백질 루프를 만들었다). 루프의 모델 단계 작업은 `timeout_s` 120초 고정이다(`jev_loop_constants.STEP_TIMEOUT_DEFAULTS_S["model"]`을 `jev_loop_store.step_job`이 그대로 쓰고, 루프에는 240초로 바꾸는 경로가 없다). 그래서 T1 측정(M21 작업 하나, 부하가 있던 한 기계)으로 보면 1M17·1A4I·8VF6뿐 아니라 1A30(123초)·1MQ4(233초) 보완 구조의 모델 단계도 끝나지 않을 것으로 본다(1A30은 수락의 단독 M21 작업(`timeout_s` 240)에서 116.5–116.6초였으므로 120초 경계에 있다). 1HSG(T1 118초)는 여유가 약 1.5초다. 같은 조건의 저장 M21 모델이 있으면 바퀴가 모델 단계를 재사용으로 채택하므로(아래 후보 상태 규칙) 단독 M21 작업(`timeout_s` 240)으로 만든 모델은 루프가 쓸 수 있다고 본다. M29에서는 보완 구조로 M25 계산을 실행하지 않았다.
 - 통과하면 이벤트 `jev_loop_created{loop_id, branch, pool{source{handle, schema}, structure{handle, model_number}|null, candidates[후보 참조], filter|null}, goal, loop_seed, iteration_cap, setup(정규화한 값), setup_sha256(정규 JSON의 SHA-256), pins}` 하나를 쓰고 `jev_loop@1`을 200으로 돌려준다. `pins`는 리간드 `{m18}`, 단백질 `{m18, m21}`(단독 M18·M21 작업이 `method`로 기록하는 모듈·상수 파일 SHA-256과 엔진 버전)이며 루프의 모든 호출 키는 이 pin으로 만든다. 후보 참조는 리간드 후보 id 문자열, 단백질 후보 `index` 정수다. 이벤트가 전체를 담아 events-only로 다시 열린다.
 
 ### 루프 기록 `jev_loop@1` (저장하지 않음)
@@ -1020,6 +1042,10 @@ LJ1 항상: "JEV 루프는 사람이 바퀴마다 보낼 내용과 계산 시작
 - 리간드 설계·탐색 탭의 M22 GA 영역 다음, 단백질 공학 탭의 M23 서열 GA 영역 다음에 각각 "JEV 루프" 영역(`JevLoopPanel`, `branch` prop, 선택된 동안에만 렌더링, run·갈래마다 `key`로 새로, 마운트는 읽기만, 구조 분석 탭은 숨긴 채 유지, 다른 탭 내용 불변). 두 영역은 루프 목록·진행·미리보기·승인·제안 카드·후보 표·바퀴 표·끝내기·요약·보고서를 함께 쓰고 만들기 입력과 후보 표기만 다르다. M24 지식·보고서 탭 `JevPanel`의 동작은 그대로이고, 전송 기록에서 루프 전송은 "JEV 루프" 표시와 루프 영역으로 가는 안내가 붙은 읽기 전용 행이며 그 행의 "결과 열기"·"보고서 만들기" 단추는 없다. M21 짝 표는 루프 도킹 짝을 "루프 도킹(야생형 없음) · 바퀴 n"으로 보인다.
 - 순서: ① 과학 전송 동의 상태(서버 상태 그대로, 같은 `POST /jev/consent`로 켜고 끔, 루프별 동의 없음, dry-run이면 켤 수 없음)와 UL1·UL3(+ 단백질 U3) ② 만들기 입력: 후보 집합(자동 선택 없음), 풀 체크박스 ≤ 20(리간드는 M17 `FilterForm`·필터 통과만, 21번째 체크는 막고 이유를 보임, 최소 2), 목표 라디오(탐색형·활용형과 한 줄 의미, 자동 선택 없음), 루프 seed(필수, 비어 있음), 반복 상한(1–8, 기본 5), 계산 조건(리간드: M22와 같은 수용체·인스턴스·부모 SDF·상자·값·확인, 단백질: M21 `PairInputs`·SDF·상자·값·확인 두 리터럴·cutoff), 자유 도킹 고정과 그 사실 표시 → "루프 만들기"(입장 이유는 칸별로) ③ 진행: 현재 바퀴·phase, `needs`·`remaining`·막힌 축, 보낼 내용 만들기 → 미리보기(정확한 본문 문자열을 접은 `pre`로, 바이트·SHA-256, 질문 고정 문구, 별칭 ↔ 로컬 후보 대응표("전송하지 않음"), 섞기 순서·seed, 예약값, 차단 이유, 확인 체크 "이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다") → 전송 → "JEV 판정(모델 선택)" 카드(고른 별칭의 로컬 표기, 목록 위치 "n/m", 확신도, 늦으면 J7, 접힌 상세에 확률 값만 보낸 순서대로) → "이 선택으로 계산 시작"(단위·시간 확인) 또는 "직접 지정"(계산 안 된 후보 중, 전송 없이도) → 작업 진행(2초마다 읽기만, 첫 계산 승인 안내) → (단백질) 도킹 시작 또는 포기 ④ 후보 표(후보 표기, 상태, qvina 점수(값만, 점수 없음은 "—"와 이유), 바퀴, 선택 주체 JEV/사람, 평가 "새 계산/저장된 결과 재사용", 풀 순서·후보·점수·바퀴 열 정렬만 되고 점수 없는 행은 어떤 정렬에서도 끝(풀 순서), `aria-sort`, 순위 열·최고 표시·강조·차이 열 없음, "상세 열기"는 저장 M18 결과 상세) ⑤ 끝내기(거절 이유를 보임)·요약·보고서 만들기 ⑥ 서버가 준 저장 문장 그대로.
 - 화면은 점수·집계·부족분·섞기·계산 여부를 계산하지 않고 서버 응답만 보인다. `send_id`는 처음 누를 때 만들고 기록이 올 때까지 같은 값을 쓴다(더블클릭·재시도가 한 전송). 늦은 응답은 run + 연 루프 + 바퀴 + 영역별 요청 번호가 모두 같을 때만 반영하고, 제안 카드는 루프 기록이 그 전송의 완료를 보일 때까지 확인 중 줄만 보인다. 한 번에 한 루프만 열어 진행하며 진행 중 요청이 있으면 다른 루프 열기를 이유와 함께 막는다. 다섯 상태(불러오는 중·준비·빈 결과·실패·사용할 수 없음)를 구분하고 사용할 수 없을 때는 숫자 없이 이유만(`methods.jev_loop`의 갈래별 이유) 보인다. 순위·막대·색 비교·"최고"·"추천"·"개선" 표현이 없다.
+
+### 보완 구조 (M29)
+- 단백질 풀의 후보 집합이 보완 구조에서 만든 것이어도 같은 규칙으로 루프를 만들고 계산한다(계산은 단독 M21·M18과 같은 작업). 루프 목록 행·상세와 루프 동작 응답(만들기·계산 시작·도킹 포기·끝내기, 상세 읽기와 같게)에 `structure_origin`이 붙고, 루프 전송의 미리보기·승인은 M24와 같은 라우트라 JW1(`repair_warning`)이 붙는다. 와이어·본문·`jev_loop_choice@1`·루프 이벤트·루프 모듈의 import 제약은 바뀌지 않는다(구조 출처는 서버 응답 계층이 더함). 단백질 갈래의 새 보고서는 `jev_loop_markdown@2`(`jev_loop_constants.REPORT_RENDER_V2`, "## 구조 출처" 절)이고 리간드 갈래와 그 밖의 단백질 루프는 `@1` 바이트 그대로다.
+- 보완 기록이 검증되지 않거나(422) 검증 환경이 없으면(412), 루프 동작 라우트는 루프 이벤트를 쓴 뒤 응답에 구조 출처를 붙이는 단계에서 오류로 답할 수 있다(알려진 한계, "구조 보완 (M29, `repair_structure`)").
 
 ### 의미하지 않는 것
 JEV 판정은 후보의 순위·추천·예측·점수가 아니며 결합·활성·친화도·안정성·ΔΔG·합성 가능성·변이 효과에 대한 판단이 아니다. 고른 이유는 알 수 없다. 탐색형·활용형 목표는 JEV에게 고를 기준을 알리는 고정 문장일 뿐이고 루프가 더 나은 후보를 찾는다는 주장이 아니다. 목록 위치는 관찰값이며 섞기의 효과·무효과·편향의 증거가 아니다(LJ3). 바퀴 순서·표 정렬·선택 표시는 순위나 개선이 아니고, 루프는 최솟값·최댓값·평균·차이·증감·"지금까지 최저"를 만들지 않는다. 단백질 루프의 점수는 후보마다 다른 변이 구조에 도킹한 값이라 같은 수용체 안의 비교가 아니며 변이 효과나 친화도가 아니고(LJ7), 서열이 다른 구조의 OpenMM 전위는 점수·선택·표에 쓰지 않는다. 점수 없음(계산하지 않음·모드 없음·실패·도킹하지 않음)은 0이 아니다.
@@ -1231,6 +1257,155 @@ KP1 "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록
 
 ### 의미하지 않는 것
 전례 연결은 내 구조·변이·리간드·후보가 그 전례와 같다거나 비슷하다는 판단이 아니다(변이 표기를 서열과 대조하지 않고(UP3), PDB 언급의 일치를 판단하지 않음(UP4)). 방향·크기는 kbase 규칙 v1의 산출값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화는 효과의 증거로 쓰지 않는다. 전례 개수·목록 순서·정렬은 순위·추천·유망도·성공률이 아니며(KP6) ProtView는 개선/악화 집계·배수·차이·평균을 만들지 않는다. "kbase 기계 검사"의 `pass`와 "ProtView 무결성 확인"은 원문과 같다는 뜻이 아니다. "포함한 파일에 이 표적의 전례 기록 없음"·`not_in_kbase_references`·미해석 전례는 선행 연구가 없다는 뜻이 아니다(KP4). 실데이터 점검(1MQ4 Aurora A `O14965` → `none_in_included_files`·`excluded_flagged` 0, 1M17 → `P00533` `moves` 76·`excluded_flagged` 66·포함 시 142, 1FIN 체인 A·C → `P24941` 한 표적에 체인 행 둘·`moves` 32·`excluded_flagged` 24, `docs/qa/m27-precedents-20261010/acceptance/`)은 kbase가 그 표적에 남긴 기록 수를 센 것뿐이다.
+
+## 구조 보완 (M29, `repair_structure`)
+
+사용자가 승인한 작업 하나로, M7 사전 검사(완전한 표준 중원자 템플릿, 사슬 끝 OXT, 잔기 간격 없음, 저자 체인 이름 중복 없음 등)에 막히는 전처리 구조(`prepared_structure@1`) 하나에서 승인된 결손만 PDBFixer로 보완한 **새** 전처리 구조(보완 구조)를 만들고, 더하고 바꾼 것을 전부 보완 기록 `structure_repair@1`에 남긴다(결정 0037). 목적은 곁사슬 원자 결손·사슬 안 틈·C 말단 OXT 결손·같은 저자 체인 이름의 조각 분리 때문에 M7 입구에서 막히던 실제 결정구조(M28 점검에서 로컬 공개 구조 8개 중 통과는 1UBQ뿐이었다)를 모델링 경로에 쓰게 하는 것이며, 보완 구조는 그 경로에서만 쓴다(아래 "받는 곳과 기본 거절"). 과학 값을 만들어 내지 않는다: 새 원자는 PDBFixer가 만든 모델링 좌표이고 실험 좌표가 아니며, 실험으로 관측한 원자는 이름(MSE의 SE→SD만 예외)·원소·altloc·잔기 7필드·좌표(차이 ≤ 1e-9 Å)가 입력 그대로다. 새 원자 좌표는 소수 넷째 자리로 반올림해 구조와 기록에 같은 값으로 넣는다(M21 작업 모듈이 단백질을 PDBx 텍스트 `%.4f`로 옮긴 뒤 변이 잔기 밖 좌표를 1e-9 Å로 대조하므로 더 긴 값은 `coordinates_changed`로 실패한다. M23의 새 원자 반올림과 같은 이유). 내려받는 mmCIF의 새 원자 표지는 표준 열 `_atom_site.calc_flag`(새 원자 `c`, 나머지 `.`)이고 점유율 0은 표지로 쓰지 않는다(입력에 점유율 0인 단백질 원자가 실제로 있다). 원본 전처리 구조와 불러온 구조의 객체 바이트는 바뀌지 않고, 보완 구조에서 나온 결과는 읽기·화면·보고서에 "보완 구조 기준"을 드러낸다. 닫힌 집합·상수·고정 문장은 `backend/mw/structure_repair_constants.py`(아무것도 import하지 않음)에 있고 바꾸려면 사용자 결정이 필요하다. PDBFixer는 작업 모듈 `mw/jobs/structure_repair_worker.py`(프로젝트 `.venv`)에서만 import하고, 서버는 PDBFixer 버전을 `importlib.metadata`로만 읽으며 OpenMM은 M7 `openmm_method.dependencies()`·`preflight()` 경로로만 쓴다. 코어 세 모듈(`structure_repair_constants.py`·`structure_repair.py`·`structure_origin.py`)은 네트워크·프로세스·엔진 모듈을 import하지 않는다(AST 시험).
+
+### 보완 종류와 방식
+- 작업 전용 도구 `repair_structure`, 프로토콜(방식) `pdbfixer_repair_v1`(`JOB_PROTOCOLS`·`JOB_ONLY_TOOLS`·작업 승인 허용 목록, `SUPPORTED_TOOLS` 아님, `Run.call`은 작업 전용 도구로 거절). 제출·시작·승인·상태·취소·재시도는 기존 작업 API다. 인자(그 밖의 키는 `unknown_field`): `structure`(같은 run의 보완되지 않은 `prepared_structure@1` handle, 필수), `repair_policy`(리터럴 `"complete_missing_atoms_v1"`, 모델링 좌표가 들어간 구조가 만들어진다는 명시적 확인, 필수). seed·틈 길이 상한·좌표 소수 자리는 인자가 아니라 상수다.
+- 보완 종류 `REPAIR_CLASSES`(닫힌 집합, 이 순서로 기록):
+  1. `chain_parts_merged`: 같은 `chain_auth`가 단백질·리간드·물 조각으로 갈라져 있던 것을 체인 이름을 바꾸지 않고 한 체인으로 합친다(저자 체인은 처음 나온 순서, 조각은 입력 순서로 이어 붙임). 잔기 7필드·좌표는 그대로이고 원자 순서만 바뀐다. 조각 합치기만 필요한 구조도 보완 대상이다(`nothing_to_repair`가 아님).
+  2. `side_chain_atoms_added`: 뼈대 N·CA·C·O가 모두 있고 관측 중원자가 설치된 Amber14 템플릿(M7이 쓰는 `amber14/protein.ff14SB.xml`, M7 포스필드 지문으로 확인. HIS는 HID 템플릿, 사슬 마지막 잔기는 C 말단 템플릿)의 부분집합일 때 빠진 곁사슬 중원자만 더한다.
+  3. `terminal_oxt_added`: 사슬의 마지막 관측 폴리머 잔기에 OXT가 없으면 더한다. 관측 끝이 서열 끝이 아니어도(말단 꼬리가 관측되지 않았어도) 더하고, 사슬마다 관측 끝과 서열 끝이 같은지(N 끝도)를 기록 `chain_ends`에 남긴다(RP4).
+  4. `internal_gap_filled`: 관측된 두 잔기 사이의 내부 틈 잔기를 파일에 적힌 서열대로 더한다(틈 하나 1–20잔기, `MAX_GAP_RESIDUES = 20`). 말단 꼬리는 만들지 않는다. 틈 잔기의 원자는 모두 PDBFixer 좌표다.
+  5. `nonstandard_replaced`: 폴리머 MSE를 MET로 바꾼다(SE→SD, 원소 Se→S, 좌표 그대로, 레코드 HETATM→ATOM). PDBFixer의 표준 치환은 SD를 템플릿 위치에 새로 놓으므로 쓰지 않고, 작업 모듈이 PDBFixer 호출 전에 이름·원소만 바꾼다. 잔기 7필드의 `resname`이 바뀌는 식별자 보존 규칙의 유일한 명시적 예외이며 대응표는 기록 `replaced`, 화면·보고서 표시는 "치환 잔기"다.
+- 보완하지 않는 것: 수소·물·리간드·이온·altloc(전처리 정책 그대로. 수소는 M7 경로가 pH 7로 다시 만든다), 뼈대 원자가 빠진 잔기, 말단 꼬리, MSE 밖 비표준 잔기(인산화 잔기 등), 이황화 결합 설정, 서열 틈을 캡(ACE·NME)으로 끊기, 체인 이름 바꾸기, 여러 모델(NMR), 사슬 일부만 고른 보완, 같은 전처리 구조를 seed·인자를 바꿔 여러 번 보완하기. 구조에서 리간드 SDF를 뽑거나 수소를 붙이는 도킹 입력 만들기도 범위 밖이다.
+
+### 틈과 틈 잔기 식별자 (추측하지 않는다)
+- mmCIF: 같은 label 체인에서 label 서열 번호가 1보다 크게 건너뛰는 곳(M7 `sequence_gap` 기준)만 틈이다. 틈 잔기 이름은 `_entity_poly_seq`, 저자 번호·삽입 코드·label 번호는 `_pdbx_unobs_or_zero_occ_residues`(폴리머·점유 플래그 1·같은 모델 행)에서 가져오며, 위치마다 행이 정확히 하나이고 서열 이름·저자 체인이 맞아야 한다. 이 목록은 전처리 mmCIF에 남지 않으므로 전처리 기록 `source_handle`이 가리키는 원본 `structure_source` 바이트에서 읽는다.
+- PDB 형식(`seq_label` 없음): C–N 거리가 M7 범위(1.1–1.7 Å) 밖인 이웃 폴리머 잔기 쌍을 틈 후보로 보고, 그 체인의 `REMARK 465` 행(저자 번호·삽입 코드·이름)을 저자 번호 순서로 관측 잔기 사이에 놓아 관측 이름과 목록 이름을 이은 것이 그 체인의 `SEQRES`와 정확히 같을 때만 확정한다. 목록이 없거나 맞지 않으면 `gap_listing_missing`, 저자 번호가 이어진 채 거리만 어긋난 쌍(진짜 사슬 끊김)은 `m7_condition_unsupported`(`peptide_geometry`)다.
+- 틈 잔기의 7필드는 모두 채운다: `model_number`, `chain_auth`(틈 양끝 잔기의 체인), `seq_auth`·`icode`(미관측 목록), `resname`(서열), `seq_label`(mmCIF는 목록의 label 번호, PDB 형식은 null), `chain_label`(mmCIF는 이웃 관측 잔기의 label 체인. PDB 형식은 이웃 관측 잔기의 값과 같으며 보완 구조를 다시 읽을 때 gemmi가 붙이는 값이다: SEQRES가 있는 파일은 `Axp` 같은 합성 subchain 이름, 없으면 null). 서열에 적힌 틈 잔기 이름이 표준 20종이 아니면(MSE 포함) 틈을 메우지 않고 `unsupported_residue`(`detail.in_gap: true`)로 거절한다(틈 잔기를 MET로 바꿔 메우지 않는다). 미관측 목록의 잔기가 관측 잔기와 7필드가 같으면 `gap_listing_missing`이다.
+
+### 입장 검사 (작업을 만들기 전, 예산 없음, 이 순서, 첫 실패만)
+1. 422 `input_invalid`, `detail.reason_code`(`ADMISSION_REASON_CODES`): `unknown_field` → `confirmation_missing`(`repair_policy`가 리터럴과 다름) → `argument_invalid`(`structure`가 비어 있지 않은 문자열이 아님, `timeout_s`가 (0, 240] 밖) → `structure_invalid`(이 run의 `prepared_structure@1`이 아님) → `already_repaired`(manifest에 `repair`가 있음).
+2. dry-run run이면 여기서 계획만 돌려준다.
+3. 412 `precondition`(`UNAVAILABLE_REASON_CODES`): `process_identity_unavailable` → `openmm_unavailable` → `pdbfixer_unavailable`(고정 OpenMM 8.6.0 포스필드 지문·PDBFixer 1.12.0·프로세스 신원 어댑터. 이유 문장은 M21과 같다).
+4. 422 `input_invalid`, `detail.error: "repair_not_possible"`, `detail.reason_code` = 아래 거절 이유의 첫 코드, `detail.blockers` = 모든 걸림돌 `{reason_code, residue?, chain_auth?, detail}`(거절 이유 순서, 같은 이유 안에서는 구조 순서), 첫 이유가 `m7_condition_unsupported`면 `detail.m7_reason`.
+5. 429 `resource_exceeded`(`limit: "staged_input_bytes"`): 스테이징 입력이 4,000,000 B 초과.
+- 거절 이유 `REFUSAL_REASONS`(닫힌 집합, 이 순서로 검사):
+  1. `chain_identity_duplicate`: 조각을 합친 뒤에도 서로 다른 단백질 폴리머 체인(label 체인이 다름)이 같은 저자 체인 이름을 쓴다(합치지 않는다).
+  2. `unsupported_residue`: 표준 20종도 MSE도 아닌 폴리머 잔기, 또는 표준 20종이 아닌 틈 잔기(`detail.in_gap`).
+  3. `unexpected_atoms`: 템플릿에 없는 이름이거나 C·N·O·S가 아닌 원소인 관측 중원자.
+  4. `backbone_atoms_missing`: N·CA·C·O 중 하나라도 없는 잔기.
+  5. `gap_listing_missing`: 내부 틈의 잔기 이름·저자 번호·label 번호를 파일의 서열과 미관측 잔기 목록(mmCIF `_entity_poly_seq`·`_pdbx_unobs_or_zero_occ_residues`, PDB `SEQRES`·`REMARK 465`)으로 확정할 수 없다.
+  6. `gap_too_long`: 틈 하나가 20잔기를 넘는다.
+  7. `m7_condition_unsupported`: 원본에 M7 사전 검사를 돌렸을 때 나올 거절 중 위 코드가 덮지 않고 보완으로 풀리지도 않는 것(`peptide_geometry`, label 번호가 늘지 않는 `sequence_gap`, 미해결 altloc, 원자 이름·잔기 식별 모호, 비유한 좌표, 단백질 없음). `detail.m7_reason`은 M7 코드이고 M7이 코드 없이 메시지만 내는 거절은 그 메시지 원문이다.
+  8. `atom_limit_exceeded`: 보완 뒤 단백질 중원자가 M7 상한 6,000을 넘는다.
+  9. `nothing_to_repair`: 걸림돌도 보완할 것도 없다(이미 M7 입구 조건을 만족하는 구조로 보고 새 구조를 만들지 않는다).
+- 결함 분석은 서버가 gemmi와 설치된 Amber14 템플릿 XML(파일로 읽고 M7 포스필드 지문으로 확인)만으로 한다(PDBFixer 없음). 서버 분석이 미리 알 수 없는 M7 거절(예: 이은 틈 잔기의 펩티드 C–N 거리)은 작업 단계의 `repair_incomplete`다. 입장 거절은 작업을 만들지 않고 예산을 쓰지 않는다.
+- `timeout_s` 범위 오류는 API 본문 모델 단계에서 먼저 나와 위 순서(`unknown_field` 등)보다 앞설 수 있다(이유 코드는 같은 `argument_invalid`, M21과 같다).
+
+### 사전 검사 읽기 (무료, 이벤트·도구 호출·작업을 만들지 않음)
+- `GET /runs/{rid}/structure_repair/preflight?structure=<handle>` → `structure_repair_preflight@1`(키는 `docs/contracts.md`의 M29 API), `starts_job: false`. 결함 분석과 `POST /jobs`의 입장 결과를 같은 순서(입력 422 → 412 → 422 `repair_not_possible` → 429)로 보인다.
+- `blockers`는 첫 거절만이 아니라 **모든 걸림돌**의 목록이다. `defects`는 항목 목록을 그대로 담는다: `chain_parts[{chain_auth, parts}]`(조각이 둘 이상인 체인만), `side_chain_residues[{residue, missing_atoms}]`, `terminal_oxt[{residue}]`, `gaps[{chain_auth, after_residue, before_residue, length, residues}]`(파일이 잔기를 확정한 틈만), `nonstandard[{residue, to_resname}]`. 잔기 참조는 입력 식별자다(MSE는 아직 MSE). 개수는 목록 길이와 `expected_added_residues`·`expected_added_heavy_atoms`로 읽고, `statements`는 조건이 맞는 RP 문장이다.
+- 입장 거절·환경 없음도 HTTP 200과 `admission.admitted: false`(+ `error`·`reason_code`·`message`·`detail`)이고, 예산 부족은 거절이 아니라 `shortfall.expensive_calls`다. 입장 1단계에서 거절됐거나 설치 템플릿을 읽을 수 없으면 분석이 없어 `repairable`·`defects`·`expected_*`가 null이다(0이 아니며 화면은 "— (결함 분석 없음)").
+
+### 결정성과 호출 키
+- seed는 상수 `REPAIR_SEED = 1`이고 작업은 `platform=CPU Threads=1`로 돈다. PDBFixer의 `missingResidues`는 서버 분석이 정한 틈 목록으로 직접 설정한다(`findMissingResidues`는 저자 번호와 label 체인 id 대조 때문에 쓰지 않는다).
+- 호출 키 = 정규화 인자(`structure`, `repair_policy`) + 작업 모듈 SHA-256 + 의존 모듈 다섯(`structure_repair.py`, `structure_repair_constants.py`, `jobs/openmm_worker.py`, `tools/openmm_method.py`, `mutation_model_constants.py`)의 SHA-256 + 고정 방법 기록(M7 `dependencies()` + `pdbfixer_version`). `timeout_s`는 들어가지 않는다. 같은 전처리 구조는 같은 작업을 돌려주고 새 단위를 쓰지 않으며 같은 보완 구조·보완 기록 handle이 나온다. 한 전처리 구조의 보완은 하나다. 작업 모듈이나 의존 파일이 바뀌면 호출 키가 바뀌어 이전 보완 작업은 재사용되지 않는다. 시작 때 pin(작업 모듈·의존 파일 해시·방법 기록)이 바뀌었으면 412 `worker_version_invalid`.
+
+### 작업과 실패
+- 작업 하나 = 비싼 계산 1단위(M7·M21과 같은 승인·예산·guardian 경로. run의 첫 비싼 계산이면 `expensive_first_call` 승인). 작업 시간은 인자가 아니라 `JobSubmit.timeout_s`(기본 120초, 0 초과 240 이하, 화면은 120을 보냄)다. 실패·취소·시간 초과 작업은 결과를 남기지 않고 예약한 1단위를 환불하지 않는다. capability `methods.structure_repair`는 고정 OpenMM 8.6.0 포스필드·PDBFixer 1.12.0·프로세스 신원 어댑터가 모두 있을 때만 사용 가능이고, 아니면 숫자·버전 없이 이유와 함께 사용할 수 없음이다.
+- guardian은 고정 작업 모듈을 프로젝트 인터프리터로 띄우고(출력 상한 4,000,000 B), 작업 모듈은 스테이징된 단백질 폴리머 잔기의 중원자(입력 식별자, 조각을 합친 순서, 틈 위치)를 받아 PDBFixer가 **더한 원자만** PDBFixer 정밀도로 돌려준다. 관측 원자는 작업 프로세스에서 오지 않고 서버가 전처리 구조 바이트에 접합한다. 작업 모듈도 PDBFixer가 돌려준 관측 원자가 1e-9 Å 안에 그대로인지, 잔기 수·순서·이름이 계획과 같은지 확인한다.
+- 작업 실패 `detail.reason_code`(닫힌 집합 `FAILURE_REASON_CODES`)와 실패 분류: `repair_incomplete`(게시 전 M7 사전 검사 거절, `detail.m7_reason`), `repair_modeling_failed`(PDBFixer 예외), `coordinates_changed`, `unexpected_atoms_added`, `repair_identity_mismatch`, `repair_record_mismatch`(이상 `input_invalid`, 아래 게시 전 검증), `resource_exceeded`(`resource_exceeded`, 출력·기록 크기), `engine_failed`(`fatal`, 입력·엔진·실행 오류). 잘못된 오류 봉투(키 집합, 닫힌 이유, 300자를 넘는 메시지 등)는 `fatal`이다. 시간 초과는 기존 작업 상태이고 `detail.reason_code`가 없다(`{error: "resource_exceeded", message: "job timeout"}`).
+- **닫힌 집합 밖 예외(세션 결정)**: 작업 모듈이 끝난 뒤 게시 직전 검증 중에 환경을 잃으면(설치 템플릿을 읽을 수 없음, M7 엔진이나 프로세스 신원 어댑터 없음) 작업은 `error: "precondition"`과 `reason_code` `openmm_unavailable` 또는 `process_identity_unavailable`로 실패한다. 위 닫힌 집합 밖이며, 환경 없음을 증거 무효(`repair_record_mismatch` 등)로 보이지 않으려고 의도한 것이다(구현 T5, 결정 0037). 결과는 남기지 않고 1단위는 환불하지 않는다.
+
+### 게시 전 검증 (하나라도 실패하면 run 저장소에 새 객체가 하나도 남지 않는다)
+1. 서버가 작업 출력(크기·해시, 작업이 pin한 방법·고정 엔진 값과 일치)을 읽고, 코어가 추가 원자를 전처리 구조에 접합한다(`structure_repair.build_repaired`): 조각을 합친 체인 순서, 틈 잔기는 `after_residue` 바로 뒤, MSE→MET, 입력의 모든 `calc_flag`는 `.`, 새 원자는 그 잔기 끝에 소수 넷째 자리 좌표·점유율 1.0·B 0.0·`calc_flag` `c`. `_atom_site.id`는 gemmi가 구조 순서로 다시 매긴다(보존 항목이 아니며 전처리 구조도 원본 파일의 번호가 아니다).
+2. 순수 검증기 `structure_repair.validated_repair`(엔진·PDBFixer import 없음)가 입력과 보완 바이트에서 기록을 다시 만들어 저장할 기록과 정규 JSON 바이트로 대조한다: 입력의 모든 원자가 이름(MSE 치환 제외)·원소·altloc·7필드·좌표 1e-9 Å 이내로 있다(`coordinates_changed`). 나머지 원자는 기록 `added_atoms`와 정확히 같고 허용된 잔기·이름뿐이며(템플릿에 있고 입력에 없던 이름, 틈 잔기가 아니면 뼈대 이름이 아님) `c`인 원자 = `added_atoms`가 양방향으로 성립한다(`unexpected_atoms_added`). 새 잔기 7필드가 미관측 목록·서열과 같고 잔기 순서가 계획과 같다(`repair_identity_mismatch`). 그 밖의 기록 내용, 새 좌표의 소수 넷째 자리, 반올림 차 범위(`repair_record_mismatch`).
+3. 보완 구조에 M7 사전 검사(`openmm_method.preflight`, M7 코드 불변)를 저장 전에 읽기 전용 겹침 보기(`structure_repair_bundle.Overlay`: 객체 저장소 위에 메모리의 네 객체를 겹쳐 `meta`·`load`만 제공, 쓰기·이벤트 로그 없음)로 돌려 통과해야 한다. 거절이면 `repair_incomplete`(`detail.m7_reason`, 있으면 `residue`)다.
+4. 모두 통과하면 run 전이 잠금 하나 안에서 취소 요청·현재 시도를 다시 확인하고, 네 객체를 보완 좌표(`prepared_coordinates@1`, mmCIF) → 보완 기록 → manifest(`preparation_manifest@1`) → 보완 구조(`prepared_structure@1`) 순서로 저장한 뒤 게시 이벤트 `structure_repair_published{job_id, attempt_id, record, prepared_structure, coordinates, manifest}`, 결과 후보, `done` 종료를 같은 임계 구역에서 커밋한다. 거기서 취소·지난 시도를 보면 아무것도 저장하지 않는다. 작업 출력 handle은 `[보완 기록, 보완 구조]`다.
+- handle은 내용 해시라 이 순서로만 만들 수 있고, 보완 기록은 보완 구조·manifest handle을 담지 않는다(세 객체가 서로의 해시를 품는 순환이 없다). 기록에서 구조로 가는 조회는 게시 이벤트로 한다.
+- 다시 열기: 읽기·보고서·소비자 입장은 매번 `structure_repair_bundle.validated_result`로 다시 검증한다: 완료된 `pdbfixer_repair_v1` 게시 하나(예약 → 정리 확인 → 게시 → 결과 후보 → `done` 종료 순서, 출력 handle 일치), 작업 선택 기록, 네 객체의 종류·내용(manifest·구조는 원본에서 다시 만들어 비교), 좌표 바이트 해시, `validated_repair`. 이벤트만으로 다시 열린다(원본 입력·네트워크·PDBFixer·OpenMM 계산 없이). 검증이 설치 템플릿 XML을 파일로 읽으므로 그것이 없거나 지문이 다르면 증거 무효가 아니라 412 `precondition`(`openmm_unavailable`)이다.
+
+### 보완 기록 `structure_repair@1` (불변, 객체 종류 `structure_repair`)
+- 최상위 키(정확히 이것): `schema`, `method_version`(`mw.structure_repair/v1`), `source{prepared_structure, model_number}`, `result{coordinates, coordinates_sha256}`(보완 좌표 객체 handle), `parameters{repair_policy, seed, max_gap_residues, waters, hydrogens, new_atom_coordinate_decimals}`, `method{engine: "PDBFixer", pdbfixer_version, openmm_distribution_version, forcefield_files_sha256}`, `classes_applied`(보완 종류 순서의 부분집합), `chain_parts[{chain_auth, parts, merged}]`(모든 저자 체인, 합친 체인만 `merged: true`), `chain_ends[{chain_auth, observed_first, observed_last, first_is_sequence_start, last_is_sequence_end}]`, `side_chain_repairs[{residue, added_atoms[이름]}]`, `terminal_oxt[{residue}]`, `gaps[{chain_auth, after_residue, before_residue, length, residues}]`, `replaced[{from, to, atom_map[{from, to}], record_type{from, to}}]`, `added_atoms[{residue, atom_name, element, coordinates_A, origin}]`(구조 순서, `origin` ∈ `side_chain`·`oxt`·`gap_residue`), `counts{added_residues, added_atoms, side_chain_residues, terminal_oxt, gaps, replaced, chain_parts_merged, protein_heavy_atoms}`, `unchanged{atom_count, max_delta_A, input_calc_flag_cleared}`, `new_atom_rounding{decimals, max_abs_delta_A}`, `zero_occupancy_input_atoms{count, residues}`, `collisions`, `limitations`.
+- 사용자가 승인한 명세 정정으로 더한 키: `parameters.new_atom_coordinate_decimals`(4), `counts.protein_heavy_atoms`(보완 구조의 단백질 중원자 수. 화면 요약과 M21 크기 판단에 씀), `unchanged.input_calc_flag_cleared`(입력에 이미 `calc_flag` 값이 있어 `.`로 정규화한 원자 수), `new_atom_rounding{decimals, max_abs_delta_A}`(PDBFixer 원값과 넣은 값의 최대 차).
+- 잔기 참조는 보완 구조의 식별자다(치환 잔기는 MET). 예외는 `replaced[].from`(원래 7필드)뿐이다. `unchanged.atom_count`는 입력 원자 전부(물·리간드·수소 포함)이고 `max_delta_A`는 관측 원자의 최대 이동(Å, 1e-9 이하만 통과)이다.
+- 값이 없는 종류는 빈 목록·0이며 null로 "없음"을 나타내지 않는다. 예외는 둘이다: `chain_ends`의 두 플래그는 파일의 서열·미관측 목록으로 정할 수 없으면 null이고 이는 "판정 불가"이지 "같음"이 아니다(화면 "—(판정 불가)", 보고서 "— (판정 불가)", RP4는 값이 거짓일 때만). 충돌 분류에 상대가 없으면 `min_distance_A`·`min_pair`가 null이다.
+- `method`는 고정 방법 기록 그대로이며(작업 출력의 엔진 값이 이것과 같아야 게시) 저장 바이트로 다시 만들 수 없는 값은 `new_atom_rounding.max_abs_delta_A` 하나라 형식과 범위(0 이상 0.5e-4 이하)만 검사한다. 새 원자 좌표는 구조에 들어간 소수 넷째 자리 값 그대로이고 그 밖의 값은 반올림하지 않는다. 기록이 4,000,000 B를 넘으면 자르지 않고 `resource_exceeded`(`limit: "record_bytes"`).
+- 입력의 점유율 0 원자는 좌표를 그대로 두고 개수·잔기를 `zero_occupancy_input_atoms`와 화면에 따로 보인다(착수 확인 측정 1M17 37개, 1A4I 20개).
+
+### 충돌 기록 (기록만 하고 보완을 거절하지 않는다)
+- 새 중원자마다 상대 분류 `COLLISION_CLASSES`(`protein` 폴리머 잔기, `ligand` 물·금속이 아닌 HETATM, `metal` 금속 이름(`tools/structural.py` `METALS`, M20과 같은 열 개), `water`, `other`)별로 가장 가까운 비이웃 중원자(같은 잔기와 같은 체인의 바로 이웃 폴리머 잔기는 제외하고 다른 잔기의 새 원자는 포함)까지 거리를 잰다. 분류마다 `{min_distance_A, count_lt_2_0, count_lt_1_5, min_pair{new_residue, new_atom, partner_residue, partner_atom}}`.
+- `count_lt_*`는 그 분류의 가장 가까운 상대가 2.0·1.5 Å 미만인 새 원자 수이고, `min_pair`는 분류별 첫 최솟값 쌍(구조 순서)이며 전체 최솟값은 분류별 값 중 가장 작은 것이다. 상대가 없는 분류는 개수 0과 `min_distance_A`·`min_pair` null이고 "충돌 없음"으로 읽지 않는다(화면 문구). 화면·보고서에 그대로 보이되 순위·판정 말을 붙이지 않는다. 거리가 짧아도 보완을 거절하거나 좌표를 고치지 않는다(사용자 결정).
+
+### 고정 한계 문장 (기록 `limitations`·화면·보고서에 문자 그대로, 이 순서, 해당 조건일 때만, `structure_repair_constants.LIMITATION_ORDER`, 바꾸려면 사용자 결정)
+  1. (RP1, 항상) "보완 구조의 추가 원자는 PDBFixer가 만든 모델링 좌표이며 실험으로 관측한 좌표가 아니다."
+  2. (RP2, 항상) "실험으로 관측한 원자의 좌표는 입력 그대로이며 추가·치환·원자 순서 변경만 기록했다."
+  3. (RP3, `internal_gap_filled`) "메운 틈 구간은 단순한 기하로 놓은 가상 좌표이며 실제 구조가 아니다."
+  4. (RP4, 어느 사슬의 `first_is_sequence_start` 또는 `last_is_sequence_end`가 거짓) "사슬의 관측된 끝이 서열의 끝과 다른 곳에도 말단 원자를 두었으므로 그 끝의 화학은 실제와 다를 수 있다."
+  5. (RP5, `nonstandard_replaced`) "MSE는 MET로 바꾸었고 셀레늄 원자는 황 원자로 대체했다. 원래 이름은 보완 기록에 있다."
+  6. (RP6, `chain_parts_merged`) "같은 저자 체인 이름의 조각을 한 체인으로 합쳐 원자 순서가 바뀌었다. 잔기 식별자와 좌표는 그대로이다."
+- RP1–RP6은 상수 이름이며 화면에 번호를 보이지 않는다.
+
+### 보완 구조 `prepared_structure@1`
+- 기존 형식 그대로의 새 객체다(새 스키마 버전 없음: M7 사전 검사와 호출 키 해시 파일들이 이 종류·스키마를 요구한다). 내용 `{coordinates, manifest, model_index, model_number}`는 원본과 같은 모델 값이고 요약은 전처리 구조와 같은 모양(원본의 제거 개수 포함)이다.
+- manifest `preparation_manifest@1` = 원본 전처리 기록 사본 + `missing_residues`(틈을 메웠을 때만 새 값 `modeled_internal_gaps`, 아니면 원본 값 `leave_gaps`) + 보완 구조에만 있는 키 `repair{record: <보완 기록 handle>, source: <원본 전처리 구조 handle>}`. 정책 값(`altloc`·`waters`·`hydrogens`)·`input`·`source_handle`·`model_index`·`model_number`는 원본과 같다. `repair` 키가 보완 구조의 유일한 표지이고 모든 소비자가 이것으로 판별한다(`structure_origin.is_repaired`·`structure_origin`). `modeled_internal_gaps`는 manifest 값의 닫힌 집합을 넓힌 승인된 변경이며 `prepare_structure` 입력은 여전히 `leave_gaps`만 받는다.
+- 식별자 보존: 관측 잔기의 7필드는 그대로이고(MSE→MET의 `resname`만 예외, 원래·새 7필드와 원자 이름 대응은 `replaced`), 틈 잔기 7필드는 위 "틈과 틈 잔기 식별자"대로다. 원자 일련번호는 보존 항목이 아니다.
+
+### 받는 곳과 기본 거절
+- **받는 곳(모델링 경로뿐)**: M20 `generate_mutation_candidates`의 `structure`(`Run.call` 허용 목록 `runtime/orchestrator.py` `REPAIRED_STRUCTURE_TOOLS`는 이것 하나), 그 후보 집합을 쓰는 M21 `openmm_mutation_model_v1`·M23 `sequence_ga_dock_v1`·M25 단백질 루프·M24 변이 투영 `build_jev_projection`, 그리고 M21 변이 모델·M23 개체 모델을 `receptor_source`로 쓰는 M18 도킹. 후보 집합이 들고 있는 구조 handle이 보완 구조인 것이 유일한 입구다. 보완 작업 자체는 보완 구조를 받지 않는다(`already_repaired`).
+- **기본 거절**: 그 밖에서 보완 구조 handle을 받으면 422 `input_invalid`, `detail.reason_code: "repaired_structure_not_accepted"`, 메시지 "보완 구조는 모델링 경로에서만 쓴다"(`structure_origin.reject_if_repaired`, 판정은 manifest `repair` 키)이며 객체·작업·예산 단위·분석 계획·저장된 보기·보고서를 만들지 않는다. 대상: 허용 목록 밖의 `Run.call` 도구 전부(사전 검사 전. `compute_interactions`·`compute_interface_sasa`·`measure_distance`·`align_structures`·`compile_state`·`map_residue_numbering`·`link_reaction_knowledge`, 지도의 구조로 판정하는 `annotate_reference_sites`), M7 단독 최소화 작업과 그 사전 검사 읽기, PyRosetta 작업 입장, M11 화학 미리보기·준비 작업, M12 포켓 작업과 사전 검사 읽기(M12 닫힌 이유 집합에 코드를 더하지 않음), 뷰어 세션·저장된 보기·그림, 검사 보고서(`/reports`), `inspect_complex` 파이프라인, M13 분석 계획 라우트(M13 코드는 바꾸지 않고 계획 입구에서 거절). M27 `link_kinase_precedents`는 보완 구조에서 번호 대응 지도가 만들어지지 않아 상위에서 막힌다(직접 방어선은 없다).
+- 읽기(목록·내려받기)는 거절하지 않는다. 화면의 뷰어 소스 목록은 보완 구조를 빼므로 Mol*에 올리는 경로가 없다. 그래서 보완 구조 좌표로 접촉·SASA·포켓·거리·정렬 값이 만들어지지 않는다.
+- 인벤토리 시험 `backend/tests/test_structure_repair_consumers.py`(표준 라이브러리 AST·문자열 검사)가 `backend/mw`의 모든 `prepared_structure` 소비 지점(함수·메서드·클래스·라우트 정의 하나씩)이 receive·refuse·read_only·blocked_upstream·judgement·unrelated 중 하나로 선언되었거나 스스로 거절을 부른다는 것과 `Run.call` 허용 목록이 정확히 위 하나라는 것을 증명한다. 새 소비 지점이 선언 없이 생기면 실패한다. 거절 동작은 `test_structure_repair_refusals.py`가 확인한다.
+
+### M20 참조 결과 인계
+- 보완 구조로 M20을 만들 때 포켓 결과·번호 대응·참조 주석·촉매 연결(M26) 결과는 그 결과의 구조가 보완 구조이거나 보완 전 원본 전처리 구조(`repair.source`)일 때 받는다(`structure_mismatch` 판정만 넓힘). M20 입장은 보완 구조를 읽기·보고서와 같은 검사(`mutation_handoff.validated_origin`)로 확인하고 통과하지 못하면 `structure_invalid`, 환경이 없으면 412 `precondition`이다. 바뀐 곳은 `tools/mutations.py`의 입장 검사와 읽기 계층뿐이고 해시 파일 `mutation_candidates.py`는 그대로다.
+- 원본 기준 결과의 행은 잔기 7필드 정확 일치로 보완 구조의 잔기와 잇는다. 일치하는 잔기가 없는 모델링 잔기(틈 잔기, MSE→MET 치환 잔기)는 잇지 않는다. 해시 파일 규칙상 그 잔기는 "검사 안 함"이 아니라 "검사함, 해당 없음"(`numbering.status: "not_in_map"`, `protection.klifs_sites: []`, `protection.catalytic: []`)으로 저장되며 **저장값은 바꾸지 않는다**. 읽기·화면·보고서가 보완 기록의 잔기 목록(`gaps[*].residues`·`replaced[*].to`)으로 그 위치를 "검사 안 함(모델링 잔기)"로 덮어 보인다: 위치 행 `reference_not_checked`는 인계된 결과가 있고 저장값이 `not_in_map`·`[]`·`[]`인 필드(`numbering`·`klifs_sites`·`catalytic` 순)이고, 상세·위치 페이지의 `repair_handoff{references, statements}`의 `references`는 원본 구조에서 만든 결과 종류(`pocket_set`·`numbering_map`·`annotation`·`catalytic_annotation` 순), `statements`는 SO2(`modeled_basis`가 참인 위치가 있을 때)·SO3(인계가 있을 때)이다.
+- 원본 구조에서 M20을 만들었을 때의 보호(KLIFS 주요 부위, 촉매, 금속 3.0 Å, 이황화 2.5 Å, 사용자 지정)는 보완 구조의 관측 잔기에서 그대로 유지된다. 8VF6 수락(R3): 원본에서 `klifs_key_site`로 제외된 일곱 자리 A/145/LYS·A/192/MET·A/193/GLU·A/194/LEU·A/195/CYS·A/264/THR·A/265/ASP가 보완 구조 집합에서도 제외되었고, 틈 잔기 A/279/MET는 번호 대응·KLIFS가 "검사 안 함(모델링 잔기)"로 보였다.
+- 한계: 저장 객체만 읽으면 모델링 잔기 위치는 "해당 없음"으로 보인다. 치환·틈 잔기도 M20 위치(후보)가 될 수 있고 참조 보호가 연결되지 않으며, "검사 안 함(모델링 잔기)"는 위치 읽기·M20 화면·`@3` 보고서에만 있고 후보 읽기와 M21·M24·M25 화면에는 없다(그곳에는 SO1만). 보완 구조 자체는 M12가 거절하므로 "같은 구조 포켓 결과" 출처는 쓸 수 없고 원본 구조의 포켓 결과를 쓴다. 포켓 lining에 MSE→MET 치환 잔기가 있으면 기존 이유 `pocket_residue_mismatch`로 포켓 출처가 거절된다(제품 경로에서는 M12가 MSE가 든 원본을 `modified_residue_unsupported`로 먼저 거절해 닿지 않고, 해시 파일의 순수 함수에 합성 포켓 내용을 넣는 시험으로만 고정했다).
+
+### 모델링 원자 표시 `modeled_basis`
+- M20 위치 읽기 계층이 위치마다 계산한다(저장된 후보 집합은 바뀌지 않음). 참: 위치 잔기에 보완 기록 `added_atoms`의 원자(새 곁사슬·OXT·틈 잔기)가 있거나, 리간드 껍질·금속 근접(저장된 `metal_contact_A`)·이황화 2.5 Å 판정을 새 원자를 뺀 관측 원자만으로 `mutation_candidates`의 같은 함수(`_walk`·`_min_distance`, 읽기만)로 다시 내렸을 때 모든 원자로 낸 판정과 달라지면 참이다. 그 밖은 거짓이다(보완 구조가 아닌 집합의 읽기에는 키가 없다).
+- SO2는 위치마다가 아니라 참인 위치가 하나라도 있을 때 `repair_handoff.statements`에 붙는 집합 단위 문장이다. 8VF6 수락(R3): 37위치 중 3위치가 참.
+
+### 하류 표시: 읽기 필드와 고정 문장
+- 결과에서 구조로 가는 길: M20 후보 집합 → 구조, M21 모델 → 구조(후보 집합의 구조와 같음), M23 요약·개체 → 후보 집합 → 구조, M18 결과 → 수용체 출처 모델(M21 `mutation_model@1` 또는 M23 `mutation_set_model@1` → 서열 GA 결과) → 후보 집합 → 구조, M24 변이 전송 → 투영의 후보 집합, M25 단백질 루프 → 풀의 후보 집합. 판별은 manifest `repair` 키 하나다.
+- 보완 구조일 때만 읽기 응답에 `structure_origin{repair_record, repaired_structure, source_structure, counts, statements: [{id: "SO1", text}]}`(`counts`는 보완 기록 `counts`)를 더한다. 더하기 전에 보고서와 같은 검사(연결 모양, 보완 기록의 완료된 게시와 원본에서 다시 만든 기록, 게시된 구조 = 이 구조)를 하므로 읽기와 보고서가 엇갈리지 않는다. 검증되지 않으면 행마다 `valid`가 있는 목록은 그 행을 숫자 없이 `valid: false`로, 그 밖의 읽기는 422 `method_evidence_invalid`로 답하고, 환경이 없으면 412 `precondition`이다.
+- 붙는 읽기: M20 목록 행·상세·위치 페이지·후보 페이지(상세·위치 페이지에는 `repair_handoff`, 위치 행에는 `modeled_basis`·`reference_not_checked`도), M21 목록 행·상세·접촉 페이지·같은 조건 도킹 짝, M23 요약 목록 행·상세·개체 상세(M23 읽기 모듈은 해시 파일이라 서버 응답 계층 `app.py`가 더함), M18 도킹 목록 행·상세·접촉 페이지, M24 미리보기(변이, `repair_warning`도)·전송 목록·전송 상세, M25 루프 목록 행·상세·루프 동작 응답. M24 승인·전송 응답에는 `repair_warning`만 붙는다.
+- 붙지 않는 것: 바이트 내려받기(보완 구조 mmCIF, M21 쪽별 mmCIF 등), 저장 객체·이벤트·JEV 본문·감사 열, 보완 구조가 아닌 결과의 응답(바이트 그대로, 골든·옛 저장 결과 영향 없음).
+- 고정 문장(`structure_repair_constants`, 문자 그대로, 서버가 정하고 브라우저는 그대로 보임, 바꾸려면 사용자 결정):
+  - SO1(보완 구조 기준 결과에 항상) "이 결과의 구조는 보완 구조이다. 일부 잔기와 원자는 PDBFixer가 만든 모델링 좌표이며 실험으로 관측한 좌표가 아니다."
+  - SO2(`modeled_basis`가 참인 M20 위치가 있을 때) "이 위치·보호 판정에는 모델링 원자 또는 잔기가 들어 있다."
+  - SO3(M20 참조 결과 인계가 있을 때) "번호 대응·참조 주석·촉매 연결·포켓 결과는 보완 전 원본 구조에서 만든 것이며 잔기 식별자 일치로 이었다. 모델링한 잔기는 검사하지 않았다."
+  - JW1(JEV 미리보기·승인) "이 후보는 보완 구조 기준이며, 전송 본문은 이 사실을 담지 않는다."
+  - 화면은 SO1 옆에 보완 기록 handle과 "보완 기록 열기"를 보인다.
+
+### 보고서
+- **하류 보고서 형식 버전**(M28의 M20 `@2` 선례와 같이 해당할 때만 새 버전, 입력·라우트 모양은 같음): 보완 구조에서 나온 결과의 새 보고서만 manifest에 `structure_origin{repair_record, repaired_structure, source_structure, statements}`를 더하고 "## Limitations" 앞에 "## 구조 출처" 절(SO1, M20은 인계가 있으면 SO3, 보완 기록·보완 구조·보완 전 원본 구조 handle, 추가 잔기 수·추가 원자 수)을 둔다. 개수 주장은 `computed`이고 statement ID `repair_added_residue_count`(`counts.added_residues`)·`repair_added_atom_count`(`counts.added_atoms`)이며 보완 기록 handle을 인용하고, 기록의 행(`gaps[*].residues`, `added_atoms`)으로 다시 센 값과 정확히 같아야 한다.
+  - M20 `mutation_candidates_markdown@3`, M21 `mutation_model_markdown@2`, M24 `jev_choice_markdown@2`(변이 종류만), M25 `jev_loop_markdown@2`(단백질 갈래만, 새 상수 `jev_loop_constants.REPORT_RENDER_V2`, 기존 `REPORT_RENDER`는 그대로), M18 `ligand_docking_markdown@2`(수용체가 보완 구조 기반 M21·M23 모델일 때). 이 보고서 파일들은 해시 파일이 아니며 해시 파일이 함께 쓰는 상수(`docking_constants.py` 등)는 바뀌지 않았다.
+  - 보완 구조가 아닌 결과의 새 보고서는 이전 버전·바이트 그대로이고 이미 저장된 이전 버전 보고서는 같은 바이트로 다시 열린다(수락 R9: 저장된 M20 `@1`·`@2`, M21 `@1`). 새 버전 manifest를 보완 구조가 아닌 결과에, 이전 버전 manifest를 보완 구조 결과에 쓴 보고서는 `report_evidence_invalid`다.
+- **M20 `@3`**: `@2` 키 집합 + `structure_origin`(`reference_snapshot_sets`는 늘 있고 비어 있을 수 있으며 "참조 스냅샷" 절은 비어 있지 않을 때만). 참조 출처 검사는 `@3`에서만 원본 구조(`repair.source`)의 결과도 받는다(`@1`·`@2`는 그대로). 새 `computed` 주장 `repair_modeled_residue_position_count`(두 개수 주장 앞)는 보완 기록의 모델링 잔기(틈 잔기, 치환 잔기)인 위치의 수이며 읽기와 같은 판정(`mutation_handoff.modeled_residue_view`)을 쓴다. 근거는 후보 집합 `positions[*].residue`(`row_selector` `{repair_modeled_residue: true}`)이고 보완 기록은 `subject`(`repair_record_handle`·`repaired_structure_handle`·`reference_not_checked`)와 `operation`(`count_where(residue in structure_repair@1 gaps[*].residues[*] or replaced[*].to; stored rows)`)에 이름으로만 나온다. 새 줄 셋: (1) 보호 검사 절 "모델링 잔기 위치의 <KLIFS 주요 부위·촉매 잔기 데이터베이스> 검사: 검사 안 함(모델링 잔기). 위 표의 상태와 개수는 저장값이며 이 위치를 검사했다는 뜻이 아니다."(`subject.reference_not_checked`에 `klifs_sites`·`catalytic`이 있을 때), (2) 번호 대응 절 "모델링 잔기 위치의 번호 대응: 검사 안 함(모델링 잔기). 위 지도에 없음 (`not_in_map`) 위치 수는 저장값을 센 것이며 모델링 잔기 위치가 들어 있다."(`numbering`이 있을 때), (3) 구조 출처 절의 "모델링 잔기 위치 수 (보완 기록 `gaps[*].residues`·`replaced[*].to`와 잔기 식별자가 같은 위치, ProtView 계산): N". 고정 문장 SO1–SO3는 바뀌지 않았다.
+- **M23 서열 GA 보고서는 바꾸지 않는다**: `sequence_ga_reports.py`·`sequence_ga_reads.py`는 바이트 고정 해시 파일 27개(`BASELINE_BLOBS`)에 속한다. M23 보고서는 후보 집합·구조 handle을 인용할 뿐 보완 사실을 담지 않고, 화면과 읽기 필드(`app.py` 응답 계층)만 "보완 구조 기준"을 보인다. 보완 사실은 같은 후보 집합의 M20 `@3` 보고서와 보완 보고서가 싣는다.
+- **보완 보고서** `method_report_manifest@1`, `analysis_type: "structure_repair"`, 렌더 `structure_repair_markdown@1`, 입력은 보완 기록 handle 하나(`POST /runs/{id}/method_reports`), 보고서 목록 이름 "구조 보완 보고서". 만들기·다시 열기·내려받기는 보완을 다시 하지 않고 PDBFixer를 실행하지 않는다. 주장은 모두 `computed`(보완 기록 handle·필드 경로)이고 statement ID는 `repair_scope`(`classes_applied`), `added_residue_count`, `added_atom_count`(합계와 `origin`별 개수), `side_chain_residue_count`, `terminal_oxt_count`, `gap_count`(+ 틈별 `gaps[i].length`), `replaced_count`, `chain_parts_merged_count`, `unchanged_atom_count`(`atom_count`, `max_delta_A`는 저장 float 그대로), `collision_min_distance`(상대가 있는 분류마다 Å, `Decimal(str(v))` 0.01 `ROUND_HALF_UP`. 상대가 없으면 주장 없이 "— (상대 없음: 이 분류의 비이웃 중원자가 보완 구조에 없다)"), `zero_occupancy_input_atom_count`(원자 수와 잔기 수)다. 개수는 기록의 행을 다시 센 값과 정확히 같아야 한다. 충돌 표의 `count_lt_*`·`min_pair`, 표의 잔기 식별자, 체인 끝 플래그는 기록 값을 manifest에 복사한 것이며(다시 열 때 기록과 비교) 별도 주장이 아니다. 한계 문장은 저장된 RP 문장을 위 순서 그대로 쓴다. 다시 열 때 기록을 `validated_result`로 검증하고 manifest·주장·Markdown 바이트를 다시 만든 것과 비교한다. 틀린 값·섞인 증거·다른 run의 증거는 `report_evidence_invalid`, 환경 없음은 412다.
+- 해석 금지어: M20 목록(M15 목록 + 안정성·ΔΔG·순위·추천·최적·개선·활성·예측·유망·좋은·나쁜·안전·점수·에너지·수소결합과 영문, `mutation_reports.INTERPRETIVE`)을 값·식별자를 빈 자리로 둔 새 템플릿 줄마다 검사하고, 고정 문장(RP1–RP6, SO1·SO3) 줄은 문자 그대로 같을 때만 건너뛴다.
+
+### JEV 전송 경고 JW1
+- 보완 구조에서 나온 변이 후보는 M24 단독 전송과 M25 단백질 루프 전송에 쓸 수 있다. 투영 도구·와이어 허용 필드·질문·본문·`jev_choice@1`·`jev_loop_choice@1`·감사 열·저장 이벤트는 바뀌지 않으며, 본문에는 보완 사실(보완 기록 handle, `structure_origin`, "repair"·"보완" 같은 글자)이 들어가지 않는다. 와이어의 구간·이웃·거리에는 틈 잔기·치환 잔기와 모델링 원자에서 잰 값이 섞일 수 있고 외부 모델에 알리지 않는다.
+- 그래서 미리보기(`POST /runs/{id}/jev/preview`, M25 루프 투영 포함) 응답에 `structure_origin`과 `repair_warning{id: "JW1", text}`를, 승인·전송 응답(`POST /runs/{id}/jev/sends`)에 `repair_warning`을 더하고, 화면이 미리보기·승인 자리에 JW1을 보인다. JW1 문장은 표지(`is_repaired`)만으로 정한다. 승인·전송 응답에서는 보완 기록 검증과 무관하게 오류를 내지 않는다(이미 정해진 전송의 답이며, 표지를 읽지 못하면 JW1 없이 답한다). 미리보기는 그렇지 않다: 후보 집합의 구조 출처가 읽기와 같은 검증(`app.py`의 `_origins_of`)을 통과한 뒤에만 `structure_origin`과 JW1을 붙이고, 통과하지 못하면 미리보기 전체가 422 `method_evidence_invalid`(검증 환경 없음은 412)다. 구조 출처는 읽기 응답과 보고서에만 있고 저장 이벤트에는 붙지 않는다. M29 개발·수락에서 실제 JEV 호출은 0회다.
+
+### 화면 규칙
+- 단백질 공학 탭 맨 위 "구조 보완" 영역(`StructureRepairPanel`. 구조 분석 탭·뷰어·저장된 보기·브리지는 건드리지 않음). 이 run의 보완되지 않은 전처리 구조만 고를 수 있고 자동 선택이 없다. 사전 검사 결함 표(체인 조각, 곁사슬 잔기, OXT, 틈 목록·길이, MSE)와 걸림돌 이유("한국어 (code)"), 해당 RP 문장, 비싼 계산 1단위 안내, 기본으로 꺼진 `repair_policy` 확인 체크, 작업 제출·승인·시작·취소·다시 마운트 때 진행 중 작업 붙잡기(M21 방식, 작업 시간 120초를 고정값으로 보냄). 결과는 보완 한 줄 요약(보완 뒤 단백질 중원자 수 포함), 보완 종류 표, 추가 원자 표(페이지), 치환 표, 체인 끝 표, 충돌 기록, 점유율 0 입력 원자 수, RP 문장, mmCIF 내려받기, 보완 보고서 만들기·목록이다. 숫자는 서버 값이고 브라우저는 계산하지 않으며, 없음은 "—"와 이유, 순위·강조·막대·색 비교가 없다.
+- 구조 분석 탭의 뷰어 소스 목록(`page.tsx` `sourceOptions`)은 보완 구조를 뺀다(게시 이벤트로 판별). M20 구조 선택에는 보완 구조가 "보완 구조" 배지와 함께 들어가고, 보완 구조를 고르면 참조 결과 목록이 원본 구조의 결과도 보인다. M20 위치 표에는 `modeled_basis` 표시와 SO1–SO3, M21·M23·M25·M18 결과와 M24·M25 JEV 화면에는 "보완 구조" 배지·SO1·보완 기록 열기, JEV 미리보기·승인에는 JW1이 있다. M23은 화면 표시만 있다.
+- 다섯 상태(불러오는 중·준비·빈 결과·실패·사용할 수 없음). capability가 사용할 수 없음이면 숫자·컨트롤 없이 이유만 보인다. 늦은 응답은 run + 구조/기록 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 화면 불변 조건 전체는 `frontend/AGENTS.md`.
+
+### 검증 범위와 알려진 한계
+- **검증 구조**(수락 `docs/qa/m29-repair-20261013/acceptance/`의 `classification-table.md`, 13구조 × 물 정책 둘, 문서 분류 = 독립 분류 = 제품 사전 검사): `in_scope`(보완 → M7 사전 검사를 통과한 게시 → M20 → M21 입장이 `openmm_preflight_failed` 없이 열림)는 1M17·1MQ4·1A30·1A4I·1HSG·8VF6과 사용자가 허용한 RCSB 추가 구조 1RNH·4INS·1CLL(두 정책 모두), 1AY7(`keep_all`). `out_of_scope`는 1FIN `atom_limit_exceeded`(조각을 합치면 단백질 중원자 8,998), 1S9I `gap_too_long`(27·34잔기), 1UBQ와 1AY7(`strip_all`) `nothing_to_repair`. MSE 실례는 1RNH(A/47·A/50·A/142 MSE → MET)이고, `chain_identity_duplicate`·`unsupported_residue`·`unexpected_atoms`·`backbone_atoms_missing`·`gap_listing_missing`은 합성 표시 소형 구조(`backend/tests/fixtures/structure_repair/synthetic-*.cif`)로만 시험했다. 8VF6(`strip_all`) 보완: 체인 조각 합치기 2체인, 곁사슬 결손 잔기 23, OXT 2, 틈 둘(A 273–285 13잔기·B 274–284 11잔기), 추가 잔기 24·추가 원자 266(곁사슬 91·OXT 2·틈 잔기 173), 보완 뒤 단백질 중원자 4,538, 관측 원자 4,338개 최대 이동 0 Å.
+- **입력 형식·거절 코드의 시험 범위**: 검증 구조 13개는 모두 mmCIF(`backend/tests/fixtures/public_*.cif`)다. PDB 형식 입력은 백엔드 시험에서만, 합성 자료 두 개(`backend/tests/fixtures/structure_repair/synthetic-gap.pdb`·`synthetic-chain-break.pdb`)와 시험 안에서 실제 1RNH를 PDB 텍스트로 다시 쓴 것(`REMARK 465` 없음)으로 확인했다. PDB 형식의 틈 경로(`SEQRES`·`REMARK 465`로 틈 잔기를 정함)는 합성 `synthetic-gap.pdb`로만 시험했다. 거절 코드 `m7_condition_unsupported`는 수락 사례에서 나온 적이 없고, 백엔드 시험(합성 `synthetic-chain-break.pdb`, `m7_reason` `peptide_geometry` 하나: 분석 시험 `test_structure_repair_analysis.py`와 제출 422·사전 검사 읽기 시험 `test_structure_repair_lane.py`)으로만 덮었다.
+- **M21 시간 상한 유지**(사용자 결정 2026-10-13, 해시 파일 `mutation_model_constants.py`의 120·240초): 착수 확인 측정(부하가 있던 한 기계, CPU 한 개 고정, M21 작업 하나 = 두 구조)에서 보완 뒤 단백질 중원자 1HSG 1,516 118초, 1A30 1,542 123초, 1MQ4 2,160 233초, 1M17 2,594 310초, 1A4I 4,476 992초, 8VF6 4,538 1,035초이고 시간은 크기의 대략 제곱으로 는다. 그래서 1M17·1A4I·8VF6 보완 구조의 M21 작업은 240초 안에 끝나지 않고(수락에서 돌린 것은 8VF6 하나, 나머지는 T1 측정), M21 모델이 있어야 하는 같은 조건 도킹(M18 수용체 출처)도 그 구조에서는 할 수 없다. 1MQ4는 여유 약 7초다. T1 측정의 1A30(123초)은 M21 기본 120초를 넘지만, 수락에서 `timeout_s` 240으로 돌린 1A30 M21 작업은 116.5–116.6초(작업 이벤트 처음–끝)에 끝났다. M25 단백질 루프의 모델 단계 작업은 `timeout_s` 120초 고정이라(위 "JEV 설계 루프"의 M29 메모) T1 측정으로 보면 1A30·1MQ4의 모델 단계도 끝나지 않을 것으로 보고(1A30은 경계), 1HSG(T1 118초)는 여유가 약 1.5초다. M25 계산은 실행하지 않았다. M23 개체 모델링(한 구조, `sequence_ga_constants.MODEL_STEP_S = 240`)은 이 크기에서 측정하지 않았다. 수락에서 M21 작업이 완료된 것은 `completes` 구간(1A30·1HSG·1RNH·4INS·1AY7 `keep_all`·1CLL, `timeout_s` 240)이며, 시간 상한 결과는 8VF6에서 한 번 관측했다(R4b: 242.4초에 `failed`/`resource_exceeded` "job timeout", 모델 0, 비싼 계산 사용 1→2로 환불 없음, 남은 작업 프로세스 0).
+- 게시 직전 환경 상실은 닫힌 실패 집합 밖의 `precondition` 실패다(위 "작업과 실패"). 시간 초과 실패에는 `detail.reason_code`가 없다.
+- 네 객체를 저장하는 도중 I/O 실패가 나면 추가 전용 로그에 일부 객체가 남을 수 있고(재시도가 완성한다) 그 객체는 읽기에서 `valid: false`다. 화면은 게시 이벤트로 보완 구조를 거르고 서버는 manifest `repair` 키로 판별하므로, 게시 이벤트 없이 남은 보완 구조 객체가 화면 목록에 보일 수 있으나 고르면 서버가 거절한다(기본 거절, M20 입장은 `structure_invalid`).
+- 취소된 보완 작업은 재시도 대상이 아니고 같은 호출 키가 그 작업을 돌려주므로, 그 전처리 구조는 이 run에서 다시 보완할 수 없다(기존 큐 의미).
+- 입력 좌표가 소수 다섯째 자리 이상이면 PDBx 텍스트(`%10.4f`) 왕복 때문에 작업 모듈의 관측 원자 대조가 `coordinates_changed`로 실패하고 1단위가 과금된다(로컬 검증 구조의 입력 좌표는 소수 셋째 자리).
+- PDB 형식에서 TER로 나뉜 같은 체인 ID의 서로 다른 단백질은 gemmi가 label 체인을 나누지 않으면 `chain_identity_duplicate`로 잡히지 않을 수 있다(이 판정은 label 체인으로만 한다). 그때 다른 코드로 거절되는지는 합성 자료·실제 구조 어느 쪽으로도 시험하지 않았다.
+- 내려받은 보완 mmCIF를 다시 올리면 `calc_flag` `c`가 남아 있어도 보완 표지(manifest `repair`)가 없으므로 일반 구조로 다뤄진다(M21 모델 mmCIF 내려받기 선례와 같다).
+- M25 루프 동작 라우트(만들기·계산 시작·도킹 포기·끝내기)는 루프 이벤트를 쓴 뒤 구조 출처를 붙이므로, 보완 기록이 검증되지 않거나 검증 환경이 없으면 이미 기록된 동작에 422·412로 답할 수 있다.
+- 서버가 설치 템플릿을 한 번 읽은 뒤 실행 중에 그 파일이 바뀌면 캐시(`lru_cache`) 때문에 서버를 다시 시작할 때까지 412가 나지 않는다(검증 결과가 틀리지는 않는다).
+
+### 의미하지 않는 것
+보완 구조는 실험 구조가 아니다. 추가 원자와 틈 잔기는 PDBFixer가 단순한 기하로 놓은 모델링 좌표이며 그 위치·형태·접촉은 관측 사실이 아니고, 보완은 M7 입구 조건을 채운 모델을 만든 것이지 구조의 실제 모습을 밝힌 것이 아니다. 보완 구조에서 나온 OpenMM 전위·SASA·접촉·qvina 점수는 실험 구조의 값이 아니며 원본 구조나 다른 구조의 값과 나란히 비교하는 근거가 아니고 ΔΔG·친화도·안정성이 아니다. 충돌 기록은 거리 사실이며 구조 품질 판정이나 순위가 아니고, 상대가 없는 분류는 "충돌 없음"이 아니다. `chain_ends`의 null은 판정 불가이며 "서열 끝과 같음"이 아니다. "검사 안 함(모델링 잔기)"인 위치는 보호가 없다는 뜻이 아니라 검사하지 않았다는 뜻이며, 그 위치의 저장값 `not_in_map`·`[]`는 "해당 없음"을 뜻하지 않는다. MSE→MET는 셀레늄을 황으로 바꾼 치환이며 원래 잔기는 보완 기록에 있다.
 
 ## PyRosetta와 에너지 표시
 

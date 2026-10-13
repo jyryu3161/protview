@@ -1,0 +1,12 @@
+M29 regression chain: old-stage harness or runner changes (spec 11.1, 11.2 (b))
+
+One expectation was changed, in one old-stage harness. Nothing else in an old harness or runner was changed.
+
+file: frontend/tests/offscreen/jev-loop-flow.cjs (the M25 harness, used only by scripts/m25_offscreen_acceptance.py; none of the M24..M13 regression steps uses it)
+change: in step L01-other-areas-before the expected list of areas on the 단백질 공학 tab
+  before: ["mutation-panel", "mutation-model-panel", "sequence-ga-panel", "jev-loop-panel"]
+  after:  ["repair-panel", "mutation-panel", "mutation-model-panel", "sequence-ga-panel", "jev-loop-panel"]
+reason: M29 puts the new 구조 보완 area (data-testid "repair-panel", spec 8) at the top of the 단백질 공학 tab. The old step asserted the exact list of area ids and failed on the extra first id. The assertion text printed on failure ("actual" had 'repair-panel' first, the other four unchanged) shows this is the only difference.
+effect seen in the first M25 chain run (docs/qa/m29-repair-20261013/regression/m25, kept as it was written): the ligand branch aborted at L-tab-entry (all 28 ligand-branch cases L-* failed) and the evidence searches flagged the recorded area text of the failing step (an existing GA parameter label that contains the word 최솟값), which also failed the case S-wording-evidence (29 failed in all); 28 cases passed (the protein branch P-* 22, X-* 3, S-* 3). All twelve regression steps of that same run (M24 ... M13) passed.
+re-run after the change: scripts/m25_offscreen_acceptance.py --phase fixture (the M25 fixture phase alone, new root, 8000/3000 free, .deps/precedent_reference and .deps/reaction_reference absent before and after): failedSteps [], acceptance true, 57 of 57 cases pass, real calls 0 (docs/qa/m29-repair-20261013/regression/m25-own-after-fix).
+product code: unchanged (this is a harness expectation, not a product change). The change is a post-freeze change of an old-stage harness, which spec 11.2 (b) allows; M29 files are not touched.

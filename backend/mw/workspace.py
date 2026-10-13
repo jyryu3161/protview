@@ -21,6 +21,7 @@ from .tools import (
     sasa,
     site_annotation,
     structural,
+    structure_repair,
 )
 from .tools.registry import ToolRegistry
 
@@ -45,6 +46,7 @@ def build_registry(tools_yaml: Path | None = None) -> ToolRegistry:
     jev_loop.register(reg)
     reaction_knowledge.register(reg)
     kinase_precedents.register(reg)
+    structure_repair.register(reg)
     return reg
 
 

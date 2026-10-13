@@ -1,0 +1,224 @@
+{
+  "schema": "m16_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "A-load-prepare-contacts": "pass",
+    "A-numbering-prepared": "pass",
+    "A-panel-create": "pass",
+    "A-site-table": "pass",
+    "A-show-readback": "pass",
+    "A-figure-legend": "pass",
+    "A-figure-no-legend": "pass",
+    "A-scene-v1-unchanged": "pass",
+    "A-figure-pixels": "pass",
+    "A-restore-redraw": "pass",
+    "A-blocked-m8": "pass",
+    "A-report": "pass",
+    "A-no-contacts": "pass",
+    "A-blocked-pocket": "pass",
+    "A-blocked-comparison": "pass",
+    "A-run-switch-late": "pass",
+    "A-read-retry": "pass"
+  },
+  "runId": "run_1bb2c525d4b74fda9c5ade1bde88cfc6",
+  "runs": {
+    "A": "run_1bb2c525d4b74fda9c5ade1bde88cfc6",
+    "B": "run_e807e9cea95e430483e7d8dfd2acb733"
+  },
+  "handles": {
+    "structure": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/structure/dcacfc60f982609c3a32645c60df6dc903c6e614f71a75bfdf4c1d47c9d161a3",
+    "prepared": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/prepared_structure/2836a05057d88b3f34da8b940af9e19bdbefb04651d4c69c6bc251218da20b7c",
+    "contacts": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/interaction_set/6a29dc50051aee9060ebb70571bf3d32adaf25c311ab6f02ccb42b5e2acfdc01",
+    "map": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/residue_numbering_map/bac8f7ffca746fb926e417a0c253d9e20d2bac1007299d40c034dc12c5332a45",
+    "annotation": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/reference_site_annotation/331fee7721f3a926e96ad66ff547bdcc2a5642bf5d8c350995ce96bef78f2eee",
+    "report": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/method_report_manifest/0f0970b70fc946ad8211d29d81d6b9fe271f502c634e79497bb8d71e80058ab7",
+    "noContacts": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/reference_site_annotation/309499286021ddd693b1c1122f0343ba58944ec7310694967dd08361bc05f312",
+    "runBStructure": "obj://run_e807e9cea95e430483e7d8dfd2acb733/structure/7a1b64b31d4d4f835a84a6a54bcf08a2205341337112267bf09aa9ed48ff6d1e"
+  },
+  "inputs": [
+    {
+      "name": "preflight.txt",
+      "path": "<repo>/docs/qa/m16-annotations-20261001/preflight.txt",
+      "bytes": 10404,
+      "sha256": "c9b2a2a84d1164d7e30e87777e220f972b626eefb4e6f3982efe165529cdb033",
+      "provenance": "M16 T1 independent numpy oracle (committed QA text)"
+    },
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain with ADP)"
+    }
+  ],
+  "fixtureLabels": [
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)",
+    "QA fault fixture (labeled renderer route, not a scientific value): site annotation read failure"
+  ],
+  "controls": {
+    "site-annotation-maps": [
+      {
+        "checked": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/residue_numbering_map/bac8f7ffca746fb926e417a0c253d9e20d2bac1007299d40c034dc12c5332a45"
+      }
+    ],
+    "site-annotation-contacts:set": [
+      {
+        "checked": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/interaction_set/6a29dc50051aee9060ebb70571bf3d32adaf25c311ab6f02ccb42b5e2acfdc01"
+      }
+    ],
+    "site-annotation-create": [
+      {
+        "created": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/reference_site_annotation/331fee7721f3a926e96ad66ff547bdcc2a5642bf5d8c350995ce96bef78f2eee",
+        "listed": 1
+      }
+    ],
+    "site-annotation-toggle:show": [
+      {
+        "data": "applied",
+        "lines": "10"
+      }
+    ],
+    "site-annotation-legend": [
+      {
+        "checked": false,
+        "readbackLegend": false,
+        "lines": 10
+      },
+      {
+        "checked": true,
+        "shown": false
+      }
+    ],
+    "site-annotation-toggle:off": [
+      {
+        "data": "none"
+      }
+    ],
+    "site-annotation-report": [
+      {
+        "handle": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/method_report_manifest/0f0970b70fc946ad8211d29d81d6b9fe271f502c634e79497bb8d71e80058ab7",
+        "text": "보고서를 저장했습니다 · 0f0970b70fc9. 지식·보고서 탭의 보고서 목록에서 열고 받을 수 있습니다."
+      }
+    ],
+    "site-annotation-contacts:none": [
+      {
+        "checked": "none"
+      }
+    ],
+    "site-annotation-maps-retry": [
+      {
+        "maps": 1
+      }
+    ],
+    "site-annotation-list-retry": [
+      {
+        "rows": 2
+      }
+    ],
+    "site-annotation-list": [
+      {
+        "checked": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/reference_site_annotation/331fee7721f3a926e96ad66ff547bdcc2a5642bf5d8c350995ce96bef78f2eee"
+      }
+    ],
+    "site-annotation-detail-retry": [
+      {
+        "table": "obj://run_1bb2c525d4b74fda9c5ade1bde88cfc6/reference_site_annotation/331fee7721f3a926e96ad66ff547bdcc2a5642bf5d8c350995ce96bef78f2eee"
+      }
+    ]
+  },
+  "buildId": "zHxijM08Zpd_R8U7RDu8X",
+  "harness": {
+    "annotation-flow.cjs": "8f670b8262fa02ca11c29625fb3be563e305d475df43935f7f31f1cf61fd5d85",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": "3529157ef2c777d77cc9a914bfa8ce39ef2c425482d146723d93813a6fbf7555",
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 673,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m16/annotation-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 533,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 10,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m16/annotation-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_1bb2c525d4b74fda9c5ade1bde88cfc6",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_e807e9cea95e430483e7d8dfd2acb733",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "annotation-main.jsonl",
+  "startedAt": "2026-10-13T16:35:41.591Z",
+  "finishedAt": "2026-10-13T16:36:18.464Z"
+}

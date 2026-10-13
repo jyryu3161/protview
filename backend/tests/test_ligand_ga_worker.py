@@ -32,6 +32,7 @@ import subprocess
 import time
 from pathlib import Path
 
+import engine_hold as EH
 import psutil
 import pytest
 
@@ -236,12 +237,16 @@ def _assert_path(out: Out, expected: dict) -> None:
 
 
 def _qvina_under(root: Path) -> list[int]:
+    """Live qvina2 processes working under ``root``. Nothing is prefetched: a prefetch runs inside ``process_iter``,
+    outside this ``try``, where psutil's ``SystemError`` from a process ending mid-read escaped under load (M28 T2,
+    ``test_sequence_ga_worker._engines_under``); here it means the process is gone, as ``psutil.Error`` does
+    (M29 T2)."""
     found = []
-    for proc in psutil.process_iter(["name"]):
+    for proc in psutil.process_iter():
         try:
-            if proc.info["name"] == "qvina2" and str(root) in proc.cwd():
+            if proc.name() == "qvina2" and str(root) in proc.cwd():
                 found.append(proc.pid)
-        except (psutil.Error, OSError):
+        except (psutil.Error, OSError, SystemError):
             continue
     return found
 
@@ -560,6 +565,33 @@ def test_output_cap_stops_without_storing_the_result(seed7, tmp_path):
     assert [e["evaluation"] for e in out.gens[1]["individuals"]] == ["reused"] * 3 and not out.gens[1]["complete"]
 
 
+def _held_docking(proc: subprocess.Popen, root: Path, eval_index: int) -> psutil.Process:
+    """The qvina2 of new docking ``eval_index``, held (M29 T2). The test used to send SIGTERM once a pass over every
+    system process had seen a qvina2; under Stop-hook load such a pass took up to seconds while this docking
+    (exhaustiveness 1) is far shorter, so it could end and the run go on before the signal. From
+    ``individuals/<eval_index>.started`` the worker's process group (the worker and qvina2) is stopped for each look
+    (the worker's own children, ``engine_hold``) and run 10 ms between looks; the first look that sees qvina2 holds it
+    for good once it has run its own code. Returns with the group stopped."""
+    sign, ended = root / f"individuals/{eval_index}.started", root / f"individuals/{eval_index}.status.json"
+    worker = psutil.Process(proc.pid)
+    looks = 0
+    end = time.monotonic() + 300
+    while time.monotonic() < end:
+        assert proc.poll() is None, f"worker exited before eval_index {eval_index} ran qvina2"
+        if looks or sign.exists():
+            looks += 1
+            EH.stop_group(proc.pid, worker)
+            engine = EH.named_child(proc.pid, "qvina2")
+            if engine is not None:
+                held = EH.hold_past_exec(engine)
+                assert held and not ended.exists(), f"eval_index {eval_index} ended before held ({looks} looks)"
+                return engine
+            assert not ended.exists(), f"eval_index {eval_index} ended before its qvina2 was seen ({looks} looks)"
+            os.killpg(proc.pid, signal.SIGCONT)
+        time.sleep(0.01)
+    raise AssertionError(f"eval_index {eval_index} never started qvina2")
+
+
 def test_sigterm_cancels_the_running_docking_and_keeps_the_evaluated_individuals(seed7, tmp_path):
     ga = VECTORS["small_observed_seed7"]["ga"]
     first = [e["candidate_id"] for e in VECTORS["small_observed_seed7"]["expected"]["generations"][0]["individuals"]]
@@ -567,27 +599,33 @@ def test_sigterm_cancels_the_running_docking_and_keeps_the_evaluated_individuals
     _stage(root, _manifest(ga, reuse={first[0]: seed7["results"][first[0]]}), "qvina_ga_dock_v1")
     proc = subprocess.Popen(_argv(None), cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                             env={**ENV, "TMPDIR": str(root)}, start_new_session=True)
-    end = time.monotonic() + 300
-    engines: list[int] = []
-    while time.monotonic() < end:   # the second new docking (eval_index 2) runs qvina2
-        engines = [c.pid for c in psutil.Process(proc.pid).children(recursive=True) if c.name() == "qvina2"]
-        if engines and (root / "individuals/2.started").exists():
-            break
-        assert proc.poll() is None, "worker exited before eval_index 2 ran qvina2"
-        time.sleep(0.05)
-    else:
-        proc.kill()
-        raise AssertionError("eval_index 2 never started qvina2")
-    os.kill(proc.pid, signal.SIGTERM)
-    assert proc.wait(timeout=5.0) == 0, "exits within the guardian grace period"
-    out = Out(root, 0)
-    assert out.result == _result("cancelled", 0)
-    assert sorted(out.files) == ["1.result.json", "1.started", "1.status.json", "2.started"]
-    assert out.gens[1]["complete"] is False
-    assert [(e["evaluation"], e["eval_index"]) for e in out.gens[1]["individuals"]] == [("reused", 0), ("docked", 1)]
-    assert out.files["1.result.json"] == seed7["results"][first[1]]
-    assert not (root / "qvina_work").exists()
-    assert not any(psutil.pid_exists(pid) and psutil.Process(pid).status() != psutil.STATUS_ZOMBIE for pid in engines)
+    held: list[psutil.Process] = []
+    try:
+        held.append(_held_docking(proc, root, 2))   # the second new docking (eval_index 2) runs qvina2
+        os.kill(proc.pid, signal.SIGCONT)            # the worker only: its qvina2 stays held, so only it can end it
+        EH.wait_blocked(psutil.Process(proc.pid))
+        os.kill(proc.pid, signal.SIGTERM)
+        assert proc.wait(timeout=5.0) == 0, "exits within the guardian grace period"
+    finally:
+        if proc.poll() is None:                      # a failure above leaves no stopped group behind
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait()
+    engines = [process.pid for process in held]
+    try:
+        out = Out(root, 0)
+        assert out.result == _result("cancelled", 0)
+        assert sorted(out.files) == ["1.result.json", "1.started", "1.status.json", "2.started"]
+        assert out.gens[1]["complete"] is False
+        assert [(e["evaluation"], e["eval_index"]) for e in out.gens[1]["individuals"]] == [("reused", 0),
+                                                                                         ("docked", 1)]
+        assert out.files["1.result.json"] == seed7["results"][first[1]]
+        assert not (root / "qvina_work").exists()
+        assert not any(psutil.pid_exists(pid) and psutil.Process(pid).status() != psutil.STATUS_ZOMBIE
+                       for pid in engines)
+    finally:
+        for process in held:                         # a held engine the worker left must not stay stopped
+            if process.is_running():
+                process.kill()
 
 
 def test_a_finished_docking_survives_a_late_sigterm_and_a_stale_private_directory(seed7, tmp_path):

@@ -6,18 +6,17 @@ missing environment FAILS, never skips). Inputs: the public prepared docking exa
 not experimental validation), the public-derived parent SDF and the labeled synthetic building blocks (see
 ``fixtures/docking/SYNTHETIC-PROVENANCE.md``). Small manual boxes and exhaustiveness 1 keep the rows short; engine
 values are only compared with the stored per-row results, never used as an oracle. The partial batch is a real user
-cancel sent through the queue's own cancel path when row 2 starts (an internal test hook on ``_record_control``,
-never a request field).
+cancel sent through the queue's own cancel path when row 2 runs qvina2, which the test holds stopped until the cancel
+reaches the worker (an internal test hook on ``_record_control``, never a request field).
 """
 from __future__ import annotations
 
 import json
 import shutil
-import threading
-import time
 from pathlib import Path
 from typing import Any
 
+import engine_hold as EH
 from ligand_job_fixture import import_file, new_ligand_run, run_job
 
 from mw import docking_constants as C
@@ -78,27 +77,6 @@ def summary_handle(run: Run, job: dict) -> str:
     return published[0]["summary_handle"]
 
 
-def _cancel_when_row_starts(index: int):
-    """Wrap _record_control: on STARTED, a thread waits for rows/<index>.started, then requests the cancel."""
-    original = JobQueue._record_control
-
-    def record(self, message, job_id, attempt_id, nonce):
-        done = original(self, message, job_id, attempt_id, nonce)
-        if message and message.get("kind") == "STARTED":
-            marker = self.run.run_dir / "jobs" / job_id / attempt_id / "rows" / f"{index}.started"
-
-            def watch() -> None:
-                end = time.monotonic() + 300
-                while time.monotonic() < end and not marker.exists():
-                    time.sleep(0.02)
-                if marker.exists():
-                    self.request_cancel(job_id)
-            threading.Thread(target=watch, daemon=True).start()
-        return done
-
-    return record
-
-
 def reopen(root: Path) -> Run:
     """Events-only reopen of the run under ``root`` (same handles, no staged files)."""
     run = new_ligand_run(root, RID)
@@ -137,14 +115,19 @@ def build_world(root: Path, monkeypatch_context) -> dict[str, Any]:
         assert jobs[name]["status"] == "done", jobs[name]
         handles[name] = summary_handle(run, jobs[name])
     plans["partial"] = args_for(world, IDS, include_parent=True, params={**FAST, "seed": 2})
+    held: list[dict[str, Any]] = []
     with monkeypatch_context() as patch:
-        patch.setattr(JobQueue, "_record_control", _cancel_when_row_starts(2))
+        # M29 T2: row 2's qvina2 is held until the cancel reaches the worker (engine_hold.hold_then_cancel): a row
+        # here ends in about a second and under Stop-hook load the cancel landed in a later row or after the last.
+        EH.hold_then_cancel(patch, "qvina2", "rows/2.started", "rows/2.status.json", held)
         jobs["partial"] = batch(run, plans["partial"])
-    assert jobs["partial"]["status"] == "cancelled", jobs["partial"]
+    assert len(held) == 1 and "error" not in held[0], (held, jobs["partial"])
+    assert jobs["partial"]["status"] == "cancelled", (held, jobs["partial"])
     handles["partial"] = summary_handle(run, jobs["partial"])
     world.update(jobs=jobs, handles=handles, args=plans,
                  stored={name: run.store.load(handle) for name, handle in handles.items()})
-    assert world["stored"]["partial"]["status"] == "partial"
-    assert [row["state"] for row in world["stored"]["partial"]["rows"]][2:] == ["cancelled", "not_run"]
+    states = [(row["state"], row["reason_code"]) for row in world["stored"]["partial"]["rows"]]
+    assert world["stored"]["partial"]["status"] == "partial", (held, states)
+    assert [state for state, _ in states][2:] == ["cancelled", "not_run"], (held, states)
     assert world["stored"]["free"]["status"] == world["stored"]["core"]["status"] == "complete"
     return world

@@ -1,0 +1,21 @@
+# template protein.ff14SB.xml sha256 d9f9779c09d67cd5f8bc657692f174ffab14c469dfd06d560ac1899fa7e976b8; gemmi 0.7.5
+file	waters	verdict	first_blocker	blocker_codes	classes	chain_part_order	side_chain_residues	side_chain_residues_per_chain	side_chain_atoms	oxt	gaps	mse	zero_occ_atoms	zero_occ_residues	added_res	added_heavy	heavy_before	heavy_after
+public_1m17.cif	strip_all	in_scope	-	-	terminal_oxt_added,internal_gap_filled	A	0	{}	0	A/995/PRO	A:A/964/HIS..A/977/LEU(n=12,ids)	-	37	A/725/GLU	12	97	2497	2594
+public_1m17.cif	keep_all	in_scope	-	-	terminal_oxt_added,internal_gap_filled	A	0	{}	0	A/995/PRO	A:A/964/HIS..A/977/LEU(n=12,ids)	-	37	A/725/GLU	12	97	2497	2594
+public_1fin.cif	strip_all	out_of_scope(atom_limit_exceeded)	atom_limit_exceeded@None	atom_limit_exceeded	chain_parts_merged	A,B,C,D,A,C	0	{}	0	-	-	-	0	-	0	0	8998	8998
+public_1fin.cif	keep_all	out_of_scope(atom_limit_exceeded)	atom_limit_exceeded@None	atom_limit_exceeded	chain_parts_merged	A,B,C,D,A,C,A,B,C,D	0	{}	0	-	-	-	0	-	0	0	8998	8998
+public_1mq4.cif	strip_all	in_scope	-	-	side_chain_atoms_added,terminal_oxt_added,internal_gap_filled	A	8	{"A": 8}	36	A/388/SER	A:A/285/ARG..A/288/THR(n=2,ids)	-	0	-	2	55	2105	2160
+public_1mq4.cif	keep_all	in_scope	-	-	side_chain_atoms_added,terminal_oxt_added,internal_gap_filled	A	8	{"A": 8}	36	A/388/SER	A:A/285/ARG..A/288/THR(n=2,ids)	-	0	-	2	55	2105	2160
+public_1s9i.cif	strip_all	out_of_scope(gap_too_long)	gap_too_long@A/313/ARG	gap_too_long	chain_parts_merged,terminal_oxt_added,internal_gap_filled	A,B,A,B	0	{}	0	A/393/GLY,B/389/LEU	A:A/223/MET..A/228/VAL(n=4,ids);A:A/285/ASP..A/313/ARG(n=27,ids);B:B/223/MET..B/230/THR(n=6,ids);B:B/281/ARG..B/316/MET(n=34,ids)	-	0	-	71	519	4686	5205
+public_1s9i.cif	keep_all	out_of_scope(gap_too_long)	gap_too_long@A/313/ARG	gap_too_long	chain_parts_merged,terminal_oxt_added,internal_gap_filled	A,B,A,B	0	{}	0	A/393/GLY,B/389/LEU	A:A/223/MET..A/228/VAL(n=4,ids);A:A/285/ASP..A/313/ARG(n=27,ids);B:B/223/MET..B/230/THR(n=6,ids);B:B/281/ARG..B/316/MET(n=34,ids)	-	0	-	71	519	4686	5205
+public_1a30.cif	strip_all	in_scope	-	-	side_chain_atoms_added	A,B,C	1	{"A": 1}	6	-	-	-	0	-	0	6	1536	1542
+public_1a30.cif	keep_all	in_scope	-	-	chain_parts_merged,side_chain_atoms_added	A,B,C,A,B,C	1	{"A": 1}	6	-	-	-	0	-	0	6	1536	1542
+public_1a4i.cif	strip_all	in_scope	-	-	chain_parts_merged,terminal_oxt_added,internal_gap_filled	A,B,A,B	0	{}	0	A/296/GLU,B/296/GLU	A:A/240/TYR..A/251/LYS(n=10,ids)	-	20	-	10	80	4396	4476
+public_1a4i.cif	keep_all	in_scope	-	-	chain_parts_merged,terminal_oxt_added,internal_gap_filled	A,B,A,B,A,B	0	{}	0	A/296/GLU,B/296/GLU	A:A/240/TYR..A/251/LYS(n=10,ids)	-	20	-	10	80	4396	4476
+public_1ubq.cif	strip_all	out_of_scope(nothing_to_repair)	-	-	-	A	0	{}	0	-	-	-	0	-	0	0	602	602
+public_1ubq.cif	keep_all	out_of_scope(nothing_to_repair)	-	-	-	A	0	{}	0	-	-	-	0	-	0	0	602	602
+public_1hsg.cif	strip_all	in_scope	-	-	terminal_oxt_added	A,B	0	{}	0	A/99/PHE,B/99/PHE	-	-	0	-	0	2	1514	1516
+public_1hsg.cif	keep_all	in_scope	-	-	chain_parts_merged,terminal_oxt_added	A,B,A,B	0	{}	0	A/99/PHE,B/99/PHE	-	-	0	-	0	2	1514	1516
+8VF6.cif	strip_all	in_scope	-	-	chain_parts_merged,side_chain_atoms_added,terminal_oxt_added,internal_gap_filled	A,B,A,B	23	{"A": 10, "B": 13}	91	A/382/THR,B/383/GLY	A:A/272/LYS..A/286/THR(n=13,ids);B:B/273/GLN..B/285/GLY(n=11,ids)	-	0	-	24	266	4272	4538
+8VF6.cif	keep_all	in_scope	-	-	chain_parts_merged,side_chain_atoms_added,terminal_oxt_added,internal_gap_filled	A,B,A,B,A,B	23	{"A": 10, "B": 13}	91	A/382/THR,B/383/GLY	A:A/272/LYS..A/286/THR(n=13,ids);B:B/273/GLN..B/285/GLY(n=11,ids)	-	0	-	24	266	4272	4538
+# rows=18 in_scope=['8VF6.cif', 'public_1a30.cif', 'public_1a4i.cif', 'public_1hsg.cif', 'public_1m17.cif', 'public_1mq4.cif'] same_verdict_both_water_policies=true

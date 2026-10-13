@@ -1,0 +1,69 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "zHxijM08Zpd_R8U7RDu8X",
+    "gitHead": "5fe7f208c0e544e92382fc0f87f93c0795c9245c",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "b9355b8ac813f75d14bf5ab2e03af96da626d3610e6bca03386154cbd5193c70",
+    "dirtyFiles": [
+      "?? docs/qa/m29-repair-20261013/regression/"
+    ],
+    "recordedAt": "2026-10-13T16:06:10.888224+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "jev-loop-flow.cjs": "6a4eef9223abb1c6bfc40be99c560379a1d37616780f06881511ac308022cea2",
+      "jev-flow.cjs": "3fa77454cba84914570de78dad662187f9b52ca7fa0ca727ceeff5e89e7a0521",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "fixtureServerSha256": "199b5b1fac6ef509c3760a161f8258ab7ed43e3c0989be8dd8312c4c07126cb9",
+    "qaSetupSha256": "f973aee568be6882b1c514eb08312be0739709c01e69b7407127da8ab6a80c29",
+    "runnerSha256": "e0787b7f2953774cbc1ef0fd8b18422024741d9a842a7a8820f4f2860bea2865"
+  },
+  "responsesBefore": 0,
+  "services": [
+    {
+      "name": "fixture-backend",
+      "runs": "<repo>/runs/m29-chain-m25-20261014/runs",
+      "control": "<repo>/runs/m29-chain-m25-20261014/fixture-control",
+      "pid": 23120,
+      "startedAt": "2026-10-13T16:06:15.768536+00:00"
+    }
+  ],
+  "setupRuns": {
+    "L": "run_d0fdba2f3a0b488dbfcc31aa2df4ef11",
+    "P": "run_a55834109af34929ac872342cd784270"
+  },
+  "environment": {
+    "workerPython": true,
+    "dockingPython": true,
+    "qvina": true,
+    "fixtureServer": true,
+    "fixtureServerRecord": {
+      "schema": "m25_jev_loop_fixture_server@1",
+      "scienceGate": "EgressGate(httpx.MockTransport scripted, sentinel credential)",
+      "viewerGate": "EgressGate(httpx.MockTransport refusing, no credential)",
+      "defaultGate": "EgressGate defaults: httpx.MockTransport refusing, resolver without a credential",
+      "scripts": [
+        "good",
+        "good_second",
+        "computed_alias",
+        "http_500",
+        "slow",
+        "no_usage",
+        "model_mismatch"
+      ]
+    },
+    "ligandAvailable": true,
+    "mutationAvailable": true,
+    "dockingAvailable": true,
+    "modelAvailable": true,
+    "jevAvailable": true,
+    "loopLigand": true,
+    "loopProtein": true,
+    "setup": true
+  }
+}

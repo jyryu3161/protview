@@ -1,0 +1,128 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "zHxijM08Zpd_R8U7RDu8X",
+    "gitHead": "b7e637cc9a13856d676f5d591347a94f59f861c3",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "b9355b8ac813f75d14bf5ab2e03af96da626d3610e6bca03386154cbd5193c70",
+    "dirtyFiles": [
+      "?? docs/qa/m29-repair-20261013/regression/"
+    ],
+    "recordedAt": "2026-10-13T16:36:38.056930+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "numbering-flow.cjs": "8996b7fc22495aeeca03600e7f97a4988dc2955ffb05d0b21deeb0e5c9944b8f",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "fbf063db5d81af19dc14213a1f5b67d7c9b2308beb774f062e2248ce0dcb5a90"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m29-chain-m25-20261014-m15-regression/runs",
+      "reference": "<repo>/runs/m29-chain-m25-20261014-m15-regression/reference",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-13T16:36:42.787436+00:00"
+    }
+  ],
+  "emptyReference": {
+    "available": false,
+    "reason_code": "not_installed",
+    "reason": "\ucc38\uc870 \uc2a4\ub0c5\uc0f7 \uc138\ud2b8\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4(\uac00\uc838\uc624\uae30 \uba85\ub839 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+  },
+  "reference": {
+    "reference-import": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "<repo>/scripts/import_reference_snapshots.py",
+        "--from",
+        "<home>/Projects/kbase_kinase",
+        "--dest",
+        "<repo>/runs/m29-chain-m25-20261014-m15-regression/reference"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m15/services/reference-import.log",
+      "setHash": "553eb944693d74d77d753d498d17d348042d26b943879b0de450c1e7b49dab08",
+      "served": {
+        "available": true,
+        "set_hash": "553eb944693d74d77d753d498d17d348042d26b943879b0de450c1e7b49dab08",
+        "imported_at": "2026-10-13T16:36:46.622559Z",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    },
+    "reference-reimport": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "-c",
+        "import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]); from reference_fixture_set import build_fixture_set; print(build_fixture_set(Path(sys.argv[2]), tag=sys.argv[3]))",
+        "<repo>/backend/tests",
+        "<repo>/runs/m29-chain-m25-20261014-m15-regression/reference",
+        "m15-qa-marked-fixture-20261013T163706"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m15/services/reference-reimport.log",
+      "setHash": "e05dc2acfc10dfe2dd77987115dc115bcdefdef4083c6607defaa806c96fcea8",
+      "served": {
+        "available": true,
+        "set_hash": "e05dc2acfc10dfe2dd77987115dc115bcdefdef4083c6607defaa806c96fcea8",
+        "imported_at": "2026-09-30T00:00:00Z m15-qa-marked-fixture-20261013T163706",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    }
+  }
+}

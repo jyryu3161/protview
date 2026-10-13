@@ -1,0 +1,79 @@
+M29 gate record (source freeze 52aa4265, 2026-10-14)
+
+Source freeze: 52aa42653f0e20b8780bb76db5cebb5388bc47a0 (M29 T14: source freeze). The tree was clean (git status: 0 lines) when the gate started and after it. Commits after it may change only docs/**, README.md, CLAUDE.md, AGENTS.md (including backend/frontend/scripts AGENTS.md) and, when the regression chain needs it, expectations of old-stage harnesses and runners (spec 11.2). Check: git diff --name-only <freeze>..HEAD.
+
+== pytest groups on the freeze (.codex/hooks/stop.py CHECKS: ruff first, then the 20 pytest groups (19 named + the rest group) started together, bound 480 s per group); three consecutive rounds, no re-run, no skipped test ==
+round 1: ruff + 20 groups all exit=0 True, 6703 passed, 0 skipped, wall time 377.9 s, longest group 377.9 s (limit per group 480 s)
+round 2: ruff + 20 groups all exit=0 True, 6703 passed, 0 skipped, wall time 379.7 s, longest group 379.6 s (limit per group 480 s)
+round 3: ruff + 20 groups all exit=0 True, 6703 passed, 0 skipped, wall time 375.3 s, longest group 375.2 s (limit per group 480 s)
+
+round 1 groups (the official gate run):
+group 01: exit=0 24 passed, 375.3 s  (backend/tests/test_chemical_interactions.py ...)
+group 02: exit=0 25 passed, 327.5 s  (backend/tests/test_m11_job_api.py ...)
+group 03: exit=0 220 passed, 376.1 s  (backend/tests/test_docking_inputs.py backend/tests/test_docking_worker ...)
+group 04: exit=0 120 passed, 362.1 s  (backend/tests/test_docking_batch_worker.py backend/tests/test_docking_ ...)
+group 05: exit=0 390 passed, 365.9 s  (backend/tests/test_docking_batch_inputs.py backend/tests/test_docking_ ...)
+group 06: exit=0 12 passed, 377.9 s  (backend/tests/test_ligand_ga_jobs.py ...)
+group 07: exit=0 15 passed, 340.7 s  (backend/tests/test_ligand_ga_worker.py ...)
+group 08: exit=0 2 passed, 344.5 s  (backend/tests/test_sequence_ga_jobs.py::test_product_path_publication_ ...)
+group 09: exit=0 12 passed, 297.5 s  (backend/tests/test_sequence_ga_jobs.py::test_registration_capability_a ...)
+group 10: exit=0 24 passed, 349.7 s  (backend/tests/test_sequence_ga_api.py ...)
+group 11: exit=0 20 passed, 372.5 s  (backend/tests/test_sequence_ga_reports.py ...)
+group 12: exit=0 419 passed, 309.6 s  (backend/tests/test_sequence_ga_worker.py backend/tests/test_sequence_m ...)
+group 13: exit=0 247 passed, 347.5 s  (backend/tests/test_mutation_model_worker.py backend/tests/test_mutatio ...)
+group 14: exit=0 202 passed, 220.2 s  (backend/tests/test_jev_loops_read.py backend/tests/test_jev_loop_sends ...)
+group 15: exit=0 43 passed, 272.6 s  (backend/tests/test_jev_loops_compute.py ...)
+group 16: exit=0 758 passed, 196.5 s  (backend/tests/test_precedent_constants.py backend/tests/test_precedent ...)
+group 17: exit=0 130 passed, 261.2 s  (backend/tests/test_analysis_workflows.py backend/tests/test_jev_loop_r ...)
+group 18: exit=0 103 passed, 272.8 s  (backend/tests/test_structure_repair_jobs.py backend/tests/test_structu ...)
+group 19: exit=0 43 passed, 177.6 s  (backend/tests/test_structure_repair_downstream_reads.py backend/tests/ ...)
+group 20: exit=0 3894 passed, 323.8 s  (backend/tests scripts/test_execute.py scripts/test_codex_hooks.py scri ...)
+round 2 longest groups: 379.6 s, 375.9 s, 375.1 s
+round 3 longest groups: 375.2 s, 374.2 s, 373.2 s
+
+== other commands on the freeze (sequential, captured by the same script) ==
+head: 52aa42653f0e20b8780bb76db5cebb5388bc47a0
+status-lines:        0
+ruff: exit=0 0s
+node-check: files=35 fails=0
+frontend-test-events: exit=0 1s
+frontend-typecheck: exit=0 7s
+frontend-build: exit=0 16s
+golden-science-m24: exit=0 6s
+golden-egress: exit=0 1s
+golden-call-keys-record: exit=0 45s
+golden-call-keys-equal: exit=0
+golden-runs-root: runs/m29-gate-golden-keys-20261014001237
+<repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+baseline-blobs: files=27 equal=True
+status-lines-after:        0
+done
+
+== notes ==
+ruff command: ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py (also CHECKS[0] of each round).
+node-check: every frontend/tests/offscreen/*.cjs (34 older harnesses + structure-repair-flow.cjs = 35 files).
+npm --prefix frontend run test:events: tests 553 pass 553 fail 0. typecheck then build were run one after the other, not at the same time.
+golden_call_keys.json: prototype_golden_call_keys.py re-recorded into a new git-ignored runs folder and compared with the committed file by cmp (exit 0); not rewritten. golden_science_m24.json and golden_egress_events.json: --check exit 0.
+call-key hash files: the 27 git blobs at HEAD equal BASELINE_BLOBS (baseline-blobs: files=27 equal=True above); backend/tests/test_kinase_precedents_ast.py::test_the_call_key_hash_files_are_byte_identical_to_the_m27_baseline is in the precedent group and passed in all three rounds.
+Number of pytest groups: 20 (19 named groups + the rest group) plus the ruff check = 21 checks in .codex/hooks/stop.py. M28 had 18 groups. Total tests: 6703 (M28 gate 6379). The longest group of the diagnostic trial before the freeze was the rest group (414.3 s, limit 480 s); six mid-size test files (test_jobs, test_ligand_worker, test_ligand_jobs, test_mutation_tool, test_jev_ast, test_site_annotation_reports) then moved to the precedent group and the longest group fell to about 371 s. The trials were diagnostics, not gate runs.
+The intermittent test set fixed in T2 (spec 12) passed in all three rounds. No test failed in any round; the Stop-hook failures seen during M29 (load and concurrent edits) are summarized in docs/qa/m29-repair-20261013/t2-flaky-tests.md (the raw failure records are in the coordinating session's git-ignored notes) and none occurred on this source.
+Raw per-group records (absolute paths replaced by <repo>/<scratch>) and per-command logs are in docs/qa/m29-repair-20261013/gate-raw/.
+
+== completion check on the final head bb6403ad (2026-10-14; not one of the three gate rounds) ==
+After the documents of T17-T20 and the one old-harness expectation were committed, all pytest groups were run once more together (same script, same bound): ruff + 20 groups, 6703 passed, 0 skipped, wall time 373.0 s, longest group 372.9 s, failed checks 0. The other commands were run again too:
+head: bb6403ad3dc03bd287ddf9041e13e3364a3bd2cd
+status-lines:        0
+ruff: exit=0 0s
+node-check: files=35 fails=0
+frontend-test-events: exit=0 1s
+frontend-typecheck: exit=0 7s
+frontend-build: exit=0 16s
+golden-science-m24: exit=0 6s
+golden-egress: exit=0 1s
+golden-call-keys-record: exit=0 45s
+golden-call-keys-equal: exit=0
+golden-runs-root: runs/m29-gate-golden-keys-20261014031233
+baseline-blobs: files=27 equal=True
+status-lines-after:        0
+git diff --name-only 52aa4265..bb6403ad lists only docs/**, README.md, CLAUDE.md, AGENTS.md documents and frontend/tests/offscreen/jev-loop-flow.cjs (the old M25 harness expectation, regression-harness-changes.txt); no product code, hash file or golden file differs from the freeze.

@@ -25,6 +25,7 @@ from __future__ import annotations
 import ast
 import copy
 import json
+import re
 import subprocess
 import sys
 from decimal import ROUND_HALF_UP, Decimal
@@ -78,6 +79,20 @@ FORBIDDEN = ("순위", "추천", "최적", "개선", "예측", "유망", "좋은
              "안정성", "결합", "최저", "최고", "좋아짐", "승자", "차이", "평균", "best", "rank", "recommend", "improve",
              "winner", "lowest", "affinity", "score")
 REPORT_EVENTS = ["object_created", "object_created", "method_report_created"]
+
+
+def _number_in(value, text):
+    """``str(value)`` in ``text`` as a whole number, not as digits inside a longer one: the manifest's snapshot holds
+    the last event's ``time.time()`` (``time_utc``) and the budget's wall clock, whose digits can run ``…0.4321…`` by
+    chance (the M24 ``test_jev_reports`` failure, fixed there in M28 T2; here in M29 T2)."""
+    return re.search(rf"(?<![\d.]){re.escape(str(value))}(?!\d)", text) is not None
+
+
+def test_the_probability_check_finds_the_value_but_not_its_digits_inside_other_numbers():
+    for leaked in ('{"p":0.4321}', '{"p":[1,0.4321]}', '"0.4321"', "p = 0.4321."):
+        assert _number_in(PROBABILITY, leaked), leaked
+    for other in ('{"time_utc":1760180000.43215}', '{"used":10.4321}', '{"x":0.43211}'):
+        assert not _number_in(PROBABILITY, other), other
 
 
 # ---------------------------------------------------------------- helpers
@@ -381,7 +396,7 @@ def test_the_ligand_report_cites_its_summary_and_results_and_keeps_jev_choices_a
     assert content["iterations"][2]["decided_by"] == "human"
     # no probability, rank, difference or improvement anywhere; the LJ sentences as fixed lines
     dumped = canonical_json(manifest).decode()
-    assert "probabilities" not in dumped and str(PROBABILITY) not in dumped and str(PROBABILITY) not in markdown
+    assert "probabilities" not in dumped and not _number_in(PROBABILITY, dumped) and str(PROBABILITY) not in markdown
     for word in ("rank", "best", "improv", "diff", "delta"):
         assert f'"{word}' not in dumped
     assert manifest["limitation_ids"] == content["limitations"] == ["LJ1", "LJ2", "LJ3", "LJ4", "LJ6", "LJ8"]

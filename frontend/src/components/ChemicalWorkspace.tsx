@@ -23,6 +23,7 @@ import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "./AnalysisWorkf
 import { hostRequestAccepted, importedPocketChains, type ScreenSelections } from "@/lib/analysis";
 import { chemicalExclusive, featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback,
   type PocketOverlayRequest } from "@/lib/pockets";
+import { repairedStructureHandles, withoutRepaired } from "@/lib/structure-repair";
 
 type ChemicalDisplay = { generation: number; view: ChemicalView; source: ViewerSource;
   catalog: AtomCatalog; graphHandle: string; manifest: ChemicalPreparationManifest };
@@ -130,9 +131,11 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
   const bridge = useRef<ViewerBridge | null>(null);
   const generation = useRef(0);
 
-  const sources = useMemo(() => [...new Map(events.filter((event): event is Extract<RunEvent, { type: "object_created" }> =>
+  // M29 (spec 5.2): a repaired structure is a modelling input only; chemistry never offers it.
+  const sources = useMemo(() => withoutRepaired([...new Map(events.filter((event): event is Extract<RunEvent, { type: "object_created" }> =>
     event.type === "object_created" && ["structure", "prepared_structure"].includes(event.kind))
-    .map(event => [event.handle, { handle: event.handle, kind: event.kind }])).values()], [events]);
+    .map(event => [event.handle, { handle: event.handle, kind: event.kind }])).values()], repairedStructureHandles(events)),
+    [events]);
   const selectedLigand = complexResidues.find(ref => refKey(ref) === ligandKey) ?? null;
   const ligandSourceAtoms = complexAtoms?.rows.filter(row => selectedLigand && sameResidueRef(row.ref.residue, selectedLigand)) ?? [];
   const terminalResidues = [...new Map((mode === "create_new" ? stagingAtoms.filter(row => !row.water) :

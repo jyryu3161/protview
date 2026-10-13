@@ -1,0 +1,36 @@
+{
+  "schema": "m25_jev_loop_bytes@1",
+  "rule": "per send: the preview <pre> text = the server preview string; its SHA-256 = the audit prepared payload_sha256 (prepared body deep-equal) = (fixture server) the SHA-256 of the bytes its transport received; one dispatch event",
+  "sends": [
+    {
+      "run": "run_a55834109af34929ac872342cd784270",
+      "sendId": "462aea45-a4cf-46d4-8480-57ee2d7ef4b8",
+      "script": "good_second",
+      "previewSha256": "28659f46950428c5e6062cda9734069488f816c491266c245ee2b9b21c2e1552",
+      "previewBytes": 5090,
+      "preparedSha256": "28659f46950428c5e6062cda9734069488f816c491266c245ee2b9b21c2e1552",
+      "preparedBodyEqual": true,
+      "transportSha256": "28659f46950428c5e6062cda9734069488f816c491266c245ee2b9b21c2e1552",
+      "transportBytes": 5090,
+      "authorizationIsSentinel": true,
+      "dispatched": 1,
+      "fixtureCall": 1,
+      "gate": "fixture"
+    },
+    {
+      "run": "run_a55834109af34929ac872342cd784270",
+      "sendId": "90fda61b-df50-4dbb-b486-4b25735229d4",
+      "script": "http_500",
+      "previewSha256": "5e6496f9242c42a7e4afe04d64fb99a0f6bd4ee0a870c77ae6166c3035c98c16",
+      "previewBytes": 5672,
+      "preparedSha256": "5e6496f9242c42a7e4afe04d64fb99a0f6bd4ee0a870c77ae6166c3035c98c16",
+      "preparedBodyEqual": true,
+      "transportSha256": "5e6496f9242c42a7e4afe04d64fb99a0f6bd4ee0a870c77ae6166c3035c98c16",
+      "transportBytes": 5672,
+      "authorizationIsSentinel": true,
+      "dispatched": 1,
+      "fixtureCall": 2,
+      "gate": "fixture"
+    }
+  ]
+}

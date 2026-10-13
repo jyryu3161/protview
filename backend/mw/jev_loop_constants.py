@@ -66,6 +66,7 @@ CAPABILITY_METHOD = "jev_loop"
 APPROVED_BY = "human"
 REPORT_ANALYSIS_TYPE = "jev_loop"
 REPORT_RENDER = "jev_loop_markdown@1"
+REPORT_RENDER_V2 = "jev_loop_markdown@2"   # M29: a protein loop on a repaired structure (구조 출처 section)
 REPORT_LABEL = "JEV 루프 보고서"
 REPORT_GENERATION_MODE = "local_rules_no_egress"
 REPORT_EVIDENCE_KINDS = ("computed", "model_response")

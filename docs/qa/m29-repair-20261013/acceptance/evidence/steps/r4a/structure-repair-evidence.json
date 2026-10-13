@@ -1,0 +1,146 @@
+{
+  "schema": "m29_harness_evidence@1",
+  "mode": "r4a",
+  "run": "run_5d649e11d4894bfebf5edd7a66690355",
+  "parts": {
+    "r4a-repair": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:15:43.429Z",
+      "finishedAt": "2026-10-13T15:15:49.492Z"
+    },
+    "r4a-m20": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:15:49.492Z",
+      "finishedAt": "2026-10-13T15:15:50.601Z"
+    },
+    "r4a-m21": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:15:50.601Z",
+      "finishedAt": "2026-10-13T15:17:43.723Z"
+    },
+    "r4a-model-report": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:17:43.723Z",
+      "finishedAt": "2026-10-13T15:17:44.826Z"
+    },
+    "r4a-docking": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:17:44.827Z",
+      "finishedAt": "2026-10-13T15:17:58.641Z"
+    }
+  },
+  "observed": {
+    "r4a": {
+      "run": "run_5d649e11d4894bfebf5edd7a66690355",
+      "loaded": "obj://run_5d649e11d4894bfebf5edd7a66690355/structure/8c5d44559ba81f8c635c8894673221cf6b7394eefc9b448fee60237dbb26145d",
+      "prepared": "obj://run_5d649e11d4894bfebf5edd7a66690355/prepared_structure/8072f6c31e28fea5eab6ae5665e8dba65827d451469ec9158ae3a8f84dc3713d",
+      "record": "obj://run_5d649e11d4894bfebf5edd7a66690355/structure_repair/38f34bf3074558bb9e4b9e54b23566f2e205904e7429190e22488809cc9ea707",
+      "repaired": "obj://run_5d649e11d4894bfebf5edd7a66690355/prepared_structure/9decb308caed261ef7641aec2a69a8f0642478fa82987bb214cbf6fabac6304a",
+      "repairJob": {
+        "jobId": "job_ee9d63016ae94c7b9d2e5fff40307bdd",
+        "phases": [
+          "awaiting_approval",
+          "started",
+          "queued",
+          "running",
+          "done"
+        ],
+        "record": "obj://run_5d649e11d4894bfebf5edd7a66690355/structure_repair/38f34bf3074558bb9e4b9e54b23566f2e205904e7429190e22488809cc9ea707",
+        "repaired": "obj://run_5d649e11d4894bfebf5edd7a66690355/prepared_structure/9decb308caed261ef7641aec2a69a8f0642478fa82987bb214cbf6fabac6304a",
+        "approved": true,
+        "timeoutS": 120
+      },
+      "panelText": {
+        "name": "r4a-repair-panel",
+        "bytes": 6423,
+        "sha256": "802cc384f22b95a3e5680cf0f9db7db30ae815c07f032a73742d08b3d2ea95c6"
+      },
+      "set": "obj://run_5d649e11d4894bfebf5edd7a66690355/mutation_candidate_set/26c90aa2109b09f6f670ab1d7197e7153ade422bba4cf5d93bb93c535bd905d7",
+      "model": "obj://run_5d649e11d4894bfebf5edd7a66690355/mutation_model/3c466c3f5ddb9aaaa29d3f2c04819ddcf1fb841b39eff460d39685dfcd897cc1",
+      "modelJob": {
+        "status": "done",
+        "timeoutS": 240,
+        "jobId": "job_3b64933a485349b886631904c1f6e36d",
+        "phases": [
+          "running",
+          "done"
+        ]
+      },
+      "modelSo1": "이 결과의 구조는 보완 구조이다. 일부 잔기와 원자는 PDBFixer가 만든 모델링 좌표이며 실험으로 관측한 좌표가 아니다.",
+      "modelOriginRecord": "obj://run_5d649e11d4894bfebf5edd7a66690355/structure_repair/38f34bf3074558bb9e4b9e54b23566f2e205904e7429190e22488809cc9ea707",
+      "texts": [
+        {
+          "name": "r4a-model-origin",
+          "bytes": 245,
+          "sha256": "7bcc29160631974ce5f9ae58a3b817eabd15ddc6f085a967be7933662f17f407"
+        },
+        {
+          "name": "r4a-model-list-marks",
+          "bytes": 13,
+          "sha256": "f567fc01587a720d56f3ea914cfdb1499d4665b68c380e5d552c6d8c2ddd2aca",
+          "lines": 1
+        }
+      ],
+      "modelReport": "obj://run_5d649e11d4894bfebf5edd7a66690355/method_report_manifest/2f0d5e9365b6f1392167a1097e3c334b057d6c28a08ec17b5ca5cfa08dee58ae",
+      "docking": {
+        "jobs": {
+          "wild_type_reference": "done",
+          "mutant": "done"
+        },
+        "result": "obj://run_5d649e11d4894bfebf5edd7a66690355/docking_result/514deed8e2813f07eab77eb474e5d5a4d9f5818fdcfc71d79dcdef90e3ba3872",
+        "so1": "이 결과의 구조는 보완 구조이다. 일부 잔기와 원자는 PDBFixer가 만든 모델링 좌표이며 실험으로 관측한 좌표가 아니다.",
+        "report": "obj://run_5d649e11d4894bfebf5edd7a66690355/method_report_manifest/96c344d8a29c3070454962a74d7fb79943b4f1fdadc25d342ed714c11e5d5473"
+      }
+    }
+  },
+  "texts": {
+    "r4a-repair-panel": "texts/r4a-repair-panel.screentext",
+    "r4a-m20-m21-request-marks": "texts/r4a-m20-m21-request-marks.screentext",
+    "r4a-model-origin": "texts/r4a-model-origin.screentext",
+    "r4a-model-list-marks": "texts/r4a-model-list-marks.screentext",
+    "r4a-docking-list-marks": "texts/r4a-docking-list-marks.screentext",
+    "r4a-docking-origin": "texts/r4a-docking-origin.screentext"
+  },
+  "planSha256": "7d3f5f8c072c17aa8f0993fd85c895db539fd821ea9632abf0ca3816ee954358",
+  "startedAt": "2026-10-13T15:15:42.035Z",
+  "finishedAt": "2026-10-13T15:17:58.719Z",
+  "error": null,
+  "requestCount": 406,
+  "postPaths": [
+    "/api/runs",
+    "/api/runs/<run>/chemical/imports",
+    "/api/runs/<run>/commands",
+    "/api/runs/<run>/jobs",
+    "/api/runs/<run>/jobs/approve",
+    "/api/runs/<run>/jobs/job_3b64933a485349b886631904c1f6e36d/start",
+    "/api/runs/<run>/jobs/job_5ece8acf53904206933726ef6b79aa86/start",
+    "/api/runs/<run>/jobs/job_9b3ebbc22f154872bae311f28dc4d600/start",
+    "/api/runs/<run>/jobs/job_ee9d63016ae94c7b9d2e5fff40307bdd/start",
+    "/api/runs/<run>/method_reports",
+    "/api/runs/<run>/uploads",
+    "/api/runs/<run>/viewer/sessions"
+  ],
+  "requestedPostPaths": [
+    "/api/runs",
+    "/api/runs/<run>/chemical/imports",
+    "/api/runs/<run>/commands",
+    "/api/runs/<run>/jobs",
+    "/api/runs/<run>/jobs/approve",
+    "/api/runs/<run>/jobs/job_3b64933a485349b886631904c1f6e36d/start",
+    "/api/runs/<run>/jobs/job_5ece8acf53904206933726ef6b79aa86/start",
+    "/api/runs/<run>/jobs/job_9b3ebbc22f154872bae311f28dc4d600/start",
+    "/api/runs/<run>/jobs/job_ee9d63016ae94c7b9d2e5fff40307bdd/start",
+    "/api/runs/<run>/method_reports",
+    "/api/runs/<run>/uploads",
+    "/api/runs/<run>/viewer/sessions"
+  ],
+  "serverErrors": [
+    {
+      "at": 1791904582049,
+      "method": "POST",
+      "path": "/api/runs/<run>/jobs/job_3b64933a485349b886631904c1f6e36d/start",
+      "status": 500,
+      "busy": false
+    }
+  ]
+}

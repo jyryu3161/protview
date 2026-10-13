@@ -1,0 +1,63 @@
+{
+  "schema": "m29_fixed_sentences@1",
+  "sentences": {
+    "RP1": "보완 구조의 추가 원자는 PDBFixer가 만든 모델링 좌표이며 실험으로 관측한 좌표가 아니다.",
+    "RP2": "실험으로 관측한 원자의 좌표는 입력 그대로이며 추가·치환·원자 순서 변경만 기록했다.",
+    "RP3": "메운 틈 구간은 단순한 기하로 놓은 가상 좌표이며 실제 구조가 아니다.",
+    "RP4": "사슬의 관측된 끝이 서열의 끝과 다른 곳에도 말단 원자를 두었으므로 그 끝의 화학은 실제와 다를 수 있다.",
+    "RP5": "MSE는 MET로 바꾸었고 셀레늄 원자는 황 원자로 대체했다. 원래 이름은 보완 기록에 있다.",
+    "RP6": "같은 저자 체인 이름의 조각을 한 체인으로 합쳐 원자 순서가 바뀌었다. 잔기 식별자와 좌표는 그대로이다.",
+    "SO1": "이 결과의 구조는 보완 구조이다. 일부 잔기와 원자는 PDBFixer가 만든 모델링 좌표이며 실험으로 관측한 좌표가 아니다.",
+    "SO2": "이 위치·보호 판정에는 모델링 원자 또는 잔기가 들어 있다.",
+    "SO3": "번호 대응·참조 주석·촉매 연결·포켓 결과는 보완 전 원본 구조에서 만든 것이며 잔기 식별자 일치로 이었다. 모델링한 잔기는 검사하지 않았다.",
+    "JW1": "이 후보는 보완 구조 기준이며, 전송 본문은 이 사실을 담지 않는다."
+  },
+  "repairClasses": [
+    "chain_parts_merged",
+    "side_chain_atoms_added",
+    "terminal_oxt_added",
+    "internal_gap_filled",
+    "nonstandard_replaced"
+  ],
+  "refusalReasons": [
+    "chain_identity_duplicate",
+    "unsupported_residue",
+    "unexpected_atoms",
+    "backbone_atoms_missing",
+    "gap_listing_missing",
+    "gap_too_long",
+    "m7_condition_unsupported",
+    "atom_limit_exceeded",
+    "nothing_to_repair"
+  ],
+  "failureReasons": [
+    "repair_incomplete",
+    "repair_modeling_failed",
+    "coordinates_changed",
+    "unexpected_atoms_added",
+    "repair_identity_mismatch",
+    "repair_record_mismatch",
+    "resource_exceeded",
+    "engine_failed"
+  ],
+  "reportStatementIds": [
+    "repair_scope",
+    "added_residue_count",
+    "added_atom_count",
+    "side_chain_residue_count",
+    "terminal_oxt_count",
+    "gap_count",
+    "replaced_count",
+    "chain_parts_merged_count",
+    "unchanged_atom_count",
+    "collision_min_distance",
+    "zero_occupancy_input_atom_count"
+  ],
+  "originStatementIds": [
+    "repair_added_residue_count",
+    "repair_added_atom_count"
+  ],
+  "refusedCode": "repaired_structure_not_accepted",
+  "refusedMessage": "보완 구조는 모델링 경로에서만 쓴다",
+  "sha256": "c71d723be474d0f3dc791b69b417379e72fbae8676b2915dc8cc60e5d18e25a3"
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "m29_plan@1",
+  "mode": "r4a",
+  "run": null,
+  "input": {
+    "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+    "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268"
+  },
+  "waters": "strip_all",
+  "r4a": {
+    "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 4,
+      "seq_label": 4,
+      "icode": "",
+      "resname": "THR"
+    },
+    "allowed": "A",
+    "model": {
+      "seed": "1",
+      "cutoff": "4.0",
+      "timeout": "240"
+    },
+    "docking": {
+      "margin": "8",
+      "seed": "20261004",
+      "exhaustiveness": "4",
+      "numModes": "5",
+      "energyRange": "3"
+    }
+  },
+  "phenol": {
+    "path": "<repo>/backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf",
+    "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3",
+    "label": "SYNTHETIC-FIXTURE hand-built phenol (mutation_model/SYNTHETIC-PROVENANCE.md)"
+  }
+}

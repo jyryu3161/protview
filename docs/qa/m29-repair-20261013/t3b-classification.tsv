@@ -1,0 +1,11 @@
+# template protein.ff14SB.xml sha256 d9f9779c09d67cd5f8bc657692f174ffab14c469dfd06d560ac1899fa7e976b8; gemmi 0.7.5
+file	waters	verdict	first_blocker	blocker_codes	classes	chain_part_order	side_chain_residues	side_chain_residues_per_chain	side_chain_atoms	oxt	gaps	mse	zero_occ_atoms	zero_occ_residues	added_res	added_heavy	heavy_before	heavy_after
+public_1rnh.cif	strip_all	in_scope	-	-	terminal_oxt_added,nonstandard_replaced	A	0	{}	0	A/152/GLN	-	A/47/MSE,A/50/MSE,A/142/MSE	0	-	0	1	1206	1207
+public_1rnh.cif	keep_all	in_scope	-	-	terminal_oxt_added,nonstandard_replaced	A	0	{}	0	A/152/GLN	-	A/47/MSE,A/50/MSE,A/142/MSE	0	-	0	1	1206	1207
+public_4ins.cif	strip_all	in_scope	-	-	chain_parts_merged	A,B,C,D,B,D	0	{}	0	-	-	-	0	-	0	0	806	806
+public_4ins.cif	keep_all	in_scope	-	-	chain_parts_merged	A,B,C,D,B,D,A,B,C,D	0	{}	0	-	-	-	0	-	0	0	806	806
+public_1ay7.cif	strip_all	out_of_scope(nothing_to_repair)	-	-	-	A,B	0	{}	0	-	-	-	0	-	0	0	1466	1466
+public_1ay7.cif	keep_all	in_scope	-	-	chain_parts_merged	A,B,A,B	0	{}	0	-	-	-	0	-	0	0	1466	1466
+public_1cll.cif	strip_all	in_scope	-	-	side_chain_atoms_added,terminal_oxt_added	A	1	{"A": 1}	4	A/147/ALA	-	-	0	-	0	5	1130	1135
+public_1cll.cif	keep_all	in_scope	-	-	side_chain_atoms_added,terminal_oxt_added	A	1	{"A": 1}	4	A/147/ALA	-	-	0	-	0	5	1130	1135
+# rows=8 in_scope=['public_1ay7.cif', 'public_1cll.cif', 'public_1rnh.cif', 'public_4ins.cif'] same_verdict_both_water_policies=false

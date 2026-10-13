@@ -1,0 +1,2532 @@
+{
+  "schema": "m28_case_ledger@1",
+  "acceptance": true,
+  "phase": "fixture",
+  "rehearsal": false,
+  "rehearsalPassed": null,
+  "acceptanceParts": {
+    "allBranches": true,
+    "casesValid": true,
+    "requiredCases": true,
+    "trueCases": true,
+    "buildStamped": true,
+    "nothingLeft": true,
+    "external": true,
+    "exportChecks": true,
+    "runsClaimed": true
+  },
+  "invalidCases": {},
+  "branchesRequested": [
+    "a",
+    "b",
+    "c"
+  ],
+  "source_head": "ccd4a9004a54e99ace97961366104d94bcccd6a2",
+  "dirty_files": [],
+  "build": {
+    "buildId": "zHxijM08Zpd_R8U7RDu8X",
+    "gitHead": "ccd4a9004a54e99ace97961366104d94bcccd6a2",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirtyFiles": [],
+    "recordedAt": "2026-10-13T15:44:42.557635+00:00",
+    "codeRoot": "<repo>",
+    "runnerSha256": "7c01cd25f197ab50798a552e4770d17f0cdf8554cbbceae27ff51004df12fea4",
+    "commonSha256": "c3352e70019f1305a4f19104af1d35fa5f0da37c228b8c7edca51b4172dbafc7",
+    "auditSha256": "6fac5090d1ee3598d911e95c4584c920c885ee9d0c9de2a0e43b2686a7aee32f"
+  },
+  "cases": [
+    {
+      "id": "A1",
+      "branch": "a",
+      "definition_items": [
+        1
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "a-endtoend/ledger-row.json",
+        "a-endtoend/endtoend-a-evidence.json",
+        "a/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "parts": {
+          "A1": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:44:50.524Z",
+            "finishedAt": "2026-10-13T15:44:53.333Z"
+          }
+        },
+        "setup": null
+      }
+    },
+    {
+      "id": "A2",
+      "branch": "a",
+      "definition_items": [
+        1,
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "a-endtoend/ledger-row.json",
+        "a-endtoend/endtoend-a-evidence.json",
+        "a/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "parts": {
+          "A2": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:44:53.333Z",
+            "finishedAt": "2026-10-13T15:44:55.368Z"
+          }
+        },
+        "setup": null
+      }
+    },
+    {
+      "id": "A3",
+      "branch": "a",
+      "definition_items": [
+        1,
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "a-endtoend/ledger-row.json",
+        "a-endtoend/endtoend-a-evidence.json",
+        "a/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "parts": {
+          "A3": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:44:55.368Z",
+            "finishedAt": "2026-10-13T15:45:00.444Z"
+          }
+        },
+        "setup": null
+      }
+    },
+    {
+      "id": "A4",
+      "branch": "a",
+      "definition_items": [
+        1,
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "a-endtoend/ledger-row.json",
+        "a-endtoend/endtoend-a-evidence.json",
+        "a/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "parts": {
+          "A4": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:45:00.444Z",
+            "finishedAt": "2026-10-13T15:45:07.233Z"
+          }
+        },
+        "setup": null
+      }
+    },
+    {
+      "id": "A5",
+      "branch": "a",
+      "definition_items": [
+        2,
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "a-endtoend/ledger-row.json",
+        "a-endtoend/endtoend-a-evidence.json",
+        "a/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "parts": {
+          "A5-m17": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:45:07.233Z",
+            "finishedAt": "2026-10-13T15:45:09.400Z"
+          },
+          "A5-others": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:45:14.552Z",
+            "finishedAt": "2026-10-13T15:45:27.500Z"
+          }
+        },
+        "setup": null
+      }
+    },
+    {
+      "id": "A6",
+      "branch": "a",
+      "definition_items": [
+        1,
+        2,
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "a-endtoend/ledger-row.json",
+        "a-endtoend/endtoend-a-evidence.json",
+        "a/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "parts": {
+          "A6": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:45:09.400Z",
+            "finishedAt": "2026-10-13T15:45:14.552Z"
+          }
+        },
+        "setup": null
+      }
+    },
+    {
+      "id": "A7",
+      "branch": "a",
+      "definition_items": [
+        2,
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "a-endtoend/ledger-row.json",
+        "a-endtoend/endtoend-a-evidence.json",
+        "a/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "parts": {
+          "A7": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:45:27.500Z",
+            "finishedAt": "2026-10-13T15:45:34.567Z"
+          }
+        },
+        "setup": null
+      }
+    },
+    {
+      "id": "A8",
+      "branch": "a",
+      "definition_items": [
+        2,
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "a-endtoend/ledger-row.json",
+        "a-endtoend/endtoend-a-evidence.json",
+        "a/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "parts": {
+          "A8": {
+            "status": "pass",
+            "startedAt": "2026-10-13T15:45:34.567Z",
+            "finishedAt": "2026-10-13T15:45:56.308Z"
+          }
+        },
+        "setup": null
+      }
+    },
+    {
+      "id": "B1",
+      "branch": "b",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-endtoend/ledger-row.json",
+        "b-endtoend/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:45:57.512Z",
+          "finishedAt": "2026-10-13T15:46:48.490Z"
+        },
+        "observed": {
+          "rows": 36,
+          "rolesUnmatched": 0,
+          "distanceMismatches": 0,
+          "angleMismatches": 0,
+          "categories": [
+            "Cationic",
+            "HBAcceptor",
+            "HBDonor",
+            "Hydrophobic"
+          ],
+          "screenRows": 36,
+          "units": [
+            1,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "B2",
+      "branch": "b",
+      "definition_items": [
+        3
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-endtoend/ledger-row.json",
+        "b-endtoend/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:46:48.490Z",
+          "finishedAt": "2026-10-13T15:47:12.709Z"
+        },
+        "observed": {
+          "sdfBlocksSeen": 10,
+          "smilesBlocksSeen": 10,
+          "candidates": 14,
+          "idMismatches": 0,
+          "origins": [
+            "fixed",
+            "user_1",
+            "user_2"
+          ],
+          "filterMismatches": 0
+        }
+      }
+    },
+    {
+      "id": "B3",
+      "branch": "b",
+      "definition_items": [
+        3
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-endtoend/ledger-row.json",
+        "b-endtoend/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:47:12.709Z",
+          "finishedAt": "2026-10-13T15:47:37.387Z"
+        },
+        "observed": {
+          "scoreIsFirstMode": true,
+          "modes": 1,
+          "contactMismatches": 0,
+          "again": {
+            "sameJob": true,
+            "units": 0,
+            "httpStatus": 200
+          }
+        }
+      }
+    },
+    {
+      "id": "B4",
+      "branch": "b",
+      "definition_items": [
+        3
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-endtoend/ledger-row.json",
+        "b-endtoend/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:49:16.317Z",
+          "finishedAt": "2026-10-13T15:50:18.534Z"
+        },
+        "observed": {
+          "newRows": 2,
+          "rowScoreMismatches": 0,
+          "rows": 5
+        }
+      }
+    },
+    {
+      "id": "B5",
+      "branch": "b",
+      "definition_items": [
+        5
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-endtoend/ledger-row.json",
+        "b-endtoend/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:50:18.534Z",
+          "finishedAt": "2026-10-13T15:53:09.614Z"
+        },
+        "observed": {
+          "settings": {
+            "1": {
+              "reserved": 6,
+              "newDockings": 5,
+              "reused": 1,
+              "stopReason": "generations_complete",
+              "status": "complete",
+              "generations": 2
+            },
+            "2": {
+              "reserved": 8,
+              "newDockings": 2,
+              "reused": 6,
+              "stopReason": "generations_complete",
+              "status": "complete",
+              "generations": 3
+            }
+          },
+          "reuseMismatches": 0
+        }
+      }
+    },
+    {
+      "id": "B6",
+      "branch": "b",
+      "definition_items": [
+        5
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-endtoend/ledger-row.json",
+        "b-endtoend/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:47:37.388Z",
+          "finishedAt": "2026-10-13T15:47:53.106Z"
+        },
+        "observed": null
+      }
+    },
+    {
+      "id": "B7",
+      "branch": "b",
+      "definition_items": [
+        5
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-endtoend/ledger-row.json",
+        "b-endtoend/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:47:53.106Z",
+          "finishedAt": "2026-10-13T15:49:16.317Z"
+        },
+        "observed": {
+          "explore": {
+            "computedSent": 1,
+            "bodyHasScore": false,
+            "vacuous": false
+          },
+          "exploit": {
+            "computedSent": 2,
+            "bodyScoresStored": true,
+            "computedRows": 2
+          },
+          "chosen": [
+            "c_196e9e1d9985566b",
+            "c_f1f6983d23c3009f"
+          ]
+        }
+      }
+    },
+    {
+      "id": "B8",
+      "branch": "b",
+      "definition_items": [
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-endtoend/ledger-row.json",
+        "b-endtoend/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:53:09.614Z",
+          "finishedAt": "2026-10-13T15:54:44.142Z"
+        },
+        "observed": {
+          "listed": 9,
+          "created": 9,
+          "events": 9,
+          "downloadMismatches": 0,
+          "kinds": [
+            "JEV 루프 보고서",
+            "JEV 판정 보고서",
+            "chemical_interactions",
+            "리간드 GA 설계 보고서",
+            "리간드 도킹 보고서",
+            "리간드 도킹 일괄 보고서",
+            "리간드 후보 보고서"
+          ],
+          "reports": [
+            {
+              "case": "B1",
+              "kind": "chemical_interactions",
+              "jsonSha256": "09cee037279bde0f4f7a596a62dd695ec3539007974f5966280bc929ec6cd2c4"
+            },
+            {
+              "case": "B2",
+              "kind": "리간드 후보 보고서",
+              "jsonSha256": "68485c0b98dc82044b05f8b3fab9517ca4fb0cab6843b45cbc0e5eb33036a008"
+            },
+            {
+              "case": "B3",
+              "kind": "리간드 도킹 보고서",
+              "jsonSha256": "c396dad7cb323a68bfedec2cbce37e6283a941a66232c377d8ee1d76a5355c97"
+            },
+            {
+              "case": "B6",
+              "kind": "JEV 판정 보고서",
+              "jsonSha256": "71908a836d56282ae942e4f26c02ab90568c38f95e5f18f869677a232a33b205"
+            },
+            {
+              "case": "B7",
+              "kind": "JEV 루프 보고서",
+              "jsonSha256": "ade65e06755e18a89ef11d65667c14fc4074a00c44cdc608ec21250524627b59"
+            },
+            {
+              "case": "B7",
+              "kind": "JEV 루프 보고서",
+              "jsonSha256": "de8178516c171122bd5777df1860ccd32a25b5ce95fea30ca791c81cc40d03da"
+            },
+            {
+              "case": "B4",
+              "kind": "리간드 도킹 일괄 보고서",
+              "jsonSha256": "1bb1cc2f0b5d065e552636978b7e779be9612b75ab0597603b0f2cfd96596687"
+            },
+            {
+              "case": "B5",
+              "kind": "리간드 GA 설계 보고서",
+              "jsonSha256": "25749692dce552eb711817229a44a8184e9953356df6489adb057ab8a9e69e72"
+            },
+            {
+              "case": "B5",
+              "kind": "리간드 GA 설계 보고서",
+              "jsonSha256": "b9f0c841226c592362154adfbd0261f6cda357afb83abc2305ada0ad2454064e"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "C1",
+      "branch": "c",
+      "definition_items": [
+        4
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-endtoend/ledger-row.json",
+        "c-endtoend/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:54:47.492Z",
+          "finishedAt": "2026-10-13T15:54:56.685Z"
+        },
+        "observed": {
+          "sets": {
+            "partial": {
+              "status": "not_checked",
+              "reason": "chains_not_covered",
+              "covered": [
+                "A"
+              ],
+              "uncovered": [
+                {
+                  "chain_auth": "B",
+                  "coverage": "not_in_annotation"
+                }
+              ],
+              "counts": {
+                "matched_rows": 3,
+                "conflict_rows": 0,
+                "unmatched_rows": 0
+              }
+            },
+            "all": {
+              "status": "checked",
+              "reason": null,
+              "covered": [
+                "A",
+                "B"
+              ],
+              "uncovered": [],
+              "counts": {
+                "matched_rows": 6,
+                "conflict_rows": 0,
+                "unmatched_rows": 0
+              }
+            }
+          },
+          "catalytic": {
+            "ARG A:8": [],
+            "ASP A:25": [
+              [
+                175,
+                1,
+                true
+              ]
+            ],
+            "THR A:26": [
+              [
+                175,
+                2,
+                true
+              ]
+            ],
+            "ASP B:25": [
+              [
+                175,
+                5,
+                true
+              ]
+            ],
+            "GLY B:27": [
+              [
+                175,
+                0,
+                true
+              ]
+            ]
+          },
+          "protected": [
+            "ASP A:25",
+            "ASP B:25",
+            "GLY B:27",
+            "THR A:26"
+          ],
+          "release": {
+            "residue": "ASP A:25",
+            "status": "candidate",
+            "released": true,
+            "catalytic": [
+              [
+                175,
+                1,
+                true
+              ]
+            ]
+          },
+          "report": {
+            "renderVersion": "mutation_candidates_markdown@2",
+            "setHashes": [
+              "1a7b131a102684f1f735bb96e6461bd13796c3b13a6d2203d289299cb57acf47"
+            ],
+            "setSchemas": [
+              "reaction_reference_set@1"
+            ],
+            "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/4e82c599cc5fd5bc32ea219a00937f58a32073c35b16ba27b4419351e87d1095"
+          }
+        }
+      }
+    },
+    {
+      "id": "C2",
+      "branch": "c",
+      "definition_items": [
+        4
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-endtoend/ledger-row.json",
+        "c-endtoend/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:54:56.685Z",
+          "finishedAt": "2026-10-13T15:55:42.594Z"
+        },
+        "observed": {
+          "m7": {
+            "heavyAtoms": 602,
+            "excluded": 58,
+            "approvalSeen": true
+          },
+          "set": {
+            "positions": 4,
+            "candidates": [
+              "LYS A:6 K→A",
+              "LYS A:6 K→W",
+              "ILE A:44 I→A",
+              "ILE A:44 I→W",
+              "GLY A:76 G→A",
+              "GLY A:76 G→W"
+            ]
+          },
+          "model": {
+            "target": {
+              "residue": "ILE A:44",
+              "from": "I",
+              "to": "W"
+            },
+            "energyUnit": "kJ/mol",
+            "sideBySideMismatches": 0,
+            "differenceKeys": [],
+            "energies": {
+              "wild_type_reference": {
+                "before": -10184.213905790195,
+                "after": -12792.052911304538
+              },
+              "mutant": {
+                "before": -8045.996542151248,
+                "after": -12717.486975922548
+              }
+            },
+            "sasa": {
+              "wild_type_reference": 29.349771360160197,
+              "mutant": 88.12585960950504
+            },
+            "contacts": {
+              "wild_type_reference": 27,
+              "mutant": 21
+            },
+            "hisCys": {
+              "protonationDifferences": 0,
+              "variants": {
+                "wild_type_reference": [
+                  "HIS A:68:HID"
+                ],
+                "mutant": [
+                  "HIS A:68:HID"
+                ]
+              }
+            },
+            "limitations": 5,
+            "contactMismatches": 0,
+            "reportValueClaims": 6
+          },
+          "units": [
+            1,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "C3",
+      "branch": "c",
+      "definition_items": [
+        4
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-endtoend/ledger-row.json",
+        "c-endtoend/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:55:42.594Z",
+          "finishedAt": "2026-10-13T15:55:52.418Z"
+        },
+        "observed": {
+          "scoresFirstMode": true,
+          "units": 2,
+          "pair": 0,
+          "results": [
+            "obj://run_1764c63b13534b0780f9efee283d0f97/docking_result/475da295d9d326f245e01d86922defd2d661a79507be8e456ad07df8a8829d34",
+            "obj://run_1764c63b13534b0780f9efee283d0f97/docking_result/aa98450a318d7572a7fa1d28890b16ce9036f198cd997f8a96b50641eefe0fd0"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C4",
+      "branch": "c",
+      "definition_items": [
+        5
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-endtoend/ledger-row.json",
+        "c-endtoend/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:57:28.568Z",
+          "finishedAt": "2026-10-13T16:01:46.749Z"
+        },
+        "observed": {
+          "settings": {
+            "1": {
+              "reserved": 22,
+              "reservedEvaluations": 10,
+              "space": {
+                "candidates": 6,
+                "effective_max_mutations": 3,
+                "positions": 3,
+                "size": 26
+              },
+              "newEvaluations": 10,
+              "reused": 0,
+              "stopReason": "generations_complete",
+              "status": "complete",
+              "generations": 3,
+              "reference": {
+                "state": "scored",
+                "evaluation": "computed",
+                "score": -3
+              }
+            },
+            "2": {
+              "reserved": 14,
+              "reservedEvaluations": 6,
+              "space": {
+                "candidates": 6,
+                "effective_max_mutations": 3,
+                "positions": 3,
+                "size": 26
+              },
+              "newEvaluations": 3,
+              "reused": 7,
+              "stopReason": "generations_complete",
+              "status": "complete",
+              "generations": 2,
+              "reference": {
+                "state": "scored",
+                "evaluation": "reused",
+                "score": -3
+              }
+            }
+          },
+          "individual": {
+            "key": "3",
+            "limitations": 2,
+            "m18": true
+          },
+          "reuseMismatches": 0
+        }
+      }
+    },
+    {
+      "id": "C5",
+      "branch": "c",
+      "definition_items": [
+        5
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-endtoend/ledger-row.json",
+        "c-endtoend/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:55:52.419Z",
+          "finishedAt": "2026-10-13T15:55:56.150Z"
+        },
+        "observed": {
+          "bodyHashEqual": true,
+          "limitationsOk": true,
+          "catalytic": "not_checked"
+        }
+      }
+    },
+    {
+      "id": "C6",
+      "branch": "c",
+      "definition_items": [
+        5
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-endtoend/ledger-row.json",
+        "c-endtoend/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T15:55:56.150Z",
+          "finishedAt": "2026-10-13T15:57:28.568Z"
+        },
+        "observed": {
+          "explore": {
+            "computedSent": 1,
+            "bodyHasScore": false,
+            "vacuous": false
+          },
+          "exploit": {
+            "computedSent": 2,
+            "bodyScoresStored": true,
+            "computedRows": 2
+          },
+          "chosen": [
+            2,
+            1
+          ],
+          "pool": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    },
+    {
+      "id": "C7",
+      "branch": "c",
+      "definition_items": [
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-endtoend/ledger-row.json",
+        "c-endtoend/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-13T16:01:46.749Z",
+          "finishedAt": "2026-10-13T16:02:14.198Z"
+        },
+        "observed": {
+          "listed": 9,
+          "created": 9,
+          "events": 9,
+          "downloadMismatches": 0,
+          "kinds": [
+            "JEV 루프 보고서",
+            "JEV 판정 보고서",
+            "openmm_protein_minimize",
+            "변이 구조 모델 보고서",
+            "변이 후보 보고서",
+            "서열 GA 보고서"
+          ],
+          "reports": [
+            {
+              "case": "C1",
+              "kind": "변이 후보 보고서",
+              "jsonSha256": "c3b1b648f93b41e000fbea4dc598d3bc683390b266243ecd89c4b96632826aa3"
+            },
+            {
+              "case": "C2",
+              "kind": "openmm_protein_minimize",
+              "jsonSha256": "b3b2d6c8dd77375a35dbc069e1de5c9a1376a4cbdb42c1e58bb251ff8fc287cb"
+            },
+            {
+              "case": "C2",
+              "kind": "변이 후보 보고서",
+              "jsonSha256": "7f06f851f199c42f123d16ef94c6e73ccf5bd49d9592398bce426d43c618dc85"
+            },
+            {
+              "case": "C2",
+              "kind": "변이 구조 모델 보고서",
+              "jsonSha256": "e46812a709df8cf2401a301ad0f97d34ce8d070f1005ef9dcb5a53ee77ffcd0d"
+            },
+            {
+              "case": "C5",
+              "kind": "JEV 판정 보고서",
+              "jsonSha256": "26fcd7b3c389a6493c6bfb987c9c4707ec1601b3bf349cb659b361ccbbefc3c1"
+            },
+            {
+              "case": "C6",
+              "kind": "JEV 루프 보고서",
+              "jsonSha256": "6caf7a6d26675fe3c31dabd8e101ae3723966d5555dd1351b0deefd486a240c4"
+            },
+            {
+              "case": "C6",
+              "kind": "JEV 루프 보고서",
+              "jsonSha256": "8e42c8e5b521878c517b595d9401abdf945b7e19e112d65f02ff3598d5cdb16c"
+            },
+            {
+              "case": "C4",
+              "kind": "서열 GA 보고서",
+              "jsonSha256": "4bd8574e5e6b26afedad06ef05a9a434a8323d7f816a9b5aaf6c746a2b4080ae"
+            },
+            {
+              "case": "C4",
+              "kind": "서열 GA 보고서",
+              "jsonSha256": "bf9ae3930df3e284d81fff3884a42fc65f1a405b887fa7523f1c282920bd6a4e"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "X1-A",
+      "branch": "a",
+      "definition_items": [
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "trace-audit.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "events": 10,
+        "opened": 10,
+        "createdByCases": 10
+      }
+    },
+    {
+      "id": "X1-B",
+      "branch": "b",
+      "definition_items": [
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "trace-audit.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "events": 9,
+        "opened": 9,
+        "createdByCases": 9
+      }
+    },
+    {
+      "id": "X1-C",
+      "branch": "c",
+      "definition_items": [
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "trace-audit.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "events": 9,
+        "opened": 9,
+        "createdByCases": 9
+      }
+    },
+    {
+      "id": "X2",
+      "branch": "x",
+      "definition_items": [
+        6
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "trace-audit.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "status": "pass",
+        "failures": 0,
+        "partialProductRecheck": [
+          {
+            "kind": "inspection",
+            "note": "제품 재계산 전제 불성립: no claim revalidation, no Markdown regeneration",
+            "supplementedBy": "A2",
+            "caseStatus": "pass"
+          },
+          {
+            "kind": "interface_sasa",
+            "note": "제품 재계산 전제 불성립: no Markdown regeneration",
+            "supplementedBy": "A3",
+            "caseStatus": "pass"
+          }
+        ],
+        "notSupplemented": [],
+        "unclaimedRuns": []
+      }
+    },
+    {
+      "id": "X3",
+      "branch": "x",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [],
+      "covering_tests": [],
+      "detail": {
+        "browser_non_loopback_requests": 0,
+        "provider_calls": 0,
+        "live_calls_counted": null,
+        "dispatchEvents": 6,
+        "product_key_resolver_calls": 0,
+        "ledgerCount": null
+      }
+    },
+    {
+      "id": "X4",
+      "branch": "x",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "x4-scan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "scanned": 73,
+        "hitTexts": [],
+        "withoutTabText": [],
+        "excepted": 66
+      }
+    },
+    {
+      "id": "X5",
+      "branch": "x",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [],
+      "covering_tests": [],
+      "detail": {
+        "observed": 28,
+        "failed": []
+      }
+    },
+    {
+      "id": "X6",
+      "branch": "x",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [],
+      "covering_tests": [],
+      "detail": {
+        "leftover": {
+          "processes": [],
+          "ports": []
+        },
+        "defaultFoldersCreated": [],
+        "defaultFoldersPresent": []
+      }
+    }
+  ],
+  "definition_items": {
+    "1": {
+      "name": "구조 분석",
+      "status": "pass",
+      "cases": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A6"
+      ],
+      "parts": {
+        "chain": "pass"
+      }
+    },
+    "2": {
+      "name": "지식",
+      "status": "pass",
+      "cases": [
+        "A5",
+        "A6",
+        "A7",
+        "A8"
+      ],
+      "parts": {
+        "kinase": "pass",
+        "enzyme": "pass"
+      }
+    },
+    "3": {
+      "name": "리간드 설계·탐색",
+      "status": "pass",
+      "cases": [
+        "B2",
+        "B3",
+        "B4"
+      ],
+      "parts": {
+        "chain": "pass"
+      }
+    },
+    "4": {
+      "name": "단백질 공학",
+      "status": "pass",
+      "cases": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "parts": {
+        "protection": "pass",
+        "modelling": "pass"
+      }
+    },
+    "5": {
+      "name": "GA·JEV",
+      "status": "pending_live",
+      "cases": [
+        "B5",
+        "B6",
+        "B7",
+        "C4",
+        "C5",
+        "C6",
+        "L-B7",
+        "L-C6"
+      ],
+      "parts": {
+        "ligand": "pass",
+        "protein": "pass",
+        "live": null
+      }
+    },
+    "6": {
+      "name": "보고서",
+      "status": "pass",
+      "cases": [
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "B8",
+        "C7",
+        "X1-A",
+        "X1-B",
+        "X1-C",
+        "X2"
+      ],
+      "parts": {
+        "reports": "pass",
+        "lists": "pass",
+        "audit": "pass"
+      }
+    }
+  },
+  "external": {
+    "browser_non_loopback_requests": 0,
+    "provider_calls": 0,
+    "live_calls_counted": null,
+    "dispatchEvents": 6,
+    "product_key_resolver_calls": 0
+  },
+  "leftover": {
+    "processes": [],
+    "ports": []
+  },
+  "trace_audit": {
+    "status": "pass",
+    "reportCount": 28,
+    "byKind": {
+      "chemical_interactions": 1,
+      "inspection": 1,
+      "interface_sasa": 1,
+      "jev_choice": 2,
+      "jev_loop": 4,
+      "kinase_precedents": 2,
+      "ligand_candidates": 1,
+      "ligand_docking": 1,
+      "ligand_docking_batch": 1,
+      "ligand_ga": 2,
+      "mutation_candidates": 2,
+      "mutation_model": 1,
+      "openmm_protein_minimize": 1,
+      "pocket_detection": 1,
+      "reaction_knowledge": 3,
+      "reference_site_annotation": 1,
+      "residue_numbering": 1,
+      "sequence_ga": 2
+    },
+    "checks": {
+      "reopen": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "evidence_exists": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "claim_fields": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "reference_source": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "no_mixing": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      }
+    },
+    "partialProductRecheck": [
+      {
+        "kind": "inspection",
+        "note": "제품 재계산 전제 불성립: no claim revalidation, no Markdown regeneration"
+      },
+      {
+        "kind": "interface_sasa",
+        "note": "제품 재계산 전제 불성립: no Markdown regeneration"
+      }
+    ],
+    "noReports": false,
+    "failures": 0
+  },
+  "unobserved": [],
+  "generatedAt": "2026-10-13T16:02:40.746449+00:00",
+  "x4": {
+    "exceptions": [
+      {
+        "sha256": "4d1d82bfdc9972fde983789777c4ad74f27d41b684fb72d9ba6589d6fe859565",
+        "match": "template",
+        "kind": "fpocket_rank_label",
+        "cases": [
+          "A4"
+        ],
+        "source": "frontend/app/page.tsx:1690 (뷰어 오버레이 이름표)",
+        "reason": "fpocket이 매기는 공동 번호 라벨(엔진 고유 필드 이름)을 제품이 그대로 쓰는 줄: 엔진 출력의 번호이며 제품의 평가나 주장이 아니다",
+        "matched": 1
+      },
+      {
+        "sha256": "a34f61a2588531732fe3e17aaeadcd22de674a23be8274df49e09424ee468025",
+        "match": "template",
+        "kind": "fpocket_rank_label",
+        "cases": [
+          "A4"
+        ],
+        "source": "frontend/src/components/PocketPanel.tsx:497 (오버레이 표시 확인 줄)",
+        "reason": "fpocket이 매기는 공동 번호 라벨(엔진 고유 필드 이름)을 제품이 그대로 쓰는 줄: 엔진 출력의 번호이며 제품의 평가나 주장이 아니다",
+        "matched": 1
+      },
+      {
+        "sha256": "e9796c94fd14a53e8f8df55196dac7f99daa368f8ae73b39716381521587716f",
+        "match": "line",
+        "kind": "fpocket_rank_label",
+        "cases": [
+          "A4",
+          "A6"
+        ],
+        "source": "frontend/src/components/PocketPanel.tsx:461 (포켓 표 머리글, CSS 대문자)",
+        "reason": "fpocket이 매기는 공동 번호 라벨(엔진 고유 필드 이름)을 제품이 그대로 쓰는 줄: 엔진 출력의 번호이며 제품의 평가나 주장이 아니다",
+        "matched": 2
+      },
+      {
+        "sha256": "23e22c71350bb5340191bed6f15f94939caa3521aceff970f9df6d7a5f51ce0e",
+        "match": "line",
+        "kind": "fpocket_rank_label",
+        "cases": [
+          "A4"
+        ],
+        "source": "backend/mw/pocket_reports.py:264 (포켓 보고서 표 머리글)",
+        "reason": "fpocket이 매기는 공동 번호 라벨(엔진 고유 필드 이름)을 제품이 그대로 쓰는 줄: 엔진 출력의 번호이며 제품의 평가나 주장이 아니다",
+        "matched": 1
+      },
+      {
+        "sha256": "f6cce20dc517d4dd0ea5574992d3c0c159bdde9668a4b73738f1efa53d9b2021",
+        "match": "label",
+        "kind": "fpocket_rank_label",
+        "cases": [
+          "A4"
+        ],
+        "source": "backend/mw/pocket_reports.py:276 (주변 잔기 목록 줄의 공동 번호 머리; 뒤의 잔기 목록은 계속 검사)",
+        "reason": "fpocket이 매기는 공동 번호 라벨(엔진 고유 필드 이름)을 제품이 그대로 쓰는 줄: 엔진 출력의 번호이며 제품의 평가나 주장이 아니다. 잔기 목록은 fpocket 실행마다 달라 줄 전체가 아니라 머리 라벨만 예외",
+        "matched": 27
+      },
+      {
+        "sha256": "6e31139099f7324f5c65bf328a2df7a593f2f9ef65d76193638203e42c536029",
+        "match": "template",
+        "kind": "fpocket_rank_label",
+        "cases": [
+          "A4"
+        ],
+        "source": "backend/mw/pocket_reports.py:281 (보고서 끝 JSON 안내, 주장 수는 실행마다 다름)",
+        "reason": "포켓 보고서가 JSON의 공동 번호 선택자(fpocket 필드 이름)를 안내하는 제품 문장",
+        "matched": 1
+      },
+      {
+        "sha256": "6f978dafb0f0ff00a19b27b0fffb8403d75be8f5ea4a23b1ec0776acaf3ad3d4",
+        "match": "line",
+        "kind": "frontend_fixed_sentence",
+        "cases": [
+          "A2",
+          "A3",
+          "A4",
+          "B1",
+          "C2"
+        ],
+        "source": "frontend/src/lib/pockets.ts:101 LIMITATION_NOTE + :103 NONDETERMINISM_NOTE (한 줄로 표시)",
+        "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)",
+        "matched": 6
+      },
+      {
+        "sha256": "01c5879e8930426a2a3f46e66d77883a319c76e29993975f3f5155817cc1a559",
+        "match": "line",
+        "kind": "frontend_fixed_sentence",
+        "cases": [
+          "A2",
+          "A3",
+          "A4",
+          "A6",
+          "C2"
+        ],
+        "source": "frontend/src/lib/site-annotation.ts:27 PANEL_LEGEND_TEXT",
+        "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)",
+        "matched": 5
+      },
+      {
+        "sha256": "3d7233ea3db963baca822963b231dc8b2cccfa15e29a115e3ee8b69d9bdb4bec",
+        "match": "line",
+        "kind": "frontend_fixed_sentence",
+        "cases": [
+          "A2",
+          "A4",
+          "A6"
+        ],
+        "source": "frontend/app/page.tsx:1878",
+        "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)",
+        "matched": 3
+      },
+      {
+        "sha256": "c515bcae36c113886bf0049eff02cc6c10aba08cb1314339b3324980d5e40a66",
+        "match": "template",
+        "kind": "frontend_fixed_sentence",
+        "cases": [
+          "A3"
+        ],
+        "source": "frontend/app/page.tsx:1919",
+        "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)",
+        "matched": 1
+      },
+      {
+        "sha256": "2b8eefeb282e582da5a0d0c8bb11b9dfbb361bf1e9232c67a962fe64dbfba85a",
+        "match": "template",
+        "kind": "frontend_fixed_sentence",
+        "cases": [
+          "A2",
+          "A3",
+          "A4",
+          "C2"
+        ],
+        "source": "frontend/app/page.tsx:1961 (OpenMM 방법 안내)",
+        "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)",
+        "matched": 5
+      },
+      {
+        "sha256": "b56ed9a4654dba9c88adc4dfcdfa7d72d00a7166e9f89e88f6aa6ef737715e58",
+        "match": "template",
+        "kind": "frontend_fixed_sentence",
+        "cases": [
+          "B3"
+        ],
+        "source": "frontend/src/lib/docking.ts:80 CONTACT_NOTE",
+        "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)",
+        "matched": 1
+      },
+      {
+        "sha256": "335d7ddba745a5bbe49c15c5cb9e8048b6468df52349936d1fe84255dbbcd4ad",
+        "match": "template",
+        "kind": "frontend_composed_line",
+        "cases": [
+          "A2",
+          "A3",
+          "A4",
+          "C2"
+        ],
+        "source": "frontend/app/page.tsx:2060 (방법 id · 알고리즘 · 단위 · backend/mw/tools/sasa.py:61 limitations)",
+        "reason": "화면이 SASA 방법 id·조각 수·단위와 제품 한계 문장(내보낸 인라인 고정 문장)을 한 줄로 합친 것: 핵심어는 그 한계 문장의 부정 대상으로만 나온다",
+        "matched": 5
+      },
+      {
+        "sha256": "a1a92b6f0d63cafe9425b3edd4d30d5564a6aa6bf1a75e4891fd4a33093b5b91",
+        "match": "template",
+        "kind": "product_criterion_definition",
+        "cases": [
+          "B1"
+        ],
+        "source": "backend/mw/chemical_reports.py:152 (ProLIF 범주 판정 기준, 기준값이 들어간 f-string)",
+        "reason": "M11 화학 상호작용(ProLIF 고유 판정)의 해당 범주 판정 기준(D···A 거리·D–H···A 각도) 정의 줄: 기하 접촉에 대한 말이 아니고 값의 단언도 아니다",
+        "matched": 2
+      },
+      {
+        "sha256": "66df641465c349154fc87fe7aa03fb79e82e4ca525f101d6b5bff9177d9101c8",
+        "match": "line",
+        "kind": "reference_text",
+        "cases": [
+          "A8"
+        ],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1A30 A GLY 27, 항목 175)",
+        "reason": "M-CSA 역할 원문(roles_summary·roles, 참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다",
+        "matched": 1
+      },
+      {
+        "sha256": "2f43624e7831ccc76770ccae749132af9bfc582f68a4db42e7af2bcd2a089299",
+        "match": "line",
+        "kind": "reference_text",
+        "cases": [
+          "A8"
+        ],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1A30 B GLY 27, 항목 175)",
+        "reason": "M-CSA 역할 원문(참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다",
+        "matched": 1
+      },
+      {
+        "sha256": "506d98fbbf28fa3a5e25f1406224d99da2d5288c0331e7ce3b300e3defdb2bd9",
+        "match": "line",
+        "kind": "reference_text",
+        "cases": [
+          "A8"
+        ],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1A30 A ASP 25, 항목 175)",
+        "reason": "M-CSA 역할 원문(참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다",
+        "matched": 1
+      },
+      {
+        "sha256": "277d395ccd8e804186db3011d540b89ecbb0a614501da2a146166cc81a69fd8b",
+        "match": "line",
+        "kind": "reference_text",
+        "cases": [
+          "A8"
+        ],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1A30 B ASP 25, 항목 175)",
+        "reason": "M-CSA 역할 원문(참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다",
+        "matched": 1
+      },
+      {
+        "sha256": "c6f060a6e54833bbaf0be7bd961279e21936c3adf2ed3b535c0ce1544e9f6edd",
+        "match": "line",
+        "kind": "reference_text",
+        "cases": [
+          "A8"
+        ],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1S9I A ASP 194, 항목 282)",
+        "reason": "M-CSA 역할 원문(참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다",
+        "matched": 1
+      }
+    ],
+    "notMetInThisRun": [],
+    "committedScan": "x4-scan.json",
+    "rawLines": "x4-lines.json (git-ignored artifacts only)"
+  },
+  "auditSupplements": [
+    {
+      "kind": "inspection",
+      "note": "제품 재계산 전제 불성립: no claim revalidation, no Markdown regeneration",
+      "supplementedBy": "A2",
+      "caseStatus": "pass"
+    },
+    {
+      "kind": "interface_sasa",
+      "note": "제품 재계산 전제 불성립: no Markdown regeneration",
+      "supplementedBy": "A3",
+      "caseStatus": "pass"
+    }
+  ],
+  "checks": {
+    "m15": {
+      "status": "pass",
+      "source": "<repo>/.deps/reference",
+      "setHash": "aa21ead9930f82ebea3a2acf976449d9b1c6280ed17206d74d8cb9dc3f923317",
+      "files": 7,
+      "treeSha256": "72d62057ac331433157288d0b92ed36bd4c8db41447cb5d51d6b751abed82cdd"
+    },
+    "reaction": {
+      "status": "pass",
+      "source": "<repo>/.deps/reaction_qa/import2",
+      "setHash": "1a7b131a102684f1f735bb96e6461bd13796c3b13a6d2203d289299cb57acf47",
+      "files": 6,
+      "treeSha256": "8afa9443a906c81d40c3861e4fec12643fae878ba8c799bd9a12f59e12c94fd1"
+    },
+    "fixtureServer": {
+      "started": true,
+      "pid": 4497,
+      "serverJsonPid": 4497
+    },
+    "exportScan": {
+      "ok": true,
+      "files": {},
+      "movedToArtifacts": [],
+      "keyScanOk": true,
+      "keySearch": "product resolver in a child",
+      "keyHits": [],
+      "sentinelHits": [],
+      "productKeyResolverCalls": 1
+    }
+  },
+  "flowRows": [
+    {
+      "step": "a-endtoend",
+      "harness": "endtoend-a-flow.cjs",
+      "status": "pass",
+      "externalRequestCount": 0,
+      "exitCode": 0,
+      "dispatchCapExceeded": false
+    },
+    {
+      "step": "b-endtoend",
+      "harness": "endtoend-b-flow.cjs",
+      "status": "pass",
+      "externalRequestCount": 0,
+      "exitCode": 0,
+      "dispatchCapExceeded": false
+    },
+    {
+      "step": "c-endtoend",
+      "harness": "endtoend-c-flow.cjs",
+      "status": "pass",
+      "externalRequestCount": 0,
+      "exitCode": 0,
+      "dispatchCapExceeded": false
+    }
+  ],
+  "fixedSentencesSha256": "c8655d35879277f4b57e1bf0138f86ad7bf98bba10dff47d12f8de3067c15386",
+  "liveCalls": null,
+  "liveCap": null,
+  "unclaimedRuns": [],
+  "branchesWithoutTabText": [],
+  "registry": [
+    "a",
+    "b",
+    "c"
+  ],
+  "branchNotes": {
+    "a": {
+      "evidenceCheck": {
+        "planSha256": true,
+        "mode": true
+      },
+      "precedentImport": {
+        "exitCode": 0,
+        "seconds": 0.5,
+        "networkAttempts": 0,
+        "loaded": [],
+        "log": "precedent-import.log",
+        "setHash": "91e823ca7a89aba6a86e8ce7a80e5bdb478f609de2629951c99f3a1f9d6abca9",
+        "rows": {
+          "dist/moves.jsonl": 891,
+          "dist/moves_flagged.jsonl": 885,
+          "dist/references.jsonl": 555,
+          "pubmed/2026-09-18/documents.jsonl": 252
+        },
+        "filesMatchManifest": true,
+        "kbaseCommit": "77354f94b844a8c64e7cd47691ac20a2e96214b3",
+        "status": "pass"
+      },
+      "reactionCopy": {
+        "status": "pass",
+        "copiedBy": "runner",
+        "setHash": "1a7b131a102684f1f735bb96e6461bd13796c3b13a6d2203d289299cb57acf47",
+        "sourceDigestBefore": "1121cb1d42bc0a7b22530464855f4ead9a0cc8d2c57cd39cbb0db22264c82558",
+        "sourceDigestAfter": "1121cb1d42bc0a7b22530464855f4ead9a0cc8d2c57cd39cbb0db22264c82558",
+        "copyDigest": "1121cb1d42bc0a7b22530464855f4ead9a0cc8d2c57cd39cbb0db22264c82558"
+      },
+      "defaultFoldersBefore": {
+        ".deps/precedent_reference": false,
+        ".deps/reaction_reference": false
+      },
+      "defaultFoldersAfter": {
+        ".deps/precedent_reference": false,
+        ".deps/reaction_reference": false
+      },
+      "harness": {
+        "status": "pass",
+        "externalRequestCount": 0,
+        "providerCallsZero": true,
+        "offscreenComplete": true,
+        "error": null
+      },
+      "reportHandles": [
+        {
+          "case": "A2",
+          "kind": "inspection",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/report_manifest/4c4f55c1caef2ccf74daa3f029f75b21e0deee3199af4efe2aa99ddbf55296ed"
+        },
+        {
+          "case": "A3",
+          "kind": "interface_sasa",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/d9463b543e0383aa0874cc0838e9587a0f9a273b30c62e2d01334c074a525d42"
+        },
+        {
+          "case": "A4",
+          "kind": "pocket_detection",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/0b60da7d36fa34a5bcf1a1f0cf1338a2b3f31b7e8e52a712548cefa939004fc4"
+        },
+        {
+          "case": "A5",
+          "kind": "residue_numbering",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/fd184b303fd3f68775f98a7e142e74a2d53fa92912ab37eae416c03b46e41ad4"
+        },
+        {
+          "case": "A6",
+          "kind": "reference_site_annotation",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/77c6420192dbba4e28f00d6c242cbcc72eedda2858349c72767b5e4680898892"
+        },
+        {
+          "case": "A7",
+          "kind": "kinase_precedents",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/21983019272ed5dde1d56c361c6b0c8ca83ac4a2f21e89d77d53c88835f8ca65"
+        },
+        {
+          "case": "A7",
+          "kind": "kinase_precedents",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/7ab647d1b6cdccbc9d5a03730b247f063dfa27513e4c392b17ae34792f9d57bd"
+        },
+        {
+          "case": "A8",
+          "kind": "reaction_knowledge",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/82f86773db5b29304b1ba600028507441199a6fc2c07adae4aee77dca705ec34"
+        },
+        {
+          "case": "A8",
+          "kind": "reaction_knowledge",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/3c9842783b15b3f90e41bfc31a6842295b95e567ad5db242f44098cc0a70a28b"
+        },
+        {
+          "case": "A8",
+          "kind": "reaction_knowledge",
+          "httpStatus": 201,
+          "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/7dd6fa97094c0abb52017602fce96f1fc30f5e33d375ff679ce5caff205df128"
+        }
+      ],
+      "expected": {
+        "a1": {
+          "policy": {
+            "altloc": "highest_occupancy",
+            "waters": "strip_all",
+            "hydrogens": "strip"
+          },
+          "residues": 313,
+          "atoms": 2526,
+          "removed": {
+            "waters": 20,
+            "hydrogens": 0,
+            "altlocs": 14
+          },
+          "input": {
+            "residues": 333,
+            "atoms": 2560
+          }
+        },
+        "contacts": {
+          "rows": 65,
+          "residues": 15,
+          "byType": {
+            "contact": 33,
+            "polar_contact": 7,
+            "hydrophobic_contact": 25
+          },
+          "minimumDistance": 2.699139677749187
+        }
+      }
+    },
+    "b": {
+      "defaultFoldersBefore": {
+        ".deps/precedent_reference": false,
+        ".deps/reaction_reference": false
+      },
+      "defaultFoldersAfter": {
+        ".deps/precedent_reference": false,
+        ".deps/reaction_reference": false
+      },
+      "harness": {
+        "status": "pass",
+        "externalRequestCount": 0,
+        "fixtureProof": true,
+        "offscreenComplete": true,
+        "error": null
+      },
+      "evidenceCheck": {
+        "planSha256": true,
+        "mode": true
+      },
+      "reportHandles": [
+        {
+          "case": "B1",
+          "kind": "chemical_interactions",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/35f1114d57a7c78964302b242d11df9cdf6e7a2e3c13f8426dddefad97c87578"
+        },
+        {
+          "case": "B2",
+          "kind": "ligand_candidates",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/bc2b9b42c425efbc8751f2a873f287e20f9928a3bad4cc63d7342111c247ae2a"
+        },
+        {
+          "case": "B3",
+          "kind": "ligand_docking",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/49ddc25885cd8ededf9278e2ef082ab2305cfa1ebdb88c071422c85a952bea22"
+        },
+        {
+          "case": "B6",
+          "kind": "jev_choice",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/a738e120a491809060e1ee359dc90e539e3596fcc9f7a5e63c6166e74eaddcbd"
+        },
+        {
+          "case": "B7",
+          "kind": "jev_loop",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/d0b3f0cb47f6f14e657507d56a56b05e96f2798d9aac8802cc904a868e6c840c"
+        },
+        {
+          "case": "B7",
+          "kind": "jev_loop",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/419eeac1876bb06dd17609e284bc07316e2654f35d851c5380ec8365d6c2041f"
+        },
+        {
+          "case": "B4",
+          "kind": "ligand_docking_batch",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/6038877b258a1f4aaa2a8ea7e2138db7070d5fe5e68190ce7d46b916696e8eee"
+        },
+        {
+          "case": "B5",
+          "kind": "ligand_ga",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/30a567bf62c8536993753dde61eb4b8f470cbef73b4225a01bca6e36f972cbe8"
+        },
+        {
+          "case": "B5",
+          "kind": "ligand_ga",
+          "httpStatus": 201,
+          "handle": "obj://run_4310755e5db0463f83daebc98a1078bf/method_report_manifest/0158e4bd5823d268e914e6f8cc70d7575f612fd86ac62f32073a75f74c6713aa"
+        }
+      ],
+      "units": [
+        {
+          "label": "B1-prepare",
+          "before": {
+            "limit": 8,
+            "used": 0,
+            "wallLimit": 1800,
+            "wallUsed": 0
+          },
+          "remaining": 8,
+          "planned": 1,
+          "plannedRemaining": 8,
+          "onPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 1,
+            "wallLimit": 1800,
+            "wallUsed": 0.171274833381176
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "B1-detect",
+          "before": {
+            "limit": 8,
+            "used": 1,
+            "wallLimit": 1800,
+            "wallUsed": 15.796260625123978
+          },
+          "remaining": 7,
+          "planned": 1,
+          "plannedRemaining": 7,
+          "onPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 2,
+            "wallLimit": 1800,
+            "wallUsed": 15.796260625123978
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "B2-inspect",
+          "before": {
+            "limit": 8,
+            "used": 2,
+            "wallLimit": 1800,
+            "wallUsed": 28.627062083221972
+          },
+          "remaining": 6,
+          "planned": 1,
+          "plannedRemaining": 6,
+          "onPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 3,
+            "wallLimit": 1800,
+            "wallUsed": 32.63334041694179
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "B2-enumerate",
+          "before": {
+            "limit": 8,
+            "used": 3,
+            "wallLimit": 1800,
+            "wallUsed": 32.63334041694179
+          },
+          "remaining": 5,
+          "planned": 1,
+          "plannedRemaining": 5,
+          "onPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 4,
+            "wallLimit": 1800,
+            "wallUsed": 32.63334041694179
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "B3",
+          "before": {
+            "limit": 8,
+            "used": 4,
+            "wallLimit": 1800,
+            "wallUsed": 37.008636876009405
+          },
+          "remaining": 4,
+          "planned": 1,
+          "plannedRemaining": 4,
+          "onPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 5,
+            "wallLimit": 1800,
+            "wallUsed": 51.00406154291704
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "B3-again",
+          "before": {
+            "limit": 8,
+            "used": 5,
+            "wallLimit": 1800,
+            "wallUsed": 51.00406154291704
+          },
+          "remaining": 3,
+          "planned": 0,
+          "plannedRemaining": 3,
+          "onPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 5,
+            "wallLimit": 1800,
+            "wallUsed": 51.00406154291704
+          },
+          "usedUnits": 0
+        },
+        {
+          "label": "B7-explore",
+          "before": {
+            "limit": 8,
+            "used": 5,
+            "wallLimit": 1800,
+            "wallUsed": 56.91519916895777
+          },
+          "remaining": 3,
+          "planned": 1,
+          "plannedRemaining": 3,
+          "onPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 6,
+            "wallLimit": 1800,
+            "wallUsed": 68.34343846095726
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "B7-exploit",
+          "before": {
+            "limit": 8,
+            "used": 6,
+            "wallLimit": 1800,
+            "wallUsed": 70.9783337097615
+          },
+          "remaining": 2,
+          "planned": 1,
+          "plannedRemaining": 2,
+          "onPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 7,
+            "wallLimit": 1800,
+            "wallUsed": 83.85836379276589
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "B4",
+          "before": {
+            "limit": 8,
+            "used": 7,
+            "wallLimit": 1800,
+            "wallUsed": 83.85836379276589
+          },
+          "remaining": 1,
+          "planned": 2,
+          "plannedRemaining": 1,
+          "onPlan": true,
+          "after": {
+            "limit": 9,
+            "used": 9,
+            "wallLimit": 1800,
+            "wallUsed": 106.19850362604484
+          },
+          "usedUnits": 2
+        },
+        {
+          "label": "B5-1",
+          "before": {
+            "limit": 9,
+            "used": 9,
+            "wallLimit": 1800,
+            "wallUsed": 106.19850362604484
+          },
+          "remaining": 0,
+          "planned": 6,
+          "plannedRemaining": 0,
+          "onPlan": true,
+          "after": {
+            "limit": 15,
+            "used": 15,
+            "wallLimit": 1800,
+            "wallUsed": 162.36564808385447
+          },
+          "usedUnits": 6
+        },
+        {
+          "label": "B5-2",
+          "before": {
+            "limit": 15,
+            "used": 15,
+            "wallLimit": 1800,
+            "wallUsed": 162.36564808385447
+          },
+          "remaining": 0,
+          "planned": 8,
+          "plannedRemaining": 0,
+          "onPlan": true,
+          "after": {
+            "limit": 23,
+            "used": 23,
+            "wallLimit": 1800,
+            "wallUsed": 194.02872204314917
+          },
+          "usedUnits": 8
+        }
+      ],
+      "raises": [
+        {
+          "case": "B4",
+          "shortfall": {
+            "expensive_calls": 1,
+            "wall_clock_s": 0
+          },
+          "increase": {
+            "expensive_calls": 1,
+            "wall_clock_s": 0
+          },
+          "limitsBefore": {
+            "expensive_calls": 8,
+            "wall_clock_s": 1800
+          },
+          "limitsAfter": {
+            "expensive_calls": 9,
+            "wall_clock_s": 1800
+          },
+          "by": "human-click"
+        },
+        {
+          "case": "B5-1",
+          "shortfall": {
+            "expensive_calls": 6,
+            "wall_clock_s": 0
+          },
+          "increase": {
+            "expensive_calls": 6,
+            "wall_clock_s": 0
+          },
+          "limitsBefore": {
+            "expensive_calls": 9,
+            "wall_clock_s": 1800
+          },
+          "limitsAfter": {
+            "expensive_calls": 15,
+            "wall_clock_s": 1800
+          },
+          "by": "human-click"
+        },
+        {
+          "case": "B5-2",
+          "shortfall": {
+            "expensive_calls": 8,
+            "wall_clock_s": 0
+          },
+          "increase": {
+            "expensive_calls": 8,
+            "wall_clock_s": 0
+          },
+          "limitsBefore": {
+            "expensive_calls": 15,
+            "wall_clock_s": 1800
+          },
+          "limitsAfter": {
+            "expensive_calls": 23,
+            "wall_clock_s": 1800
+          },
+          "by": "human-click"
+        }
+      ],
+      "sends": [
+        {
+          "case": "B6",
+          "sendId": "00800407-edd9-473a-b296-4023abb4bbd1",
+          "status": "completed",
+          "bodySha256": "7c54022e2258c4845279ef427b1c994afdeb5c694c3d71b9c0eb122bb594f42a",
+          "transportSha256": "7c54022e2258c4845279ef427b1c994afdeb5c694c3d71b9c0eb122bb594f42a",
+          "preparedSha256": "7c54022e2258c4845279ef427b1c994afdeb5c694c3d71b9c0eb122bb594f42a"
+        },
+        {
+          "case": "B7-explore",
+          "sendId": "5e6d08eb-46fa-412d-a1c3-80dc0c8d909b",
+          "status": "completed",
+          "reasonCode": null,
+          "goal": "explore",
+          "bodySha256": "388430d4bd7ca016409c02eb4f232ad9d1a01614d24ef4ff1c505b3a6d4d626c",
+          "transportSha256": "388430d4bd7ca016409c02eb4f232ad9d1a01614d24ef4ff1c505b3a6d4d626c",
+          "bodyBytes": 3062
+        },
+        {
+          "case": "B7-exploit",
+          "sendId": "11108c54-3af7-4622-a370-ae8a98a2f5e0",
+          "status": "completed",
+          "reasonCode": null,
+          "goal": "exploit",
+          "bodySha256": "5b2a9f55855bfe5da5206630e5cf82f2927ca8bfecae715d1fea7b2fd617c96e",
+          "transportSha256": "5b2a9f55855bfe5da5206630e5cf82f2927ca8bfecae715d1fea7b2fd617c96e",
+          "bodyBytes": 3807
+        }
+      ],
+      "syntheticInputs": {
+        "parent": "공개 파생(합성 아님)",
+        "blocksSmiles": "합성 표시",
+        "blocksSdf": "합성 표시",
+        "rules": "합성 표시"
+      },
+      "dispatchLimit": null,
+      "dispatchedDuringFlow": null
+    },
+    "c": {
+      "defaultFoldersBefore": {
+        ".deps/precedent_reference": false,
+        ".deps/reaction_reference": false
+      },
+      "defaultFoldersAfter": {
+        ".deps/precedent_reference": false,
+        ".deps/reaction_reference": false
+      },
+      "reactionCopy": {
+        "status": "pass",
+        "copiedBy": "runner",
+        "setHash": "1a7b131a102684f1f735bb96e6461bd13796c3b13a6d2203d289299cb57acf47",
+        "sourceDigestBefore": "1121cb1d42bc0a7b22530464855f4ead9a0cc8d2c57cd39cbb0db22264c82558",
+        "sourceDigestAfter": "1121cb1d42bc0a7b22530464855f4ead9a0cc8d2c57cd39cbb0db22264c82558",
+        "copyDigest": "1121cb1d42bc0a7b22530464855f4ead9a0cc8d2c57cd39cbb0db22264c82558"
+      },
+      "structures": {
+        "c1": "1A30",
+        "c2": "1UBQ",
+        "same": false
+      },
+      "evidenceCheck": {
+        "planSha256": true,
+        "mode": true
+      },
+      "harness": {
+        "status": "pass",
+        "externalRequestCount": 0,
+        "fixtureProof": true,
+        "offscreenComplete": true,
+        "error": null
+      },
+      "reportHandles": [
+        {
+          "case": "C1",
+          "kind": "mutation_candidates",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/4e82c599cc5fd5bc32ea219a00937f58a32073c35b16ba27b4419351e87d1095"
+        },
+        {
+          "case": "C2",
+          "kind": "openmm_protein_minimize",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/d5b72f23932e7797fc9641ec52f74dcd1a833bc627f643a67e43bbbff4aa6b82"
+        },
+        {
+          "case": "C2",
+          "kind": "mutation_candidates",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/9117e10ab2c92ee66715b38798a6211cc2058a9afcecdc43bfaa6d4402a68da0"
+        },
+        {
+          "case": "C2",
+          "kind": "mutation_model",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/76a96b7aa2c2c065d1e89e32260bba3e8ee7e532433df077a8bc05a352218958"
+        },
+        {
+          "case": "C5",
+          "kind": "jev_choice",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/de03b95554c2920efe307cdd86d290c06e439f19b1ca90a6d35529ccd88e6fb4"
+        },
+        {
+          "case": "C6",
+          "kind": "jev_loop",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/9a42cb12e6bebfa61bed817555518cf8c3a1534c98fdee0e91375831145d575f"
+        },
+        {
+          "case": "C6",
+          "kind": "jev_loop",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/cfa4f617c50b0763492e7c7da312c1f07b9fbe03742321db41eff7bb00ccd5fc"
+        },
+        {
+          "case": "C4",
+          "kind": "sequence_ga",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/b6db8b38f01f25e1894337adc419eb20ecb72b79495cf4520ee2005608ea7cc5"
+        },
+        {
+          "case": "C4",
+          "kind": "sequence_ga",
+          "httpStatus": 201,
+          "handle": "obj://run_1764c63b13534b0780f9efee283d0f97/method_report_manifest/eae22db18923ad5040393f58e249c45d3f81897af366fc67b34d4b4cb8d3d09e"
+        }
+      ],
+      "units": [
+        {
+          "label": "C2-m7",
+          "before": {
+            "limit": 8,
+            "used": 0,
+            "wallLimit": 1800,
+            "wallUsed": 0.33524579042568803
+          },
+          "remaining": 8,
+          "planned": 1,
+          "plannedRemaining": 8,
+          "raisePlanned": 0,
+          "onPlan": true,
+          "remainingMatchesPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 1,
+            "wallLimit": 1800,
+            "wallUsed": 11.380250790156424
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "C2-m21",
+          "before": {
+            "limit": 8,
+            "used": 1,
+            "wallLimit": 1800,
+            "wallUsed": 11.623432957101613
+          },
+          "remaining": 7,
+          "planned": 1,
+          "plannedRemaining": 7,
+          "raisePlanned": 0,
+          "onPlan": true,
+          "remainingMatchesPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 2,
+            "wallLimit": 1800,
+            "wallUsed": 32.984488581772894
+          },
+          "usedUnits": 1
+        },
+        {
+          "label": "C3-pair",
+          "before": {
+            "limit": 8,
+            "used": 2,
+            "wallLimit": 1800,
+            "wallUsed": 32.984488581772894
+          },
+          "remaining": 6,
+          "planned": 2,
+          "plannedRemaining": 6,
+          "raisePlanned": 0,
+          "onPlan": true,
+          "remainingMatchesPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 4,
+            "wallLimit": 1800,
+            "wallUsed": 38.048404957633466
+          },
+          "usedUnits": 2
+        },
+        {
+          "label": "C6-explore",
+          "before": {
+            "limit": 8,
+            "used": 4,
+            "wallLimit": 1800,
+            "wallUsed": 39.09730341471732
+          },
+          "remaining": 4,
+          "planned": 2,
+          "plannedRemaining": 4,
+          "raisePlanned": 0,
+          "onPlan": true,
+          "remainingMatchesPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 6,
+            "wallLimit": 1800,
+            "wallUsed": 63.92849812377244
+          },
+          "usedUnits": 2
+        },
+        {
+          "label": "C6-exploit",
+          "before": {
+            "limit": 8,
+            "used": 6,
+            "wallLimit": 1800,
+            "wallUsed": 64.99203195795417
+          },
+          "remaining": 2,
+          "planned": 2,
+          "plannedRemaining": 2,
+          "raisePlanned": 0,
+          "onPlan": true,
+          "remainingMatchesPlan": true,
+          "after": {
+            "limit": 8,
+            "used": 8,
+            "wallLimit": 1800,
+            "wallUsed": 89.58289962494746
+          },
+          "usedUnits": 2
+        },
+        {
+          "label": "C4-1",
+          "before": {
+            "limit": 8,
+            "used": 8,
+            "wallLimit": 1800,
+            "wallUsed": 89.58289962494746
+          },
+          "remaining": 0,
+          "planned": 22,
+          "plannedRemaining": 0,
+          "raisePlanned": 22,
+          "onPlan": true,
+          "remainingMatchesPlan": true,
+          "after": {
+            "limit": 30,
+            "used": 30,
+            "wallLimit": 1800,
+            "wallUsed": 223.6661750827916
+          },
+          "usedUnits": 22
+        },
+        {
+          "label": "C4-2",
+          "before": {
+            "limit": 30,
+            "used": 30,
+            "wallLimit": 1800,
+            "wallUsed": 223.6661750827916
+          },
+          "remaining": 0,
+          "planned": 14,
+          "plannedRemaining": 0,
+          "raisePlanned": 14,
+          "onPlan": true,
+          "remainingMatchesPlan": true,
+          "after": {
+            "limit": 44,
+            "used": 44,
+            "wallLimit": 1800,
+            "wallUsed": 263.53071841644123
+          },
+          "usedUnits": 14
+        }
+      ],
+      "raises": [
+        {
+          "case": "C4-1",
+          "shortfall": {
+            "expensive_calls": 22,
+            "wall_clock_s": 0
+          },
+          "increase": {
+            "expensive_calls": 22,
+            "wall_clock_s": 0
+          },
+          "limitsBefore": {
+            "expensive_calls": 8,
+            "wall_clock_s": 1800
+          },
+          "limitsAfter": {
+            "expensive_calls": 30,
+            "wall_clock_s": 1800
+          },
+          "by": "human-click"
+        },
+        {
+          "case": "C4-2",
+          "shortfall": {
+            "expensive_calls": 14,
+            "wall_clock_s": 0
+          },
+          "increase": {
+            "expensive_calls": 14,
+            "wall_clock_s": 0
+          },
+          "limitsBefore": {
+            "expensive_calls": 30,
+            "wall_clock_s": 1800
+          },
+          "limitsAfter": {
+            "expensive_calls": 44,
+            "wall_clock_s": 1800
+          },
+          "by": "human-click"
+        }
+      ],
+      "sends": [
+        {
+          "case": "C5",
+          "sendId": "c796b6d2-070d-45ab-b525-2e6d1763684e",
+          "status": "completed",
+          "bodySha256": "a514a2c98cddd4d8309bc330681449ecfa8ae5ff83d06c3e8d453d9ef8b63ddf",
+          "transportSha256": "a514a2c98cddd4d8309bc330681449ecfa8ae5ff83d06c3e8d453d9ef8b63ddf",
+          "preparedSha256": "a514a2c98cddd4d8309bc330681449ecfa8ae5ff83d06c3e8d453d9ef8b63ddf"
+        },
+        {
+          "case": "C6-explore",
+          "sendId": "6ee75cc5-d370-4da0-980a-8ca494e5b35d",
+          "status": "completed",
+          "reasonCode": null,
+          "goal": "explore",
+          "bodySha256": "dae5e0d82a9018ce27f54461caf58ef8664d4a8a417b6fc58ea4c8d3817bd0d3",
+          "transportSha256": "dae5e0d82a9018ce27f54461caf58ef8664d4a8a417b6fc58ea4c8d3817bd0d3",
+          "bodyBytes": 3799
+        },
+        {
+          "case": "C6-exploit",
+          "sendId": "8f8e9d55-e8ee-4f9e-b86a-25870f2b1eec",
+          "status": "completed",
+          "reasonCode": null,
+          "goal": "exploit",
+          "bodySha256": "44a27d83c0a1fbcf8ac794bade37b4333712849b9e1211e3e3cd1c355ec56172",
+          "transportSha256": "44a27d83c0a1fbcf8ac794bade37b4333712849b9e1211e3e3cd1c355ec56172",
+          "bodyBytes": 4318
+        }
+      ],
+      "syntheticInputs": [
+        "phenol"
+      ],
+      "dispatchLimit": null,
+      "dispatchedDuringFlow": null
+    }
+  }
+}

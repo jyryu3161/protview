@@ -3,7 +3,8 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { api, type RunSummary } from "@/lib/api";
 import type { JevKind, JevPreviewV1, JevProjectionSummary, JevReportArtifact, JevSendDetail, JevSendV1, JevStatusV1,
-  LigandCandidatePage, LigandCandidateSetListRow, MutationCandidatePage, MutationCandidateSetListRow } from "@/lib/contracts";
+  LigandCandidatePage, LigandCandidateSetListRow, MutationCandidatePage, MutationCandidateSetListRow, RepairWarning,
+  StructureOrigin } from "@/lib/contracts";
 import { ALIAS_TABLE_NOTE, BUILD_BUTTON_TEXT, CONFIRM_CHECK_TEXT, CONSENT_NOTICE, CONSENT_SWITCH_LABEL, JEV_AREAS,
   JEV_MAX_CANDIDATES, JEV_PANEL_TITLE, JEV_POLL_MS, JEV_SCREEN_NOTES, JEV_TEXT, NO_SOURCE_REASON, NULL_TEXT,
   PROBABILITY_NOTE, RESPONSE_SHAPE_TEXT, SCIENCE_BADGE_NOTE, SELECTION_FULL_REASON, SEND_BUTTON_TEXT, SOURCE_KIND_LABEL,
@@ -44,6 +45,8 @@ export interface JevPanelProps {
    * send, whose row is unchanged.
    */
   sendHistoryMark?: (record: JevSendV1) => { text: string; guide: string } | null;
+  /** M29: "보완 기록 열기" of a mutation send on a repaired structure (the page opens it in the protein tab). */
+  onOpenRepairRecord?: (runId: string, record: string) => void;
 }
 
 type JevCapability = { available: boolean; reason_code: string | null; reason: string | null };
@@ -113,13 +116,34 @@ export function JevPanel(p: JevPanelProps) {
     </section>;
   }
   return <JevWorkspace run={p.run} onReportCreated={p.onReportCreated} onStatus={p.onStatus}
-    sendHistoryMark={p.sendHistoryMark} />;
+    sendHistoryMark={p.sendHistoryMark} onOpenRepairRecord={p.onOpenRepairRecord} />;
 }
 
-function JevWorkspace({ run, onReportCreated, onStatus, sendHistoryMark }: { run: RunSummary;
+/** M29: SO1 as the server gave it with the repair record (a mutation send on a repaired structure only). */
+function RepairOrigin({ origin, onOpen }: { origin: StructureOrigin | undefined; onOpen?: (record: string) => void }) {
+  if (!origin) return null;
+  return <div className="mw-jev-note" role="status" data-testid="jev-repair-origin" data-repair-record={origin.repair_record}
+    data-repaired-structure={origin.repaired_structure}>
+    <span className="mw-catalytic-badge">{JEV_TEXT.repairedBadge}</span>
+    {origin.statements.map(item => <p key={item.id} data-statement={item.id}>{item.text}</p>)}
+    <p className="mw-mono">{JEV_TEXT.repairRecord} {shortSha(origin.repair_record)} · {JEV_TEXT.repairSource}{" "}
+      {shortSha(origin.source_structure)}</p>
+    {onOpen && <Button size="sm" data-testid="jev-repair-origin-open" onClick={() => onOpen(origin.repair_record)}>
+      {JEV_TEXT.repairOpen}</Button>}
+  </div>;
+}
+
+/** M29: JW1 exactly as the server put it on the preview or approval answer. */
+function RepairWarningLine({ warning, testId }: { warning: RepairWarning | undefined; testId: string }) {
+  if (!warning) return null;
+  return <p className="mw-jev-unavailable" role="status" data-testid={testId} data-statement={warning.id}>{warning.text}</p>;
+}
+
+function JevWorkspace({ run, onReportCreated, onStatus, sendHistoryMark, onOpenRepairRecord }: { run: RunSummary;
   onReportCreated: (runId: string) => void; onStatus?: (runId: string, status: JevStatusV1) => void;
-  sendHistoryMark?: JevPanelProps["sendHistoryMark"] }) {
+  sendHistoryMark?: JevPanelProps["sendHistoryMark"]; onOpenRepairRecord?: JevPanelProps["onOpenRepairRecord"] }) {
   const runId = run.run_id;
+  const openRecord = onOpenRepairRecord ? (record: string) => onOpenRepairRecord(runId, record) : undefined;
   const [status, setStatus] = useState<Load<JevStatusV1>>({ status: "idle" });
   /** Number of status answers applied so far; a preview keeps the number it was read at (see `laterStatus`). */
   const statusTick = useRef(0);
@@ -506,6 +530,10 @@ function JevWorkspace({ run, onReportCreated, onStatus, sendHistoryMark }: { run
                 {badge && <span className="mw-catalytic-mark" data-testid="jev-source-catalytic">
                   <span className="mw-catalytic-badge">{badge.text}</span>
                   <span className="mw-catalytic-detail" data-testid="jev-source-catalytic-detail">{badge.detail}</span></span>}
+                {kind === "mutation" && mutationSets.status === "ready" &&
+                  mutationSets.value.find(row => row.handle === option.handle)?.structure_origin &&
+                  <span className="mw-catalytic-mark" data-testid="jev-source-repaired">
+                    <span className="mw-catalytic-badge">{JEV_TEXT.repairedBadge}</span></span>}
               </label>;
             })}
           </fieldset>)}
@@ -559,12 +587,14 @@ function JevWorkspace({ run, onReportCreated, onStatus, sendHistoryMark }: { run
         {previewLoad?.status === "loading" && <Loading text={JEV_TEXT.previewLoading} />}
         {previewLoad?.status === "error" && <ErrorLine message={previewLoad.message}
           onRetry={() => readPreview(projection.handle)} testId="jev-preview-error" />}
+        {previewValue && <RepairOrigin origin={previewValue.structure_origin} onOpen={openRecord} />}
         {previewValue && <PreviewView preview={previewValue} laterStatus={laterStatus}
           onReload={() => readPreview(projection.handle)} />}
       </>}
     </Section>
 
     <Section area="approval" title={JEV_TEXT.areaApproval} state={sending ? "loading" : undefined}>
+      <RepairWarningLine warning={previewValue?.repair_warning} testId="jev-approval-repair-warning" />
       <label className="mw-jev-check">
         <input type="checkbox" data-testid="jev-confirm" checked={confirmed} disabled={previewValue === null || sending}
           onChange={event => setConfirmedFor(event.target.checked && previewValue ? previewValue.body_sha256 : null)} />
@@ -583,14 +613,16 @@ function JevWorkspace({ run, onReportCreated, onStatus, sendHistoryMark }: { run
         data-status={lastRecord.status} data-reason-code={lastRecord.reason_code ?? undefined}>
         {JEV_TEXT.sendRecorded}: {sendStatusText(lastRecord.status)}{recordReason ? ` · ${recordReason}` : ""} · {JEV_TEXT.sendId}{" "}
         <code>{lastRecord.send_id}</code></p>}
+      {lastRecord && <RepairWarningLine warning={lastRecord.repair_warning} testId="jev-send-repair-warning" />}
     </Section>
 
     <Section area="result" title={JEV_TEXT.areaResult} state={detailLoad?.status}>
       {opened === null ? <p className="mw-jev-note">{JEV_TEXT.resultNone}</p>
         : detailLoad?.status === "error" ? <ErrorLine message={detailLoad.message} onRetry={() => openSend(opened)}
           testId="jev-result-error" />
-        : detailLoad?.status === "ready" ? <ResultView detail={detailLoad.value} reportBusy={reportBusy}
-          onReport={handle => void makeReport(handle)} />
+        : detailLoad?.status === "ready" ? <><RepairOrigin origin={detailLoad.value.structure_origin} onOpen={openRecord} />
+          <ResultView detail={detailLoad.value} reportBusy={reportBusy}
+          onReport={handle => void makeReport(handle)} /></>
         : <Loading text={JEV_TEXT.resultLoading} />}
     </Section>
 
@@ -612,7 +644,9 @@ function JevWorkspace({ run, onReportCreated, onStatus, sendHistoryMark }: { run
               data-opened={opened === row.sendId} data-jev-loop={loopMark ? "true" : undefined}>
               <td className="mw-mono">{row.approvedSeq}</td>
               <td>{row.statusText}{row.reasonText ? ` · ${row.reasonText}` : ""}</td>
-              <td>{row.kindText}{loopMark && <> · <span data-testid="jev-send-loop-mark">{loopMark.text}</span></>}</td>
+              <td>{row.kindText}{loopMark && <> · <span data-testid="jev-send-loop-mark">{loopMark.text}</span></>}
+                {sends.value.find(item => item.send_id === row.sendId)?.structure_origin &&
+                  <> · <span data-testid="jev-send-repaired">{JEV_TEXT.repairedBadge}</span></>}</td>
               <td>{row.countText}</td><td className="mw-mono">{row.bodyHashText}</td>
               <td>{row.lateText ?? NULL_TEXT}</td>
               <td><div className="mw-jev-inline">
@@ -739,6 +773,7 @@ function PreviewView({ preview, laterStatus, onReload }: { preview: JevPreviewV1
     <p data-testid="jev-preview-cap">{view.capText}</p>
     <p data-testid="jev-preview-budget">{view.budgetRemainingText}</p>
     <p data-testid="jev-preview-previous" data-previous-sends={preview.previous_sends}>{view.previousSendsText}</p>
+    <RepairWarningLine warning={preview.repair_warning} testId="jev-preview-repair-warning" />
     <div data-testid="jev-preview-blocked" data-count={view.blocked.length}>
       <span className="mw-eyebrow">{JEV_TEXT.serverBlockers}</span>
       {view.blocked.length ? <ul className="mw-jev-errors">{view.blocked.map(item => <li key={item.code}

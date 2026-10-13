@@ -1,0 +1,116 @@
+{
+  "id": "R7",
+  "title": "입장 거절: nothing_to_repair·already_repaired·gap_too_long·합성 표시 다섯, 예산·작업 0",
+  "status": "pass",
+  "reason": null,
+  "parts": [
+    {
+      "name": "1UBQ-nothing_to_repair",
+      "status": "pass",
+      "reason": null,
+      "detail": {
+        "submit": {
+          "status": 422,
+          "error": "input_invalid",
+          "detailError": "repair_not_possible",
+          "reason": "nothing_to_repair",
+          "jobsAdded": 0,
+          "unitsAdded": 0
+        }
+      }
+    },
+    {
+      "name": "1S9I-gap_too_long",
+      "status": "pass",
+      "reason": null,
+      "detail": {
+        "submit": {
+          "status": 422,
+          "error": "input_invalid",
+          "detailError": "repair_not_possible",
+          "reason": "gap_too_long",
+          "jobsAdded": 0,
+          "unitsAdded": 0
+        }
+      }
+    },
+    {
+      "name": "SYNTHETIC-chain_identity_duplicate",
+      "status": "pass",
+      "reason": null,
+      "detail": {
+        "file": "synthetic-chain-identity-duplicate.cif",
+        "synthetic": true,
+        "run": "run_7e24048528914d11b794e6db9947ba57",
+        "oracle": "chain_identity_duplicate",
+        "preflight": "chain_identity_duplicate",
+        "submit": 422
+      }
+    },
+    {
+      "name": "SYNTHETIC-unsupported_residue",
+      "status": "pass",
+      "reason": null,
+      "detail": {
+        "file": "synthetic-unsupported-residue.cif",
+        "synthetic": true,
+        "run": "run_2fc1563aa48d43c681700c46759509ce",
+        "oracle": "unsupported_residue",
+        "preflight": "unsupported_residue",
+        "submit": 422
+      }
+    },
+    {
+      "name": "SYNTHETIC-unexpected_atoms",
+      "status": "pass",
+      "reason": null,
+      "detail": {
+        "file": "synthetic-unexpected-atoms.cif",
+        "synthetic": true,
+        "run": "run_30763442242d4cc4a069c423d992f1bc",
+        "oracle": "unexpected_atoms",
+        "preflight": "unexpected_atoms",
+        "submit": 422
+      }
+    },
+    {
+      "name": "SYNTHETIC-backbone_atoms_missing",
+      "status": "pass",
+      "reason": null,
+      "detail": {
+        "file": "synthetic-backbone-atoms-missing.cif",
+        "synthetic": true,
+        "run": "run_271455061aa24a3b99fee3837e8a03b8",
+        "oracle": "backbone_atoms_missing",
+        "preflight": "backbone_atoms_missing",
+        "submit": 422
+      }
+    },
+    {
+      "name": "SYNTHETIC-gap_listing_missing",
+      "status": "pass",
+      "reason": null,
+      "detail": {
+        "file": "synthetic-gap-listing-missing.cif",
+        "synthetic": true,
+        "run": "run_22ca542e40604d71ae5b9bb1cf0af83f",
+        "oracle": "gap_listing_missing",
+        "preflight": "gap_listing_missing",
+        "submit": 422
+      }
+    },
+    {
+      "name": "already_repaired",
+      "status": "pass",
+      "reason": null,
+      "detail": {
+        "run": "run_b712fb03c11848f899f96ca598ae486d"
+      }
+    }
+  ],
+  "allowedGaps": [],
+  "evidence_refs": [
+    "evidence/r7.json"
+  ],
+  "detail": null
+}

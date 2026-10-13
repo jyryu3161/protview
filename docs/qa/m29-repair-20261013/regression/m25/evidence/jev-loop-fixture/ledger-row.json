@@ -1,0 +1,684 @@
+{
+  "schema": "m25_case_ledger_row@1",
+  "mode": "fixture",
+  "rehearsal": false,
+  "evidenceKind": "real_electron_offscreen",
+  "status": "fail",
+  "cases": {
+    "L-tab-entry": "fail",
+    "L-create-fields": "fail",
+    "L-create": "fail",
+    "L-loop-active": "fail",
+    "P-tab-entry": "pass",
+    "P-pool-limit": "pass",
+    "P-create-fields": "pass",
+    "P-create-refused": "pass",
+    "P-create": "pass",
+    "P-send-good": "pass",
+    "P-bytes-equal": "pass",
+    "P-order-oracle": "pass",
+    "P-first-approval": "pass",
+    "P-end-refused-job": "pass",
+    "P-end-refused-docking": "pass",
+    "P-dock": "pass",
+    "P-real-engine": "pass",
+    "P-abandon": "pass",
+    "P-candidate-table": "pass",
+    "P-end-summary": "pass",
+    "P-report": "pass",
+    "P-reuse": "pass",
+    "P-failed-http": "pass",
+    "P-pair-loop": "pass",
+    "P-knowledge-rows": "pass",
+    "P-other-tabs": "pass",
+    "X-fixture-proof": "pass",
+    "X-wording": "pass",
+    "X-no-egress-browser": "pass"
+  },
+  "runs": {
+    "L": "run_d0fdba2f3a0b488dbfcc31aa2df4ef11",
+    "P": "run_a55834109af34929ac872342cd784270"
+  },
+  "sends": [
+    {
+      "sendId": "462aea45-a4cf-46d4-8480-57ee2d7ef4b8",
+      "status": "completed",
+      "reasonCode": null,
+      "late": false,
+      "loop": {
+        "loop_id": "1ac34edb-dbb6-4a22-a508-e295a40c7b7a",
+        "iteration": 1,
+        "send_ordinal": 0
+      }
+    },
+    {
+      "sendId": "90fda61b-df50-4dbb-b486-4b25735229d4",
+      "status": "failed",
+      "reasonCode": "provider_http_error",
+      "late": false,
+      "loop": {
+        "loop_id": "35967cb6-08f7-441b-92f5-8ed932f8723b",
+        "iteration": 1,
+        "send_ordinal": 0
+      }
+    }
+  ],
+  "fixture": {
+    "calls": 2,
+    "scripts": [
+      "good_second",
+      "http_500"
+    ],
+    "statuses": [
+      200,
+      500
+    ],
+    "sentinelAuthorization": true,
+    "bodySha256": [
+      "28659f46950428c5e6062cda9734069488f816c491266c245ee2b9b21c2e1552",
+      "5e6496f9242c42a7e4afe04d64fb99a0f6bd4ee0a870c77ae6166c3035c98c16"
+    ],
+    "credentialReads": {
+      "productResolverReads": 0,
+      "sentinelReads": 2,
+      "updatedAt": "2026-10-13T16:07:53.998659+00:00"
+    },
+    "dispatchCounts": {
+      "run_a55834109af34929ac872342cd784270": 2,
+      "run_d0fdba2f3a0b488dbfcc31aa2df4ef11": 0
+    },
+    "dispatched": 2
+  },
+  "bytes": 2,
+  "plan": null,
+  "preChecks": null,
+  "loops": null,
+  "shuffle": null,
+  "dispatchCounts": null,
+  "fixtureLabels": [
+    "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_loop_fixture/server.py)"
+  ],
+  "controls": {
+    "jev-loop-source-protein": [
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/mutation_candidate_set/99cc6eb105ce37126e42cca5744ee6746bfd2b875899aa46079a4ed2079add06"
+      },
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/mutation_candidate_set/51e65b92045a6a8d623535336626b07c9a5a3b6714d9bb71bad7970c437961c2"
+      },
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/mutation_candidate_set/99cc6eb105ce37126e42cca5744ee6746bfd2b875899aa46079a4ed2079add06"
+      },
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/mutation_candidate_set/99cc6eb105ce37126e42cca5744ee6746bfd2b875899aa46079a4ed2079add06"
+      }
+    ],
+    "jev-loop-candidate": [
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      },
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "4"
+      }
+    ],
+    "jev-loop-candidate-21st": [
+      {
+        "key": "20"
+      }
+    ],
+    "jev-loop-candidate-uncheck": [
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      }
+    ],
+    "jev-loop-iteration-cap": [
+      {
+        "value": "0"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-cutoff": [
+      {
+        "value": "7"
+      },
+      {
+        "value": "4.0"
+      },
+      {
+        "value": "4.0"
+      }
+    ],
+    "jev-loop-setup-sdf": [
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      },
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      },
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      }
+    ],
+    "jev-loop-setup-box": [
+      {
+        "source": "ligand_range"
+      },
+      {
+        "source": "ligand_range"
+      },
+      {
+        "source": "ligand_range"
+      }
+    ],
+    "jev-loop-setup-margin": [
+      {
+        "value": "8"
+      },
+      {
+        "value": "8"
+      },
+      {
+        "value": "8"
+      }
+    ],
+    "jev-loop-setup-seed": [
+      {
+        "value": "20261007"
+      },
+      {
+        "value": "20261007"
+      },
+      {
+        "value": "20261007"
+      }
+    ],
+    "jev-loop-setup-exhaustiveness": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-setup-num-modes": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "jev-loop-setup-energy-range": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "jev-loop-setup-ack-keep_input_protonation": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-setup-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-setup-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-goal": [
+      {
+        "goal": "explore"
+      },
+      {
+        "goal": "exploit"
+      }
+    ],
+    "jev-loop-seed": [
+      {
+        "value": "11"
+      },
+      {
+        "value": "13"
+      }
+    ],
+    "jev-loop-confirmations": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-create": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "branch": "protein"
+      },
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "branch": "protein"
+      },
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "branch": "protein"
+      }
+    ],
+    "jev-loop-consent": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "enabled": true
+      }
+    ],
+    "jev-loop-build": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "branch": "protein"
+      },
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "branch": "protein"
+      }
+    ],
+    "jev-loop-send": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "script": "good_second"
+      },
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "script": "http_500"
+      }
+    ],
+    "jev-loop-compute-proposal": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "loopId": "1ac34edb-dbb6-4a22-a508-e295a40c7b7a"
+      }
+    ],
+    "jev-loop-approve-first": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270"
+      }
+    ],
+    "jev-loop-job-start": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270"
+      }
+    ],
+    "jev-loop-dock": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "loopId": "1ac34edb-dbb6-4a22-a508-e295a40c7b7a"
+      }
+    ],
+    "jev-loop-designate-option": [
+      {
+        "ref": "10"
+      }
+    ],
+    "jev-loop-designate": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "loopId": "1ac34edb-dbb6-4a22-a508-e295a40c7b7a"
+      }
+    ],
+    "jev-loop-abandon": [
+      {
+        "loopId": "1ac34edb-dbb6-4a22-a508-e295a40c7b7a"
+      }
+    ],
+    "jev-loop-sort-pool": [
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      }
+    ],
+    "jev-loop-sort-candidate": [
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      }
+    ],
+    "jev-loop-sort-score": [
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      }
+    ],
+    "jev-loop-sort-iteration": [
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      }
+    ],
+    "jev-loop-end": [
+      {
+        "loopId": "1ac34edb-dbb6-4a22-a508-e295a40c7b7a"
+      },
+      {
+        "loopId": "35967cb6-08f7-441b-92f5-8ed932f8723b"
+      }
+    ],
+    "jev-loop-report": [
+      {
+        "run": "run_a55834109af34929ac872342cd784270",
+        "branch": "protein"
+      }
+    ],
+    "report-library-open": [
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/method_report_manifest/c00b9712b15b626227c3f619a038c3318f2a6f15377f6bb57638057046a1924f"
+      }
+    ],
+    "mutation-model-open": [
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/mutation_model/61eb7f77e3856f629387c56a268d5c4c7418610408387f08720aaf0d3c191d59"
+      },
+      {
+        "handle": "obj://run_a55834109af34929ac872342cd784270/mutation_model/3aa909478f71f14c54463fe446f6a1d112deaa4a47dec30354f1069701504624"
+      }
+    ]
+  },
+  "wording": [
+    {
+      "label": "protein good card",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "protein table",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "report 1ac34edb-dbb6-4a22-a508-e295a40c7b7a",
+      "kind": "report",
+      "found": 0
+    },
+    {
+      "label": "knowledge JEV area (run P)",
+      "kind": "screen-m24",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 1",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 2",
+      "kind": "reply",
+      "found": 0
+    }
+  ],
+  "buildId": "zHxijM08Zpd_R8U7RDu8X",
+  "harness": {
+    "jev-loop-flow.cjs": "6a4eef9223abb1c6bfc40be99c560379a1d37616780f06881511ac308022cea2",
+    "jev-flow.cjs": "3fa77454cba84914570de78dad662187f9b52ca7fa0ca727ceeff5e89e7a0521",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 342,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/jev-loop-fixture/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 465,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 6,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/jev-loop-fixture/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 66,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "partFailures": [
+    {
+      "part": "L-entry",
+      "cases": [
+        "L-tab-entry",
+        "L-create-fields"
+      ],
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n+   'repair-panel',\n    'mutation-panel',\n    'mutation-model-panel',\n    'sequence-ga-panel',\n    'jev-loop-panel'\n  ]\n"
+    },
+    {
+      "part": "L-create",
+      "cases": [
+        "L-create",
+        "L-loop-active"
+      ],
+      "error": "TimeoutError: locator.isChecked: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#mw-app-panel-ligand [data-testid=\"jev-loop-panel\"][data-branch=\"ligand\"]').locator('input[data-testid=\"jev-loop-candidate\"][data-jev-loop-candidate=\"c_c42a53803595e440\"]')\u001b[22m\n"
+    }
+  ],
+  "error": null,
+  "evidenceFile": "jev-loop-fixture.jsonl",
+  "startedAt": "2026-10-13T16:06:17.437Z",
+  "finishedAt": "2026-10-13T16:08:00.977Z"
+}

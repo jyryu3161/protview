@@ -151,12 +151,16 @@ def _result_record(stop: str | None) -> dict:
 
 
 def _qvina_under(root: Path) -> list[int]:
+    """Live qvina2 processes working under ``root``. Nothing is prefetched: a prefetch runs inside ``process_iter``,
+    outside this ``try``, where psutil's ``SystemError`` from a process ending mid-read escaped under load (M28 T2,
+    ``test_sequence_ga_worker._engines_under``); here it means the process is gone, as ``psutil.Error`` does
+    (M29 T2)."""
     found = []
-    for proc in psutil.process_iter(["name", "exe"]):
+    for proc in psutil.process_iter():
         try:
-            if proc.info["name"] == "qvina2" and str(root) in proc.cwd():
+            if proc.name() == "qvina2" and str(root) in proc.cwd():
                 found.append(proc.pid)
-        except (psutil.Error, OSError):
+        except (psutil.Error, OSError, SystemError):
             continue
     return found
 

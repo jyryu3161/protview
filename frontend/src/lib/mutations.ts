@@ -272,17 +272,27 @@ export function preparedStructures(events: RunEvent[]): { handle: string; seq: n
   return rows;
 }
 
+/**
+ * The structure(s) whose reference results a request may name: one handle (the chosen structure), or (M29 spec 5.3) a
+ * list: a repaired structure and its original prepared structure (`structure-repair.ts` `referenceStructures`).
+ */
+export type ReferenceStructures = string | null | readonly string[];
+function among(handle: string | null, structure: ReferenceStructures): boolean {
+  return handle === null || structure === null ? false : typeof structure === "string" ? handle === structure
+    : structure.includes(handle);
+}
+
 /** Published pocket sets detected on this structure that have pockets (a null result is refused by the server). */
-export function pocketSetsForStructure(rows: readonly PocketSetRow[], structure: string | null): PocketSetRow[] {
-  return structure === null ? [] : rows.filter(row => row.source_handle === structure && row.null_result === false);
+export function pocketSetsForStructure(rows: readonly PocketSetRow[], structure: ReferenceStructures): PocketSetRow[] {
+  return rows.filter(row => among(row.source_handle, structure) && row.null_result === false);
 }
 
-export function mapsForStructure(rows: readonly NumberingMapListRow[], structure: string | null): NumberingMapListRow[] {
-  return structure === null ? [] : rows.filter(row => row.structure === structure);
+export function mapsForStructure(rows: readonly NumberingMapListRow[], structure: ReferenceStructures): NumberingMapListRow[] {
+  return rows.filter(row => among(row.structure, structure));
 }
 
-export function annotationsForStructure(rows: readonly SiteAnnotationListRow[], structure: string | null): SiteAnnotationListRow[] {
-  return structure === null ? [] : rows.filter(row => row.structure === structure);
+export function annotationsForStructure(rows: readonly SiteAnnotationListRow[], structure: ReferenceStructures): SiteAnnotationListRow[] {
+  return rows.filter(row => among(row.structure, structure));
 }
 
 /**
@@ -290,7 +300,7 @@ export function annotationsForStructure(rows: readonly SiteAnnotationListRow[], 
  * numbering map that annotation recorded (only when that map is among the same-structure maps). None → both null.
  */
 export function preselectAnnotation(annotations: readonly SiteAnnotationListRow[], maps: readonly NumberingMapListRow[],
-                                    structure: string | null): { annotation: string | null; numbering_map: string | null } {
+                                    structure: ReferenceStructures): { annotation: string | null; numbering_map: string | null } {
   const offered = annotationsForStructure(annotations, structure);
   if (!offered.length) return { annotation: null, numbering_map: null };
   const newest = offered.reduce((best, row) => row.created_seq > best.created_seq ? row : best);
@@ -315,13 +325,13 @@ export function klifsNotice(annotation: string | null): string | null {
 
 /** `reaction_knowledge@1` results made on this structure (list order kept: newest first, as the server gave). */
 export function catalyticAnnotationsForStructure(results: readonly ReactionKnowledgeListItem[],
-                                                structure: string | null): ReactionKnowledgeListItem[] {
-  return structure === null ? [] : results.filter(item => item.structure_handle === structure);
+                                                structure: ReferenceStructures): ReactionKnowledgeListItem[] {
+  return results.filter(item => among(item.structure_handle, structure));
 }
 
 /** The pre-selection when a structure is chosen: the first (= newest) same-structure result, none -> null. */
 export function defaultCatalyticAnnotation(results: readonly ReactionKnowledgeListItem[],
-                                           structureHandle: string | null): string | null {
+                                           structureHandle: ReferenceStructures): string | null {
   return catalyticAnnotationsForStructure(results, structureHandle)[0]?.handle ?? null;
 }
 
@@ -433,6 +443,19 @@ export function initialMutationDraft(structure: string | null = null): MutationD
  * A new structure clears everything tied to the old one and pre-selects that structure's newest annotation and
  * (M26) its newest reaction knowledge result (`reactionResults` newest first; absent -> none).
  */
+/**
+ * M29 (spec 5.3): after `draftForStructure` on a repaired structure, the same pre-selection over the structure and its
+ * original prepared structure (`references`; one handle or none leaves the draft as it is). Never submitted by itself.
+ */
+export function draftForReferences(draft: MutationDraft, references: readonly string[],
+                                   annotations: readonly SiteAnnotationListRow[], maps: readonly NumberingMapListRow[],
+                                   reactionResults: readonly ReactionKnowledgeListItem[] = []): MutationDraft {
+  if (references.length < 2) return draft;
+  const picked = preselectAnnotation(annotations, maps, references);
+  return { ...draft, annotation: picked.annotation, numberingMap: picked.numbering_map,
+    catalyticAnnotation: defaultCatalyticAnnotation(reactionResults, references) };
+}
+
 export function draftForStructure(draft: MutationDraft, structure: string | null,
                                   annotations: readonly SiteAnnotationListRow[], maps: readonly NumberingMapListRow[],
                                   reactionResults: readonly ReactionKnowledgeListItem[] = []): MutationDraft {
@@ -482,7 +505,9 @@ function listErrors(list: readonly ExactResidueRef[], name: string): string[] {
 export interface DraftOptions { pocketSets: readonly PocketSetRow[]; maps: readonly NumberingMapListRow[];
   annotations: readonly SiteAnnotationListRow[]; ligands: readonly ExactResidueRef[];
   /** M26: this run's reaction knowledge results (absent = none read). */
-  reactionResults?: readonly ReactionKnowledgeListItem[] }
+  reactionResults?: readonly ReactionKnowledgeListItem[];
+  /** M29: the structures whose reference results the request may name (absent = the chosen structure only). */
+  referenceStructures?: readonly string[] }
 export type MutationArgsCheck = { ok: true; args: MutationRequestArgs } | { ok: false; errors: string[] };
 
 /**
@@ -493,12 +518,14 @@ export function mutationRequestArgs(draft: MutationDraft, options: DraftOptions)
   const errors: string[] = [];
   const structure = draft.structure;
   if (structure === null) errors.push("전처리 구조를 고르세요.");
+  const references: ReferenceStructures = structure !== null && options.referenceStructures?.includes(structure)
+    ? options.referenceStructures : structure;
   const pocketOn = draft.pocketOn, shellOn = draft.ligandShellOn, userOn = draft.userOn && draft.residues.length > 0;
   if (!pocketOn && !shellOn && !userOn)
     errors.push("위치 출처(포켓 검출·리간드 껍질·직접 선택)를 하나 이상 켜고 위치를 정하세요.");
   if (pocketOn) {
     if (draft.pocketSet === null) errors.push("포켓 결과를 고르세요.");
-    else if (!pocketSetsForStructure(options.pocketSets, structure).some(row => row.handle === draft.pocketSet))
+    else if (!pocketSetsForStructure(options.pocketSets, references).some(row => row.handle === draft.pocketSet))
       errors.push("고른 포켓 결과가 이 구조의 포켓 있는 결과가 아닙니다.");
     if (!draft.pocketRanks.length) errors.push("포켓 번호를 하나 이상 고르세요.");
     else if (draft.pocketRanks.some(rank => !Number.isInteger(rank) || rank < 1) ||
@@ -520,14 +547,14 @@ export function mutationRequestArgs(draft: MutationDraft, options: DraftOptions)
   if (shellOn && draft.ligand === null) errors.push("리간드 껍질을 쓰려면 리간드를 고르세요.");
   if (draft.ligand !== null && !options.ligands.some(item => residueKey(item) === residueKey(draft.ligand as ExactResidueRef)))
     errors.push("고른 리간드가 이 구조의 리간드 목록에 없습니다.");
-  if (draft.numberingMap !== null && !mapsForStructure(options.maps, structure).some(row => row.handle === draft.numberingMap))
+  if (draft.numberingMap !== null && !mapsForStructure(options.maps, references).some(row => row.handle === draft.numberingMap))
     errors.push("고른 번호 대응이 이 구조의 것이 아닙니다.");
-  if (draft.annotation !== null && !annotationsForStructure(options.annotations, structure).some(row => row.handle === draft.annotation))
+  if (draft.annotation !== null && !annotationsForStructure(options.annotations, references).some(row => row.handle === draft.annotation))
     errors.push("고른 참조 주석이 이 구조의 것이 아닙니다.");
   const conflict = annotationMapConflict(draft.annotation, draft.numberingMap, options.annotations);
   if (conflict) errors.push(conflict);
   if (draft.catalyticAnnotation !== null &&
-      !catalyticAnnotationsForStructure(options.reactionResults ?? [], structure)
+      !catalyticAnnotationsForStructure(options.reactionResults ?? [], references)
         .some(item => item.handle === draft.catalyticAnnotation))
     errors.push("고른 효소 반응 지식 결과가 이 구조의 것이 아닙니다.");
   if (errors.length || structure === null || !allowed.ok) return { ok: false, errors };

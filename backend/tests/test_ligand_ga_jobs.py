@@ -30,6 +30,7 @@ import threading
 import time
 from pathlib import Path
 
+import engine_hold as EH
 import pytest
 from fastapi.testclient import TestClient
 from ligand_job_fixture import import_file, new_ligand_run, run_job
@@ -466,10 +467,13 @@ def test_cancel_mid_run_keeps_published_individuals_and_a_partial_summary(base, 
     run, _root = world(base, tmp_path)
     raise_limits(run)
     used = run.budget.expensive_calls
+    held: list[dict] = []
     with monkeypatch.context() as patch:
-        patch.setattr(JobQueue, "_record_control",
-                      when_started(1, lambda queue, job_id, _pid: queue.request_cancel(job_id)))
+        # M29 T2: individual 1's qvina2 is held until the cancel reaches the worker (engine_hold.hold_then_cancel):
+        # its docking (exhaustiveness 1) is short, and under Stop-hook load the cancel can take longer to reach it.
+        EH.hold_then_cancel(patch, "qvina2", "individuals/1.started", "individuals/1.status.json", held)
         cancelled = run_ga(run, ga_args(base, seed=3))
+    assert len(held) == 1 and "error" not in held[0], (held, cancelled)
     assert cancelled["status"] == "cancelled" and cancelled["output_handles"] == [], cancelled
     _, content = summary(run, cancelled)
     assert (content["status"], content["stop_reason"], content["generations_done"]) == ("partial", "cancelled", 0)

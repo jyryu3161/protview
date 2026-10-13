@@ -1,0 +1,191 @@
+{
+ "added_atoms": [
+  {
+   "atom_name": "CB",
+   "coordinates_A": [
+    -7.807024673243205,
+    22.205960469528492,
+    27.468847405256408
+   ],
+   "element": "C",
+   "origin": "side_chain",
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "LEU",
+    "seq_auth": 4,
+    "seq_label": 4
+   }
+  },
+  {
+   "atom_name": "CG",
+   "coordinates_A": [
+    -7.846713844799712,
+    20.89202395697336,
+    28.504343676378532
+   ],
+   "element": "C",
+   "origin": "side_chain",
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "LEU",
+    "seq_auth": 4,
+    "seq_label": 4
+   }
+  },
+  {
+   "atom_name": "CD1",
+   "coordinates_A": [
+    -9.0430858887465,
+    21.221518788611217,
+    29.39643883170703
+   ],
+   "element": "C",
+   "origin": "side_chain",
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "LEU",
+    "seq_auth": 4,
+    "seq_label": 4
+   }
+  },
+  {
+   "atom_name": "CD2",
+   "coordinates_A": [
+    -6.606812391496826,
+    20.78606412392385,
+    29.27068622451285
+   ],
+   "element": "C",
+   "origin": "side_chain",
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "LEU",
+    "seq_auth": 4,
+    "seq_label": 4
+   }
+  },
+  {
+   "atom_name": "OXT",
+   "coordinates_A": [
+    14.404255768003582,
+    17.440631255262637,
+    -1.328064309620616
+   ],
+   "element": "O",
+   "origin": "oxt",
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "ALA",
+    "seq_auth": 147,
+    "seq_label": 147
+   }
+  }
+ ],
+ "clash": {
+  "ligand_keep_all": {
+   "count_lt_1_5": 0,
+   "count_lt_2_0": 0,
+   "min_distance_A": 23.58825042379128,
+   "partners": 2
+  },
+  "metal_keep_all": {
+   "count_lt_1_5": 0,
+   "count_lt_2_0": 0,
+   "min_distance_A": 14.938900141030329,
+   "partners": 4
+  },
+  "protein": {
+   "count_lt_1_5": 0,
+   "count_lt_2_0": 0,
+   "min_distance_A": 2.4205976435864613
+  },
+  "water_keep_all": {
+   "count_lt_1_5": 0,
+   "count_lt_2_0": 0,
+   "min_distance_A": 3.5119239520043766,
+   "partners": 139
+  }
+ },
+ "counts": {
+  "added_atoms": 5,
+  "added_hydrogens": 0,
+  "added_residues": 0,
+  "gaps": 0,
+  "observed_atoms_returned": 1130,
+  "protein_heavy_after": 1135,
+  "side_chain_residues": 1,
+  "terminal_oxt": 1
+ },
+ "gaps": [],
+ "input": {
+  "file": "backend/tests/fixtures/public_1cll.cif",
+  "sha256": "a8be375d00d2d5d47ffacae491f775167d1c0488ab8485cabd269410e596d3aa",
+  "size_bytes": 192662
+ },
+ "label": "PDBFixer \uce21\uc815 \uace0\uc815 \uc790\ub8cc(\uc81c\ud488 \uac12 \uc544\ub2d8) / PDBFixer-measured fixture, not a product value",
+ "observed_max_delta_A": 7.993605777301127e-15,
+ "peptide_links": {
+  "count": 143,
+  "max_A": 1.3563812148507455,
+  "min_A": 1.2833117314199236,
+  "outside_1_1_to_1_7": 0
+ },
+ "procedure": {
+  "coordinates": "full float precision (Angstrom = PDBFixer nm * 10), not rounded",
+  "engine": "PDBFixer 1.12.0 / OpenMM 8.6.0 CPU Threads=1",
+  "missing_residues": "set explicitly from _entity_poly_seq + _pdbx_unobs_or_zero_occ_residues (occupancy_flag 1) internal gaps only; findMissingResidues not used",
+  "pdbfixer_input": "protein polymer residues only, chain parts merged by author chain, M21-style PDBx text (chain id str(index), residue id str(global index + 1))",
+  "prepared_view": "gemmi re-implementation of prepare_structure (model 0, hydrogens strip, altloc highest_occupancy, waters strip_all)",
+  "seed": 1
+ },
+ "produced_by": "docs/qa/m29-repair-20261013/probe/pdbfixer_measure.py additions (M29 T1 (j), prototype)",
+ "schema": "m29_t1_pdbfixer_measured_additions@1",
+ "side_chain_repairs": [
+  {
+   "added_atoms": [
+    "CB",
+    "CG",
+    "CD1",
+    "CD2"
+   ],
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "LEU",
+    "seq_auth": 4,
+    "seq_label": 4
+   }
+  }
+ ],
+ "terminal_oxt": [
+  {
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "ALA",
+    "seq_auth": 147,
+    "seq_label": 147
+   }
+  }
+ ],
+ "water_policy_independent": true
+}

@@ -15,10 +15,8 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import os
 import re
 import shutil
-import signal
 import subprocess
 import sys
 import threading
@@ -26,6 +24,7 @@ import time
 from collections import Counter
 from pathlib import Path
 
+import engine_hold as EH
 import gemmi
 import numpy as np
 import psutil
@@ -783,51 +782,17 @@ def test_validated_read_rechecks_stored_values_against_native_bytes(tmp_path, mo
 
 
 # ----------------------------------------------------------------- running engine: cancel, timeout, caps, restart
-def _stopped(process: psutil.Process) -> bool:
-    """SIGSTOP ``process`` (again: one forked while its group was being stopped may have missed it) and wait until it
-    is stopped; False when it has already ended."""
-    try:
-        process.suspend()
-        end = time.monotonic() + 10
-        while (state := process.status()) != psutil.STATUS_STOPPED:
-            if state == psutil.STATUS_ZOMBIE:
-                return False
-            assert time.monotonic() < end, f"pid {process.pid} did not stop"
-            time.sleep(0.001)
-        return True
-    except psutil.NoSuchProcess:
-        return False
-
-
 def _held_engine(worker_pid: int, attempt_dir: Path, timeout: float = 60) -> psutil.Process:
     """The worker's real fpocket, held stopped (M28 T2). fpocket on this input runs about 1.7 s; under Stop-hook load
     it could finish, and the worker with it, before a fault was written and sampled, so the job completed instead
-    (the guardian samples the output only while the worker runs). The guardian's process group (guardian, worker,
-    fpocket) is stopped while fpocket is looked for (a look lists every system process, about a second under load), so
-    it cannot end between being seen and being held; then the guardian and the worker go on and only fpocket stays
-    stopped, the worker waiting on it. Polling starts when the worker has opened the engine's stream files, just
-    before it starts fpocket."""
-    pgid = os.getpgid(worker_pid)
-    guardian, worker = psutil.Process(pgid), psutil.Process(worker_pid)
-    end = time.monotonic() + timeout
-    while time.monotonic() < end:
-        if (attempt_dir / "engine.stderr").exists():
-            os.killpg(pgid, signal.SIGSTOP)
-            try:
-                assert _stopped(guardian) and _stopped(worker), "the guardian and the worker are stopped"
-                os.killpg(pgid, signal.SIGSTOP)   # again: an fpocket being forked when the first stop landed missed it
-                engine = next((child for child in worker.children() if child.name() == "fpocket"), None)
-                if engine is not None:
-                    assert _stopped(engine), "fpocket ended before it was held"
-                    guardian.resume()
-                    worker.resume()
-                    return engine
-            except BaseException:
-                os.killpg(pgid, signal.SIGCONT)   # a failure leaves no stopped guardian behind
-                raise
-            os.killpg(pgid, signal.SIGCONT)
-        time.sleep(0.005)
-    pytest.fail("the real fpocket process never started")
+    (the guardian samples the output only while the worker runs). From the moment the worker has opened the engine's
+    stream files, just before it starts fpocket, the guardian's process group (guardian, worker, fpocket) is stopped
+    for each look and run 5 ms between looks; the first look that sees fpocket holds it for good, then the guardian and
+    the worker go on and only fpocket stays stopped, the worker waiting on it. M29 T2: a look lists only the worker's
+    own children (``engine_hold``: one system call; listing every system process took seconds under load), so an
+    fpocket that escaped the group stop (it was being forked or was still in exec) cannot run to its end during it."""
+    return EH.hold_job_engine(worker_pid, "fpocket", start=attempt_dir / "engine.stderr", gap_s=0.005,
+                              timeout_s=timeout)[0]
 
 
 def _gone(process: psutil.Process) -> bool:
@@ -907,13 +872,17 @@ def test_timeout_stops_the_attempt_and_is_charged(tmp_path, monkeypatch):
 
 
 def test_owner_death_is_reconciled_and_engine_group_stopped(tmp_path, monkeypatch):
+    """M29 T2: the owner's barrier holds the real fpocket stopped (``engine_hold``, as ``_held_engine``) before it
+    reports it, so fpocket cannot end on its own (about 1.7 s) and the check that it is gone after the owner's death
+    shows the guardian's group stop, not a finished engine."""
     runs = tmp_path / "runs"
     fixture = tmp_path / "derived_1hsg_replicated_fixture.cif"
     fixture.write_bytes(_derived_replicated())
     script = r'''
 import json, sys, time
 from pathlib import Path
-import psutil
+sys.path.insert(0, sys.argv[3])
+import engine_hold as EH
 from mw.workspace import new_run
 from mw.jobs.queue import JobQueue
 root, fixture = Path(sys.argv[1]), Path(sys.argv[2])
@@ -927,12 +896,8 @@ state = {}
 def barrier(stage):
     if stage == "after_worker_started":
         worker = [e for e in run.events.read() if e["type"] == "job_worker_started"][-1]["pid"]
-        while True:
-            engines = [c for c in psutil.Process(worker).children() if c.name() == "fpocket"]
-            if engines:
-                break
-            time.sleep(0.005)
-        (root / "engine.json").write_text(json.dumps({"pid": engines[0].pid, "job_id": state["job_id"]}))
+        engine, _looks = EH.hold_job_engine(worker, "fpocket", gap_s=0.005, timeout_s=60)
+        (root / "engine.json").write_text(json.dumps({"pid": engine.pid, "job_id": state["job_id"]}))
         while True:
             time.sleep(1)
 queue = JobQueue(run, barrier=barrier)
@@ -940,7 +905,7 @@ job = queue.submit("fpocket_detect_v1", {"structure": prepared.handle}, timeout_
 state["job_id"] = job["job_id"]
 queue.start(job["job_id"])
 '''
-    owner = subprocess.Popen([sys.executable, "-c", script, str(runs), str(fixture)],
+    owner = subprocess.Popen([sys.executable, "-c", script, str(runs), str(fixture), str(Path(__file__).parent)],
                              stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     try:
         end = time.monotonic() + 60
@@ -949,6 +914,7 @@ queue.start(job["job_id"])
             time.sleep(0.02)
         marker = json.loads((runs / "engine.json").read_text())
         engine = psutil.Process(marker["pid"])
+        assert engine.status() == psutil.STATUS_STOPPED, "fpocket is held when the owner dies"
         owner.kill()
         owner.wait(timeout=5)
         end = time.monotonic() + 10

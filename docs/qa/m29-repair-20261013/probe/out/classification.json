@@ -1,0 +1,2211 @@
+{
+ "gemmi": "0.7.5",
+ "rows": [
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 7,
+     "observed_last_label": 330,
+     "sequence_length": 333
+    }
+   ],
+   "chain_part_order": [
+    "A"
+   ],
+   "classes": [
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 97,
+   "expected_added_residues": 12,
+   "file": "backend/tests/fixtures/public_1m17.cif",
+   "first_blocker": null,
+   "gaps": [
+    {
+     "after": "A/964/HIS",
+     "after_label": 299,
+     "before": "A/977/LEU",
+     "before_label": 312,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 12,
+     "residues": [
+      "965/LEU/L300",
+      "966/PRO/L301",
+      "967/SER/L302",
+      "968/PRO/L303",
+      "969/THR/L304",
+      "970/ASP/L305",
+      "971/SER/L306",
+      "972/ASN/L307",
+      "973/PHE/L308",
+      "974/TYR/L309",
+      "975/ARG/L310",
+      "976/ALA/L311"
+     ]
+    }
+   ],
+   "input_sha256": "849bd2548dffb7ddcb7229a05202c1e2e41019a1fd69ec39483654cf984fc4d0",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 1
+   },
+   "prepared_sha256": "0eee778104976b6a98d6244366049d083e4e5a75c215f29c91c552eaba4a42e4",
+   "protein_heavy_after": 2594,
+   "protein_heavy_observed": 2497,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [
+    {
+     "residue": "A/995/PRO"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "in_scope",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 37,
+   "zero_occupancy_residues": [
+    "A/725/GLU"
+   ]
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 7,
+     "observed_last_label": 330,
+     "sequence_length": 333
+    }
+   ],
+   "chain_part_order": [
+    "A"
+   ],
+   "classes": [
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 97,
+   "expected_added_residues": 12,
+   "file": "backend/tests/fixtures/public_1m17.cif",
+   "first_blocker": null,
+   "gaps": [
+    {
+     "after": "A/964/HIS",
+     "after_label": 299,
+     "before": "A/977/LEU",
+     "before_label": 312,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 12,
+     "residues": [
+      "965/LEU/L300",
+      "966/PRO/L301",
+      "967/SER/L302",
+      "968/PRO/L303",
+      "969/THR/L304",
+      "970/ASP/L305",
+      "971/SER/L306",
+      "972/ASN/L307",
+      "973/PHE/L308",
+      "974/TYR/L309",
+      "975/ARG/L310",
+      "976/ALA/L311"
+     ]
+    }
+   ],
+   "input_sha256": "849bd2548dffb7ddcb7229a05202c1e2e41019a1fd69ec39483654cf984fc4d0",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 1
+   },
+   "prepared_sha256": "e866e923f0e056e1dc366555e0b0f0fde4a53af694423ef5a371aee09c641135",
+   "protein_heavy_after": 2594,
+   "protein_heavy_observed": 2497,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [
+    {
+     "residue": "A/995/PRO"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "in_scope",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 37,
+   "zero_occupancy_residues": [
+    "A/725/GLU"
+   ]
+  },
+  {
+   "blocker_codes": [
+    "atom_limit_exceeded"
+   ],
+   "blocker_count": 1,
+   "blockers": [
+    {
+     "detail": "protein heavy atoms after repair 8998 > 6000",
+     "reason_code": "atom_limit_exceeded",
+     "residue": null
+    }
+   ],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 298,
+     "sequence_length": 298
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 260,
+     "sequence_length": 260
+    },
+    {
+     "chain_auth": "C",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 298,
+     "sequence_length": 298
+    },
+    {
+     "chain_auth": "D",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 260,
+     "sequence_length": 260
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "A",
+    "C"
+   ],
+   "classes": [
+    "chain_parts_merged"
+   ],
+   "expected_added_heavy_atoms": 0,
+   "expected_added_residues": 0,
+   "file": "backend/tests/fixtures/public_1fin.cif",
+   "first_blocker": {
+    "detail": "protein heavy atoms after repair 8998 > 6000",
+    "reason_code": "atom_limit_exceeded",
+    "residue": null
+   },
+   "gaps": [],
+   "input_sha256": "dfe5da37b2e28d3d74eefa0edee97d57ea127538beead9e68a8a42a5c363a1ac",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 2,
+    "B": 1,
+    "C": 2,
+    "D": 1
+   },
+   "prepared_sha256": "7d61e7168201e6e93d7ebba94e8fbc553cba5227cf8c4e6f0f8741f5f1a48b7c",
+   "protein_heavy_after": 8998,
+   "protein_heavy_observed": 8998,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [],
+   "unobs_listing_present": false,
+   "verdict": "out_of_scope(atom_limit_exceeded)",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [
+    "atom_limit_exceeded"
+   ],
+   "blocker_count": 1,
+   "blockers": [
+    {
+     "detail": "protein heavy atoms after repair 8998 > 6000",
+     "reason_code": "atom_limit_exceeded",
+     "residue": null
+    }
+   ],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 298,
+     "sequence_length": 298
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 260,
+     "sequence_length": 260
+    },
+    {
+     "chain_auth": "C",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 298,
+     "sequence_length": 298
+    },
+    {
+     "chain_auth": "D",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 260,
+     "sequence_length": 260
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "A",
+    "C",
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "classes": [
+    "chain_parts_merged"
+   ],
+   "expected_added_heavy_atoms": 0,
+   "expected_added_residues": 0,
+   "file": "backend/tests/fixtures/public_1fin.cif",
+   "first_blocker": {
+    "detail": "protein heavy atoms after repair 8998 > 6000",
+    "reason_code": "atom_limit_exceeded",
+    "residue": null
+   },
+   "gaps": [],
+   "input_sha256": "dfe5da37b2e28d3d74eefa0edee97d57ea127538beead9e68a8a42a5c363a1ac",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 3,
+    "B": 2,
+    "C": 3,
+    "D": 2
+   },
+   "prepared_sha256": "19e9bee854685b0e088318bced5b3869243f631f170cd143c3929f0b21bef580",
+   "protein_heavy_after": 8998,
+   "protein_heavy_observed": 8998,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [],
+   "unobs_listing_present": false,
+   "verdict": "out_of_scope(atom_limit_exceeded)",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 7,
+     "observed_last_label": 269,
+     "sequence_length": 272
+    }
+   ],
+   "chain_part_order": [
+    "A"
+   ],
+   "classes": [
+    "side_chain_atoms_added",
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 55,
+   "expected_added_residues": 2,
+   "file": "backend/tests/fixtures/public_1mq4.cif",
+   "first_blocker": null,
+   "gaps": [
+    {
+     "after": "A/285/ARG",
+     "after_label": 166,
+     "before": "A/288/THR",
+     "before_label": 169,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 2,
+     "residues": [
+      "286/ARG/L167",
+      "287/THR/L168"
+     ]
+    }
+   ],
+   "input_sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 1
+   },
+   "prepared_sha256": "aa8a654d3499ce89e31090a552538a8376f6da7164c7dc876f54f2f7f1a49d54",
+   "protein_heavy_after": 2160,
+   "protein_heavy_observed": 2105,
+   "side_chain": [
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "CZ",
+      "NE",
+      "NH1",
+      "NH2"
+     ],
+     "residue": "A/126/ARG"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "NE2",
+      "OE1"
+     ],
+     "residue": "A/127/GLN"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/170/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/171/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/175/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/183/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/339/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "CZ",
+      "NE",
+      "NH1",
+      "NH2"
+     ],
+     "residue": "A/375/ARG"
+    }
+   ],
+   "side_chain_atoms": 36,
+   "side_chain_residues": 8,
+   "side_chain_residues_per_chain": {
+    "A": 8
+   },
+   "terminal_oxt": [
+    {
+     "residue": "A/388/SER"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "in_scope",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 7,
+     "observed_last_label": 269,
+     "sequence_length": 272
+    }
+   ],
+   "chain_part_order": [
+    "A"
+   ],
+   "classes": [
+    "side_chain_atoms_added",
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 55,
+   "expected_added_residues": 2,
+   "file": "backend/tests/fixtures/public_1mq4.cif",
+   "first_blocker": null,
+   "gaps": [
+    {
+     "after": "A/285/ARG",
+     "after_label": 166,
+     "before": "A/288/THR",
+     "before_label": 169,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 2,
+     "residues": [
+      "286/ARG/L167",
+      "287/THR/L168"
+     ]
+    }
+   ],
+   "input_sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 1
+   },
+   "prepared_sha256": "d4cbf1d26ebc3bc22221a87efcb777f7b439f75441fbc0d8c1b19b0a36f48d61",
+   "protein_heavy_after": 2160,
+   "protein_heavy_observed": 2105,
+   "side_chain": [
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "CZ",
+      "NE",
+      "NH1",
+      "NH2"
+     ],
+     "residue": "A/126/ARG"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "NE2",
+      "OE1"
+     ],
+     "residue": "A/127/GLN"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/170/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/171/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/175/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/183/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/339/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "CZ",
+      "NE",
+      "NH1",
+      "NH2"
+     ],
+     "residue": "A/375/ARG"
+    }
+   ],
+   "side_chain_atoms": 36,
+   "side_chain_residues": 8,
+   "side_chain_residues_per_chain": {
+    "A": 8
+   },
+   "terminal_oxt": [
+    {
+     "residue": "A/388/SER"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "in_scope",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [
+    "gap_too_long"
+   ],
+   "blocker_count": 2,
+   "blockers": [
+    {
+     "detail": "gap of 27 residues",
+     "reason_code": "gap_too_long",
+     "residue": "A/313/ARG"
+    },
+    {
+     "detail": "gap of 34 residues",
+     "reason_code": "gap_too_long",
+     "residue": "B/316/MET"
+    }
+   ],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 6,
+     "observed_last_label": 339,
+     "sequence_length": 354
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 5,
+     "observed_last_label": 335,
+     "sequence_length": 354
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "classes": [
+    "chain_parts_merged",
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 519,
+   "expected_added_residues": 71,
+   "file": "backend/tests/fixtures/public_1s9i.cif",
+   "first_blocker": {
+    "detail": "gap of 27 residues",
+    "reason_code": "gap_too_long",
+    "residue": "A/313/ARG"
+   },
+   "gaps": [
+    {
+     "after": "A/223/MET",
+     "after_label": 169,
+     "before": "A/228/VAL",
+     "before_label": 174,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 4,
+     "residues": [
+      "224/ALA/L170",
+      "225/ASN/L171",
+      "226/SER/L172",
+      "227/PHE/L173"
+     ]
+    },
+    {
+     "after": "A/285/ASP",
+     "after_label": 231,
+     "before": "A/313/ARG",
+     "before_label": 259,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 27,
+     "residues": [
+      "286/GLY/L232",
+      "287/GLU/L233",
+      "288/GLU/L234",
+      "289/GLY/L235",
+      "290/GLU/L236",
+      "291/PRO/L237",
+      "292/HIS/L238",
+      "293/SER/L239",
+      "294/ILE/L240",
+      "295/SER/L241",
+      "296/PRO/L242",
+      "297/ARG/L243",
+      "298/PRO/L244",
+      "299/ARG/L245",
+      "300/PRO/L246",
+      "301/PRO/L247",
+      "302/GLY/L248",
+      "303/ARG/L249",
+      "304/PRO/L250",
+      "305/VAL/L251",
+      "306/SER/L252",
+      "307/GLY/L253",
+      "308/HIS/L254",
+      "309/GLY/L255",
+      "310/MET/L256",
+      "311/ASP/L257",
+      "312/SER/L258"
+     ]
+    },
+    {
+     "after": "B/223/MET",
+     "after_label": 169,
+     "before": "B/230/THR",
+     "before_label": 176,
+     "chain_auth": "B",
+     "identity_determined": true,
+     "length": 6,
+     "residues": [
+      "224/ALA/L170",
+      "225/ASN/L171",
+      "226/SER/L172",
+      "227/PHE/L173",
+      "228/VAL/L174",
+      "229/GLY/L175"
+     ]
+    },
+    {
+     "after": "B/281/ARG",
+     "after_label": 227,
+     "before": "B/316/MET",
+     "before_label": 262,
+     "chain_auth": "B",
+     "identity_determined": true,
+     "length": 34,
+     "residues": [
+      "282/PRO/L228",
+      "283/VAL/L229",
+      "284/VAL/L230",
+      "285/ASP/L231",
+      "286/GLY/L232",
+      "287/GLU/L233",
+      "288/GLU/L234",
+      "289/GLY/L235",
+      "290/GLU/L236",
+      "291/PRO/L237",
+      "292/HIS/L238",
+      "293/SER/L239",
+      "294/ILE/L240",
+      "295/SER/L241",
+      "296/PRO/L242",
+      "297/ARG/L243",
+      "298/PRO/L244",
+      "299/ARG/L245",
+      "300/PRO/L246",
+      "301/PRO/L247",
+      "302/GLY/L248",
+      "303/ARG/L249",
+      "304/PRO/L250",
+      "305/VAL/L251",
+      "306/SER/L252",
+      "307/GLY/L253",
+      "308/HIS/L254",
+      "309/GLY/L255",
+      "310/MET/L256",
+      "311/ASP/L257",
+      "312/SER/L258",
+      "313/ARG/L259",
+      "314/PRO/L260",
+      "315/ALA/L261"
+     ]
+    }
+   ],
+   "input_sha256": "3db038cdfa23f9d2b8d88e552162fa153c915402827cb4ebb24936171ef08810",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 2,
+    "B": 2
+   },
+   "prepared_sha256": "41d5a9da68a2ec5d11bfd923c2b2113855e6d0238444c33e753106ae5b7ef130",
+   "protein_heavy_after": 5205,
+   "protein_heavy_observed": 4686,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [
+    {
+     "residue": "A/393/GLY"
+    },
+    {
+     "residue": "B/389/LEU"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "out_of_scope(gap_too_long)",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [
+    "gap_too_long"
+   ],
+   "blocker_count": 2,
+   "blockers": [
+    {
+     "detail": "gap of 27 residues",
+     "reason_code": "gap_too_long",
+     "residue": "A/313/ARG"
+    },
+    {
+     "detail": "gap of 34 residues",
+     "reason_code": "gap_too_long",
+     "residue": "B/316/MET"
+    }
+   ],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 6,
+     "observed_last_label": 339,
+     "sequence_length": 354
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 5,
+     "observed_last_label": 335,
+     "sequence_length": 354
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "classes": [
+    "chain_parts_merged",
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 519,
+   "expected_added_residues": 71,
+   "file": "backend/tests/fixtures/public_1s9i.cif",
+   "first_blocker": {
+    "detail": "gap of 27 residues",
+    "reason_code": "gap_too_long",
+    "residue": "A/313/ARG"
+   },
+   "gaps": [
+    {
+     "after": "A/223/MET",
+     "after_label": 169,
+     "before": "A/228/VAL",
+     "before_label": 174,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 4,
+     "residues": [
+      "224/ALA/L170",
+      "225/ASN/L171",
+      "226/SER/L172",
+      "227/PHE/L173"
+     ]
+    },
+    {
+     "after": "A/285/ASP",
+     "after_label": 231,
+     "before": "A/313/ARG",
+     "before_label": 259,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 27,
+     "residues": [
+      "286/GLY/L232",
+      "287/GLU/L233",
+      "288/GLU/L234",
+      "289/GLY/L235",
+      "290/GLU/L236",
+      "291/PRO/L237",
+      "292/HIS/L238",
+      "293/SER/L239",
+      "294/ILE/L240",
+      "295/SER/L241",
+      "296/PRO/L242",
+      "297/ARG/L243",
+      "298/PRO/L244",
+      "299/ARG/L245",
+      "300/PRO/L246",
+      "301/PRO/L247",
+      "302/GLY/L248",
+      "303/ARG/L249",
+      "304/PRO/L250",
+      "305/VAL/L251",
+      "306/SER/L252",
+      "307/GLY/L253",
+      "308/HIS/L254",
+      "309/GLY/L255",
+      "310/MET/L256",
+      "311/ASP/L257",
+      "312/SER/L258"
+     ]
+    },
+    {
+     "after": "B/223/MET",
+     "after_label": 169,
+     "before": "B/230/THR",
+     "before_label": 176,
+     "chain_auth": "B",
+     "identity_determined": true,
+     "length": 6,
+     "residues": [
+      "224/ALA/L170",
+      "225/ASN/L171",
+      "226/SER/L172",
+      "227/PHE/L173",
+      "228/VAL/L174",
+      "229/GLY/L175"
+     ]
+    },
+    {
+     "after": "B/281/ARG",
+     "after_label": 227,
+     "before": "B/316/MET",
+     "before_label": 262,
+     "chain_auth": "B",
+     "identity_determined": true,
+     "length": 34,
+     "residues": [
+      "282/PRO/L228",
+      "283/VAL/L229",
+      "284/VAL/L230",
+      "285/ASP/L231",
+      "286/GLY/L232",
+      "287/GLU/L233",
+      "288/GLU/L234",
+      "289/GLY/L235",
+      "290/GLU/L236",
+      "291/PRO/L237",
+      "292/HIS/L238",
+      "293/SER/L239",
+      "294/ILE/L240",
+      "295/SER/L241",
+      "296/PRO/L242",
+      "297/ARG/L243",
+      "298/PRO/L244",
+      "299/ARG/L245",
+      "300/PRO/L246",
+      "301/PRO/L247",
+      "302/GLY/L248",
+      "303/ARG/L249",
+      "304/PRO/L250",
+      "305/VAL/L251",
+      "306/SER/L252",
+      "307/GLY/L253",
+      "308/HIS/L254",
+      "309/GLY/L255",
+      "310/MET/L256",
+      "311/ASP/L257",
+      "312/SER/L258",
+      "313/ARG/L259",
+      "314/PRO/L260",
+      "315/ALA/L261"
+     ]
+    }
+   ],
+   "input_sha256": "3db038cdfa23f9d2b8d88e552162fa153c915402827cb4ebb24936171ef08810",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 2,
+    "B": 2
+   },
+   "prepared_sha256": "41d5a9da68a2ec5d11bfd923c2b2113855e6d0238444c33e753106ae5b7ef130",
+   "protein_heavy_after": 5205,
+   "protein_heavy_observed": 4686,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [
+    {
+     "residue": "A/393/GLY"
+    },
+    {
+     "residue": "B/389/LEU"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "out_of_scope(gap_too_long)",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 99,
+     "sequence_length": 99
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 99,
+     "sequence_length": 99
+    },
+    {
+     "chain_auth": "C",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 3,
+     "sequence_length": 3
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "C"
+   ],
+   "classes": [
+    "side_chain_atoms_added"
+   ],
+   "expected_added_heavy_atoms": 6,
+   "expected_added_residues": 0,
+   "file": "backend/tests/fixtures/public_1a30.cif",
+   "first_blocker": null,
+   "gaps": [],
+   "input_sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 1,
+    "B": 1,
+    "C": 1
+   },
+   "prepared_sha256": "eeb3c9573aa6d84ffa2274d014aa22ade6b7256fcdd669d02fd3af1e5c555a27",
+   "protein_heavy_after": 1542,
+   "protein_heavy_observed": 1536,
+   "side_chain": [
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "CZ",
+      "NE",
+      "NH1",
+      "NH2"
+     ],
+     "residue": "A/41/ARG"
+    }
+   ],
+   "side_chain_atoms": 6,
+   "side_chain_residues": 1,
+   "side_chain_residues_per_chain": {
+    "A": 1
+   },
+   "terminal_oxt": [],
+   "unobs_listing_present": false,
+   "verdict": "in_scope",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 99,
+     "sequence_length": 99
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 99,
+     "sequence_length": 99
+    },
+    {
+     "chain_auth": "C",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 3,
+     "sequence_length": 3
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "C",
+    "A",
+    "B",
+    "C"
+   ],
+   "classes": [
+    "chain_parts_merged",
+    "side_chain_atoms_added"
+   ],
+   "expected_added_heavy_atoms": 6,
+   "expected_added_residues": 0,
+   "file": "backend/tests/fixtures/public_1a30.cif",
+   "first_blocker": null,
+   "gaps": [],
+   "input_sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 2,
+    "B": 2,
+    "C": 2
+   },
+   "prepared_sha256": "f8663a71ff077c05b21d53a9f271d78d0a82dffb8704d47b77b11fb35b562667",
+   "protein_heavy_after": 1542,
+   "protein_heavy_observed": 1536,
+   "side_chain": [
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "CZ",
+      "NE",
+      "NH1",
+      "NH2"
+     ],
+     "residue": "A/41/ARG"
+    }
+   ],
+   "side_chain_atoms": 6,
+   "side_chain_residues": 1,
+   "side_chain_residues_per_chain": {
+    "A": 1
+   },
+   "terminal_oxt": [],
+   "unobs_listing_present": false,
+   "verdict": "in_scope",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 2,
+     "observed_last_label": 296,
+     "sequence_length": 301
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 2,
+     "observed_last_label": 296,
+     "sequence_length": 301
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "classes": [
+    "chain_parts_merged",
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 80,
+   "expected_added_residues": 10,
+   "file": "backend/tests/fixtures/public_1a4i.cif",
+   "first_blocker": null,
+   "gaps": [
+    {
+     "after": "A/240/TYR",
+     "after_label": 240,
+     "before": "A/251/LYS",
+     "before_label": 251,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 10,
+     "residues": [
+      "241/VAL/L241",
+      "242/PRO/L242",
+      "243/ASP/L243",
+      "244/ASP/L244",
+      "245/LYS/L245",
+      "246/LYS/L246",
+      "247/PRO/L247",
+      "248/ASN/L248",
+      "249/GLY/L249",
+      "250/ARG/L250"
+     ]
+    }
+   ],
+   "input_sha256": "afa6bd62e3183d1e574ef4c61139148fe4d92c0a5bbac7575b5a418cd664e712",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 2,
+    "B": 2
+   },
+   "prepared_sha256": "007befce0ac3e63e3961d5b153ec1186bb20a3932e8672b63d227172af4e5100",
+   "protein_heavy_after": 4476,
+   "protein_heavy_observed": 4396,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [
+    {
+     "residue": "A/296/GLU"
+    },
+    {
+     "residue": "B/296/GLU"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "in_scope",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 20,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 2,
+     "observed_last_label": 296,
+     "sequence_length": 301
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 2,
+     "observed_last_label": 296,
+     "sequence_length": 301
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "classes": [
+    "chain_parts_merged",
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 80,
+   "expected_added_residues": 10,
+   "file": "backend/tests/fixtures/public_1a4i.cif",
+   "first_blocker": null,
+   "gaps": [
+    {
+     "after": "A/240/TYR",
+     "after_label": 240,
+     "before": "A/251/LYS",
+     "before_label": 251,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 10,
+     "residues": [
+      "241/VAL/L241",
+      "242/PRO/L242",
+      "243/ASP/L243",
+      "244/ASP/L244",
+      "245/LYS/L245",
+      "246/LYS/L246",
+      "247/PRO/L247",
+      "248/ASN/L248",
+      "249/GLY/L249",
+      "250/ARG/L250"
+     ]
+    }
+   ],
+   "input_sha256": "afa6bd62e3183d1e574ef4c61139148fe4d92c0a5bbac7575b5a418cd664e712",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 3,
+    "B": 3
+   },
+   "prepared_sha256": "c1b89426ba5c1e5aff7298b521e95da48345a3b21e18532d5dafee0ab9c8e13a",
+   "protein_heavy_after": 4476,
+   "protein_heavy_observed": 4396,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [
+    {
+     "residue": "A/296/GLU"
+    },
+    {
+     "residue": "B/296/GLU"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "in_scope",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 20,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 76,
+     "sequence_length": 76
+    }
+   ],
+   "chain_part_order": [
+    "A"
+   ],
+   "classes": [],
+   "expected_added_heavy_atoms": 0,
+   "expected_added_residues": 0,
+   "file": "backend/tests/fixtures/public_1ubq.cif",
+   "first_blocker": null,
+   "gaps": [],
+   "input_sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 1
+   },
+   "prepared_sha256": "f33c07b4af9930f499ecc76e343b5665ed754bcb73a5af20e3df051f4c711500",
+   "protein_heavy_after": 602,
+   "protein_heavy_observed": 602,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [],
+   "unobs_listing_present": false,
+   "verdict": "out_of_scope(nothing_to_repair)",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 76,
+     "sequence_length": 76
+    }
+   ],
+   "chain_part_order": [
+    "A"
+   ],
+   "classes": [],
+   "expected_added_heavy_atoms": 0,
+   "expected_added_residues": 0,
+   "file": "backend/tests/fixtures/public_1ubq.cif",
+   "first_blocker": null,
+   "gaps": [],
+   "input_sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 1
+   },
+   "prepared_sha256": "3caa74148cfb3f1bdb7348388e68d00e339491599329d7f54e9484152ec624f9",
+   "protein_heavy_after": 602,
+   "protein_heavy_observed": 602,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [],
+   "unobs_listing_present": false,
+   "verdict": "out_of_scope(nothing_to_repair)",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 99,
+     "sequence_length": 99
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 99,
+     "sequence_length": 99
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B"
+   ],
+   "classes": [
+    "terminal_oxt_added"
+   ],
+   "expected_added_heavy_atoms": 2,
+   "expected_added_residues": 0,
+   "file": "backend/tests/fixtures/public_1hsg.cif",
+   "first_blocker": null,
+   "gaps": [],
+   "input_sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 1,
+    "B": 1
+   },
+   "prepared_sha256": "e1036a8a2121cb00857afbcdcef38ebd4abe1dd8470517f9558e3b912cd5ef9e",
+   "protein_heavy_after": 1516,
+   "protein_heavy_observed": 1514,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [
+    {
+     "residue": "A/99/PHE"
+    },
+    {
+     "residue": "B/99/PHE"
+    }
+   ],
+   "unobs_listing_present": false,
+   "verdict": "in_scope",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 99,
+     "sequence_length": 99
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": true,
+     "last_is_sequence_end": true,
+     "observed_first_label": 1,
+     "observed_last_label": 99,
+     "sequence_length": 99
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "classes": [
+    "chain_parts_merged",
+    "terminal_oxt_added"
+   ],
+   "expected_added_heavy_atoms": 2,
+   "expected_added_residues": 0,
+   "file": "backend/tests/fixtures/public_1hsg.cif",
+   "first_blocker": null,
+   "gaps": [],
+   "input_sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 2,
+    "B": 2
+   },
+   "prepared_sha256": "a228c5eb51551fe6799206317a8c1c76867e5d06b42b2037446c067acfa22013",
+   "protein_heavy_after": 1516,
+   "protein_heavy_observed": 1514,
+   "side_chain": [],
+   "side_chain_atoms": 0,
+   "side_chain_residues": 0,
+   "side_chain_residues_per_chain": {},
+   "terminal_oxt": [
+    {
+     "residue": "A/99/PHE"
+    },
+    {
+     "residue": "B/99/PHE"
+    }
+   ],
+   "unobs_listing_present": false,
+   "verdict": "in_scope",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 3,
+     "observed_last_label": 285,
+     "sequence_length": 286
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": true,
+     "observed_first_label": 2,
+     "observed_last_label": 286,
+     "sequence_length": 286
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "classes": [
+    "chain_parts_merged",
+    "side_chain_atoms_added",
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 266,
+   "expected_added_residues": 24,
+   "file": "runs/stk33-8vf6-20261013/8VF6.cif",
+   "first_blocker": null,
+   "gaps": [
+    {
+     "after": "A/272/LYS",
+     "after_label": 175,
+     "before": "A/286/THR",
+     "before_label": 189,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 13,
+     "residues": [
+      "273/GLN/L176",
+      "274/SER/L177",
+      "275/ARG/L178",
+      "276/SER/L179",
+      "277/GLU/L180",
+      "278/ALA/L181",
+      "279/MET/L182",
+      "280/LEU/L183",
+      "281/GLN/L184",
+      "282/ALA/L185",
+      "283/THR/L186",
+      "284/CYS/L187",
+      "285/GLY/L188"
+     ]
+    },
+    {
+     "after": "B/273/GLN",
+     "after_label": 176,
+     "before": "B/285/GLY",
+     "before_label": 188,
+     "chain_auth": "B",
+     "identity_determined": true,
+     "length": 11,
+     "residues": [
+      "274/SER/L177",
+      "275/ARG/L178",
+      "276/SER/L179",
+      "277/GLU/L180",
+      "278/ALA/L181",
+      "279/MET/L182",
+      "280/LEU/L183",
+      "281/GLN/L184",
+      "282/ALA/L185",
+      "283/THR/L186",
+      "284/CYS/L187"
+     ]
+    }
+   ],
+   "input_sha256": "0c2c46cf2b87be1379aaac842ae9a17d6ef373865151e2669e89ae099d1f9b8a",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 2,
+    "B": 2
+   },
+   "prepared_sha256": "b8efb731525fe16a0d7c840679c882fc182d618c8aea9885234913824cb01eb4",
+   "protein_heavy_after": 4538,
+   "protein_heavy_observed": 4272,
+   "side_chain": [
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/100/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/107/GLU"
+    },
+    {
+     "missing": [
+      "OG"
+     ],
+     "residue": "A/155/SER"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/158/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/161/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/272/LYS"
+    },
+    {
+     "missing": [
+      "CD2",
+      "CE1",
+      "CG",
+      "ND1",
+      "NE2"
+     ],
+     "residue": "A/298/HIS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/329/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/330/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/343/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "B/150/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/151/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/158/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/186/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "CZ",
+      "NE",
+      "NH1",
+      "NH2"
+     ],
+     "residue": "B/206/ARG"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/272/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "NE2",
+      "OE1"
+     ],
+     "residue": "B/273/GLN"
+    },
+    {
+     "missing": [
+      "CD1",
+      "CD2",
+      "CG"
+     ],
+     "residue": "B/324/LEU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/330/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/337/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "B/339/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "B/343/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "NE2",
+      "OE1"
+     ],
+     "residue": "B/379/GLN"
+    }
+   ],
+   "side_chain_atoms": 91,
+   "side_chain_residues": 23,
+   "side_chain_residues_per_chain": {
+    "A": 10,
+    "B": 13
+   },
+   "terminal_oxt": [
+    {
+     "residue": "A/382/THR"
+    },
+    {
+     "residue": "B/383/GLY"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "in_scope",
+   "waters": "strip_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  },
+  {
+   "blocker_codes": [],
+   "blocker_count": 0,
+   "blockers": [],
+   "chain_ends": [
+    {
+     "chain_auth": "A",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": false,
+     "observed_first_label": 3,
+     "observed_last_label": 285,
+     "sequence_length": 286
+    },
+    {
+     "chain_auth": "B",
+     "first_is_sequence_start": false,
+     "last_is_sequence_end": true,
+     "observed_first_label": 2,
+     "observed_last_label": 286,
+     "sequence_length": 286
+    }
+   ],
+   "chain_part_order": [
+    "A",
+    "B",
+    "A",
+    "B",
+    "A",
+    "B"
+   ],
+   "classes": [
+    "chain_parts_merged",
+    "side_chain_atoms_added",
+    "terminal_oxt_added",
+    "internal_gap_filled"
+   ],
+   "expected_added_heavy_atoms": 266,
+   "expected_added_residues": 24,
+   "file": "runs/stk33-8vf6-20261013/8VF6.cif",
+   "first_blocker": null,
+   "gaps": [
+    {
+     "after": "A/272/LYS",
+     "after_label": 175,
+     "before": "A/286/THR",
+     "before_label": 189,
+     "chain_auth": "A",
+     "identity_determined": true,
+     "length": 13,
+     "residues": [
+      "273/GLN/L176",
+      "274/SER/L177",
+      "275/ARG/L178",
+      "276/SER/L179",
+      "277/GLU/L180",
+      "278/ALA/L181",
+      "279/MET/L182",
+      "280/LEU/L183",
+      "281/GLN/L184",
+      "282/ALA/L185",
+      "283/THR/L186",
+      "284/CYS/L187",
+      "285/GLY/L188"
+     ]
+    },
+    {
+     "after": "B/273/GLN",
+     "after_label": 176,
+     "before": "B/285/GLY",
+     "before_label": 188,
+     "chain_auth": "B",
+     "identity_determined": true,
+     "length": 11,
+     "residues": [
+      "274/SER/L177",
+      "275/ARG/L178",
+      "276/SER/L179",
+      "277/GLU/L180",
+      "278/ALA/L181",
+      "279/MET/L182",
+      "280/LEU/L183",
+      "281/GLN/L184",
+      "282/ALA/L185",
+      "283/THR/L186",
+      "284/CYS/L187"
+     ]
+    }
+   ],
+   "input_sha256": "0c2c46cf2b87be1379aaac842ae9a17d6ef373865151e2669e89ae099d1f9b8a",
+   "nonstandard": [],
+   "parts_per_chain": {
+    "A": 3,
+    "B": 3
+   },
+   "prepared_sha256": "26c2bfc7b9077da4230257af373c92a7f65460cf0c88fb7921cd5ee523566813",
+   "protein_heavy_after": 4538,
+   "protein_heavy_observed": 4272,
+   "side_chain": [
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/100/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/107/GLU"
+    },
+    {
+     "missing": [
+      "OG"
+     ],
+     "residue": "A/155/SER"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/158/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/161/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/272/LYS"
+    },
+    {
+     "missing": [
+      "CD2",
+      "CE1",
+      "CG",
+      "ND1",
+      "NE2"
+     ],
+     "residue": "A/298/HIS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/329/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "A/330/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "A/343/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "B/150/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/151/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/158/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/186/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "CZ",
+      "NE",
+      "NH1",
+      "NH2"
+     ],
+     "residue": "B/206/ARG"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/272/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "NE2",
+      "OE1"
+     ],
+     "residue": "B/273/GLN"
+    },
+    {
+     "missing": [
+      "CD1",
+      "CD2",
+      "CG"
+     ],
+     "residue": "B/324/LEU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/330/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CE",
+      "CG",
+      "NZ"
+     ],
+     "residue": "B/337/LYS"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "B/339/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "OE1",
+      "OE2"
+     ],
+     "residue": "B/343/GLU"
+    },
+    {
+     "missing": [
+      "CD",
+      "CG",
+      "NE2",
+      "OE1"
+     ],
+     "residue": "B/379/GLN"
+    }
+   ],
+   "side_chain_atoms": 91,
+   "side_chain_residues": 23,
+   "side_chain_residues_per_chain": {
+    "A": 10,
+    "B": 13
+   },
+   "terminal_oxt": [
+    {
+     "residue": "A/382/THR"
+    },
+    {
+     "residue": "B/383/GLY"
+    }
+   ],
+   "unobs_listing_present": true,
+   "verdict": "in_scope",
+   "waters": "keep_all",
+   "zero_occupancy_atoms": 0,
+   "zero_occupancy_residues": []
+  }
+ ],
+ "template_sha256": "d9f9779c09d67cd5f8bc657692f174ffab14c469dfd06d560ac1899fa7e976b8"
+}

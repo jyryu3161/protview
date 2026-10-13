@@ -1,7 +1,7 @@
 """Event-authoritative local queue and fixed POSIX guardian supervision.
 
-Only fixed OpenMM/ProLIF/fpocket/RDKit-ligand/qvina-docking/OpenMM-mutation-model workers and internal lifecycle
-fixtures can dispatch.
+Only fixed OpenMM/ProLIF/fpocket/RDKit-ligand/qvina-docking/OpenMM-mutation-model/PDBFixer-structure-repair workers
+and internal lifecycle fixtures can dispatch.
 Fixtures are injected by Python tests, never selected by an API field.
 """
 from __future__ import annotations
@@ -47,6 +47,10 @@ from ..runtime.orchestrator import (
     checked_link,
     link_fields,
 )
+from ..structure_origin import reject_if_repaired
+from ..structure_repair_constants import PROTOCOL as REPAIR_PROTOCOL
+from ..structure_repair_constants import TIMEOUT_DEFAULT_S as REPAIR_TIMEOUT_DEFAULT_S
+from ..structure_repair_constants import TIMEOUT_MAX_S as REPAIR_TIMEOUT_MAX_S
 from ..tools.energetic import JOB_PROTOCOLS, require_protocol
 from ..tools.openmm_method import PROTOCOL as OPENMM_PROTOCOL
 from ..tools.openmm_method import preflight
@@ -71,6 +75,8 @@ SEQUENCE_GA_TIMEOUT_MAX_S = 15000   # = sequence_ga_constants.TIMEOUT_MAX_S
 SUMMARY_PROTOCOLS = frozenset({BATCH_PROTOCOL, GA_PROTOCOL, SEQUENCE_GA_PROTOCOL})   # one attempt; summary after cleanup
 # M21 openmm_mutation_model_v1: its own job timeout bound 240 s (default 120 s), checked with its arguments
 # (argument_invalid) by mutation_model_bundle.admission; MUTATION_TIMEOUT_MAX_S/DEFAULT_S are imported above.
+# M29 pdbfixer_repair_v1: the same 240 s bound (default 120 s), checked with its arguments (argument_invalid) by
+# structure_repair_jobs.admission; REPAIR_TIMEOUT_MAX_S/DEFAULT_S are imported above.
 DEFAULT_TIMEOUT_S = 60      # every other protocol's default when the JobSubmit field is absent
 CHEMICAL_DERIVED_KINDS = frozenset({"chemical_preparation_manifest", "chemical_structure",
                                     "chemical_graph", "chemical_interaction_set"})
@@ -643,16 +649,20 @@ class JobQueue:
             # M21 keeps its closed admission reasons (a non-object is argument_invalid, these keys are unknown).
             raise ToolFailure(FailureClass.input_invalid, "unsafe job arguments", detail=(
                 {"reason_code": "argument_invalid" if not isinstance(args, dict) else "unknown_field"}
-                if protocol == MUTATION_MODEL_PROTOCOL else None))
+                if protocol in (MUTATION_MODEL_PROTOCOL, REPAIR_PROTOCOL) else None))
         bound = (BATCH_TIMEOUT_MAX_S if protocol == BATCH_PROTOCOL else
                  GA_TIMEOUT_MAX_S if protocol == GA_PROTOCOL else
                  SEQUENCE_GA_TIMEOUT_MAX_S if protocol == SEQUENCE_GA_PROTOCOL else
                  MUTATION_TIMEOUT_MAX_S if protocol == MUTATION_MODEL_PROTOCOL else
+                 REPAIR_TIMEOUT_MAX_S if protocol == REPAIR_PROTOCOL else
                  120 if protocol in {OPENMM_PROTOCOL, POCKET_PROTOCOL} or protocol in CHEMICAL_PROTOCOLS or
                  protocol in LIGAND_PROTOCOLS else 900)
         if protocol == MUTATION_MODEL_PROTOCOL:
             # Range (0, bound] checked in the admission order (argument_invalid) by mutation_model_bundle.admission.
             timeout_s = MUTATION_TIMEOUT_DEFAULT_S if timeout_s is None else timeout_s
+        elif protocol == REPAIR_PROTOCOL:
+            # Range (0, bound] checked in the admission order (argument_invalid) by structure_repair_jobs.admission.
+            timeout_s = REPAIR_TIMEOUT_DEFAULT_S if timeout_s is None else timeout_s
         elif protocol in (GA_PROTOCOL, SEQUENCE_GA_PROTOCOL):
             # No default (spec 2); (0, bound] and >= ga.total_s + 600 are checked with the arguments
             # (invalid_job_arguments) by ligand_ga_inputs / sequence_ga_inputs, whose ceiling is this bound.
@@ -707,18 +717,27 @@ class JobQueue:
 
             mutation_admitted, timeout_s = mutation_admission(self.run, args, timeout_s)
             normalized = mutation_admitted["arguments"]
+        elif protocol == REPAIR_PROTOCOL:
+            from ..structure_repair_jobs import admission as repair_admission
+
+            # unknown_field -> confirmation_missing -> argument_invalid -> structure_invalid -> already_repaired.
+            repair_admitted, timeout_s = repair_admission(self.run, args, timeout_s)
+            normalized = repair_admitted["arguments"]
         else:
             normalized = check_args(spec, args, self.run.store.kind_of)
             for name in spec.accepts:
                 value = normalized[name]
                 for handle in value if isinstance(value, list) else [value]:
                     self.run.store.load(handle)
+                    # M29 spec 5.2: M7 minimization and the PyRosetta protocols refuse a repaired structure before
+                    # the dry-run plan, the M7 preflight and the protocol check (nothing recorded or reserved).
+                    reject_if_repaired(self.run.store, handle)
         if self.run.dry_run:
             return {"plan_only": True, "protocol_id": protocol, "reason_code": "dry_run",
                     "available": False, "output_handles": [], "normalized_parameters": normalized}
         if (protocol not in CHEMICAL_PROTOCOLS and protocol not in LIGAND_PROTOCOLS and
                 protocol not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, DOCKING_PROTOCOL, BATCH_PROTOCOL,
-                                 GA_PROTOCOL, SEQUENCE_GA_PROTOCOL, MUTATION_MODEL_PROTOCOL}):
+                                 GA_PROTOCOL, SEQUENCE_GA_PROTOCOL, MUTATION_MODEL_PROTOCOL, REPAIR_PROTOCOL}):
             require_protocol(protocol)
             raise AssertionError("unreachable")
         if protocol == OPENMM_PROTOCOL:
@@ -784,6 +803,16 @@ class JobQueue:
             selected, mutation_pins = mutation_selection(self.run, mutation_admitted)
             implementation = MUTATION_IMPLEMENTATION
             input_handles = mutation_inputs(selected)
+        elif protocol == REPAIR_PROTOCOL:
+            from ..structure_repair_jobs import IMPLEMENTATION as REPAIR_IMPLEMENTATION
+            from ..structure_repair_jobs import call_key as repair_call_key
+            from ..structure_repair_jobs import input_handles as repair_inputs
+            from ..structure_repair_jobs import selection as repair_selection
+
+            # 412 unavailability, 422 repair_not_possible (the analysis), 429 staged size; nothing reserved.
+            selected, repair_pins = repair_selection(self.run, repair_admitted)
+            implementation = REPAIR_IMPLEMENTATION
+            input_handles = repair_inputs(selected)
         else:
             capability = chemical_capability()
             if not capability["available"]:
@@ -802,6 +831,7 @@ class JobQueue:
                ga_call_key(selected, docking_pins, ga_pins) if protocol == GA_PROTOCOL else
                sequence_call_key(selected, sequence_pins) if protocol == SEQUENCE_GA_PROTOCOL else
                mutation_call_key(normalized, mutation_pins) if protocol == MUTATION_MODEL_PROTOCOL else
+               repair_call_key(normalized, repair_pins) if protocol == REPAIR_PROTOCOL else
                idempotency_key(protocol, implementation,
                                {"selected": selected, "parameters": normalized,
                                 **({"worker_sha256": capability["worker_sha256"],
@@ -860,6 +890,8 @@ class JobQueue:
                 job["method"], job["ga_method"] = sequence_record_pins(sequence_pins)
             elif protocol == MUTATION_MODEL_PROTOCOL:
                 job["method"] = mutation_pins  # worker + dependency SHA-256 + fixed method record (rechecked at start)
+            elif protocol == REPAIR_PROTOCOL:
+                job["method"] = repair_pins  # worker + dependency SHA-256 + fixed method record (rechecked at start)
             self.run.events.append("job_submitted", job=job, **link_fields(link))
             created = self._rebuild()[job_id]
             return created if link is None else {**created, "execution_ownership": "owned"}
@@ -1016,37 +1048,44 @@ class JobQueue:
         if status not in TERMINAL:
             raise ValueError("invalid terminal status")
         with self.run._transition():
-            job = self._rebuild()[job_id]
-            if job["status"] in TERMINAL:
-                return job
-            if job["attempt_id"] != attempt_id:
-                raise ValueError("stale attempt terminal")
-            if job["cancel_requested"] or self.run._cancel_path.exists():
-                status, handles = "cancelled", []
-                failure = {"error": "cancelled", "message": "cancellation accepted before terminal commit"}
-            events = list(self.run.events.read())
-            if attempt_id is not None and not any(e["type"] == "job_cleanup_verified" and
-                                                   e.get("attempt_id") == attempt_id and
-                                                   e.get("group_empty") is True for e in events):
-                raise ValueError("terminal attempt lacks verified group cleanup")
-            if status == "done":
-                if not handles or not any(e["type"] == "job_result_candidate" and
-                           e.get("attempt_id") == attempt_id and e.get("output_handles") == (handles or [])
-                           for e in events):
-                    raise ValueError("done attempt lacks matching result candidate")
-                for handle in handles or []:
-                    kind = self.run.store.meta(handle)["kind"]
-                    if kind in CHEMICAL_DERIVED_KINDS:
-                        limit = (8 * 1024 * 1024 if kind in
-                                 {"chemical_preparation_manifest", "chemical_interaction_set"}
-                                 else 32 * 1024 * 1024)
-                        self.run.store.load_bounded_json(handle, limit)
-                    else:
-                        self.run.store.load(handle)
-            self.run.events.append("job_terminal", job_id=job_id, attempt_id=attempt_id,
-                                   status=status, failure=failure, output_handles=handles or [],
-                                   **link_fields(job.get("execution_link")))
-            return self._rebuild()[job_id]
+            return self._terminal_locked(job_id, attempt_id, status, failure, handles)
+
+    def _terminal_locked(self, job_id: str, attempt_id: str | None, status: str,
+                         failure: dict[str, Any] | None = None, handles: list[str] | None = None) -> dict[str, Any]:
+        """``_terminal`` for a caller that already holds the run's transition lock (it is not reentrant)."""
+        if status not in TERMINAL:
+            raise ValueError("invalid terminal status")
+        job = self._rebuild()[job_id]
+        if job["status"] in TERMINAL:
+            return job
+        if job["attempt_id"] != attempt_id:
+            raise ValueError("stale attempt terminal")
+        if job["cancel_requested"] or self.run._cancel_path.exists():
+            status, handles = "cancelled", []
+            failure = {"error": "cancelled", "message": "cancellation accepted before terminal commit"}
+        events = list(self.run.events.read())
+        if attempt_id is not None and not any(e["type"] == "job_cleanup_verified" and
+                                               e.get("attempt_id") == attempt_id and
+                                               e.get("group_empty") is True for e in events):
+            raise ValueError("terminal attempt lacks verified group cleanup")
+        if status == "done":
+            if not handles or not any(e["type"] == "job_result_candidate" and
+                       e.get("attempt_id") == attempt_id and e.get("output_handles") == (handles or [])
+                       for e in events):
+                raise ValueError("done attempt lacks matching result candidate")
+            for handle in handles or []:
+                kind = self.run.store.meta(handle)["kind"]
+                if kind in CHEMICAL_DERIVED_KINDS:
+                    limit = (8 * 1024 * 1024 if kind in
+                             {"chemical_preparation_manifest", "chemical_interaction_set"}
+                             else 32 * 1024 * 1024)
+                    self.run.store.load_bounded_json(handle, limit)
+                else:
+                    self.run.store.load(handle)
+        self.run.events.append("job_terminal", job_id=job_id, attempt_id=attempt_id,
+                               status=status, failure=failure, output_handles=handles or [],
+                               **link_fields(job.get("execution_link")))
+        return self._rebuild()[job_id]
 
     def _cleanup_owned(self, identity: dict[str, Any]) -> bool:
         """Signal only members admitted while this launch's guardian is still alive."""
@@ -1303,7 +1342,7 @@ class JobQueue:
                     raise ToolFailure(FailureClass.precondition, "internal fixture adapter unavailable")
             elif (job["protocol_id"] not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, *CHEMICAL_PROTOCOLS,
                                              *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL, GA_PROTOCOL,
-                                             SEQUENCE_GA_PROTOCOL, MUTATION_MODEL_PROTOCOL} or
+                                             SEQUENCE_GA_PROTOCOL, MUTATION_MODEL_PROTOCOL, REPAIR_PROTOCOL} or
                   self._fixture_mode is not None):
                 raise ToolFailure(FailureClass.precondition, "production adapter unavailable")
             if job["protocol_id"] in CHEMICAL_PROTOCOLS:
@@ -1374,6 +1413,13 @@ class JobQueue:
                     raise ToolFailure(FailureClass.precondition,
                                       "pinned OpenMM mutation-model worker or engine changed",
                                       detail={"reason_code": "worker_version_invalid"})
+            if job["protocol_id"] == REPAIR_PROTOCOL:
+                from ..structure_repair_jobs import require_ready as repair_ready
+
+                # 412 process_identity_unavailable / openmm_unavailable / pdbfixer_unavailable before reservation.
+                if repair_ready() != job.get("method"):
+                    raise ToolFailure(FailureClass.precondition, "pinned PDBFixer structure-repair worker or engine "
+                                      "changed", detail={"reason_code": "worker_version_invalid"})
             if job["cancel_requested"] or self.run._cancel_path.exists():
                 return self._terminal(job_id, None, "cancelled")
             if self.run.dry_run:
@@ -1546,6 +1592,11 @@ class JobQueue:
 
                     raw = mutation_stage(job)
                     limit = MUTATION_STAGED_LIMIT  # the M7 bound: the same staged M7 protein projection
+                elif job["protocol_id"] == REPAIR_PROTOCOL:
+                    from ..structure_repair_jobs import stage as repair_stage
+
+                    raw = repair_stage(job)
+                    limit = 4_000_000  # = structure_repair_constants.MAX_STAGED_INPUT_BYTES (checked at submission)
                 else:
                     raw = canonical_json(job["selected"])
                     limit = 32 * 1024 * 1024 if job["protocol_id"] in CHEMICAL_PROTOCOLS else 4_000_000
@@ -1556,7 +1607,8 @@ class JobQueue:
                                                                                  *LIGAND_PROTOCOLS, DOCKING_PROTOCOL,
                                                                                  BATCH_PROTOCOL, GA_PROTOCOL,
                                                                                  SEQUENCE_GA_PROTOCOL,
-                                                                                 MUTATION_MODEL_PROTOCOL}
+                                                                                 MUTATION_MODEL_PROTOCOL,
+                                                                                 REPAIR_PROTOCOL}
                                     else "openmm_protein_minimize_v1"),
                         "input_sha256": hashlib.sha256(raw).hexdigest()}
                 input_fd = os.open(attempt_dir / "structure.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
@@ -1615,7 +1667,7 @@ class JobQueue:
                                guardian_clean=result.get("clean") if result else None)
         preparation_handles = None if job["fixture_only"] or attempt_dir is None or job["protocol_id"] in {
             *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL, GA_PROTOCOL,
-            SEQUENCE_GA_PROTOCOL, MUTATION_MODEL_PROTOCOL} else \
+            SEQUENCE_GA_PROTOCOL, MUTATION_MODEL_PROTOCOL, REPAIR_PROTOCOL} else \
             self._record_preparation(job, attempt_id)
         if job["protocol_id"] in SUMMARY_PROTOCOLS:
             return self._finish_batch(self.get(job_id), attempt_id, attempt_dir, result, error)
@@ -1645,6 +1697,9 @@ class JobQueue:
                          self._mutation_worker_error(attempt_dir)
                          if job["protocol_id"] == MUTATION_MODEL_PROTOCOL and attempt_dir is not None and
                          not result.get("unexpected_members") else
+                         self._repair_worker_error(attempt_dir)
+                         if job["protocol_id"] == REPAIR_PROTOCOL and attempt_dir is not None and
+                         not result.get("unexpected_members") else
                          {"error": "fatal", "message": "worker exit or abandoned helper"})
             else:
                 payload = result.get("payload")
@@ -1668,13 +1723,15 @@ class JobQueue:
                 if job["protocol_id"] in CHEMICAL_PROTOCOLS:
                     handles = self._publish_chemical(job, attempt_id, attempt_dir, result["payload"])
                 elif job["protocol_id"] in {POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL,
-                                            MUTATION_MODEL_PROTOCOL}:
+                                            MUTATION_MODEL_PROTOCOL, REPAIR_PROTOCOL}:
                     outcome = (self._publish_pocket(job, attempt_id, attempt_dir, result["payload"])
                                if job["protocol_id"] == POCKET_PROTOCOL else
                                self._publish_docking(job, attempt_id, attempt_dir, result["payload"])
                                if job["protocol_id"] == DOCKING_PROTOCOL else
                                self._publish_mutation_model(job, attempt_id, attempt_dir, result["payload"])
                                if job["protocol_id"] == MUTATION_MODEL_PROTOCOL else
+                               self._publish_structure_repair(job, attempt_id, attempt_dir, result["payload"])
+                               if job["protocol_id"] == REPAIR_PROTOCOL else
                                self._publish_ligand(job, attempt_id, attempt_dir, result["payload"]))
                     if type(outcome) is dict:
                         return self._terminal(job_id, attempt_id, outcome["status"], outcome.get("failure"))
@@ -1768,6 +1825,12 @@ class JobQueue:
     @staticmethod
     def _mutation_worker_error(attempt_dir: Path) -> dict[str, Any]:
         from ..mutation_model_bundle import worker_error
+
+        return worker_error(attempt_dir)
+
+    @staticmethod
+    def _repair_worker_error(attempt_dir: Path) -> dict[str, Any]:
+        from ..structure_repair_jobs import worker_error
 
         return worker_error(attempt_dir)
 
@@ -2016,6 +2079,45 @@ class JobQueue:
             return publish(self.run, job, attempt_id, attempt_dir, descriptor)
         except MutationJobFailure as failure:
             return {"status": "failed", "failure": failure.to_error()}
+
+    def _publish_structure_repair(self, job: dict[str, Any], attempt_id: str, attempt_dir: Path,
+                                  descriptor: dict[str, Any]) -> dict[str, Any]:
+        """M29: the pure part first (assembly, the core validator and the M7 preflight on the read-only overlay; no
+        write, no lock), then ONE transition critical section that re-checks cancellation and the attempt and only
+        then stores the four objects and the published event, appends the result candidate and commits the done
+        terminal. A cancel or a stale completion seen there stores nothing; a cancel requested after it finds the job
+        terminal. A closed failure (``RepairJobFailure``) or an environment failure (``precondition``) is a typed
+        (charged) failure that stores nothing. Returns the outcome dict; for ``done`` it is the committed job record,
+        so the caller's ``_terminal`` returns it unchanged."""
+        from ..structure_repair_bundle import store
+        from ..structure_repair_jobs import RepairJobFailure, prepare
+
+        job_id = job["job_id"]
+        with self.run._transition():
+            current = self.get(job_id)
+            if current["cancel_requested"] or self.run._cancel_path.exists():
+                return {"status": "cancelled"}
+            if current["status"] in TERMINAL or current["attempt_id"] != attempt_id:
+                return {"status": "failed", "failure": {"error": "fatal", "message": "stale attempt completion"}}
+        try:
+            objects = prepare(self.run, job, attempt_dir, descriptor)
+        except RepairJobFailure as failure:
+            return {"status": "failed", "failure": failure.to_error()}
+        except ToolFailure as exc:
+            if exc.cls is not FailureClass.precondition:
+                raise
+            return {"status": "failed", "failure": {"error": exc.cls.value, "reason_code": exc.detail.get("reason_code"),
+                                                    "message": exc.message, "detail": exc.detail}}
+        with self.run._transition():
+            current = self.get(job_id)
+            if current["cancel_requested"] or self.run._cancel_path.exists():
+                return {"status": "cancelled"}
+            if current["status"] in TERMINAL or current["attempt_id"] != attempt_id:
+                return {"status": "failed", "failure": {"error": "fatal", "message": "stale attempt completion"}}
+            handles = store(self.run, objects, job_id, attempt_id)
+            self.run.events.append("job_result_candidate", job_id=job_id, attempt_id=attempt_id,
+                                   output_handles=handles)
+            return self._terminal_locked(job_id, attempt_id, "done", handles=handles)
 
     def _existing_attempt_dir(self, job_id: str, attempt_id: str) -> Path | None:
         path = self.run.run_dir / "jobs" / job_id / attempt_id

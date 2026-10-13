@@ -1,0 +1,1270 @@
+M29 T2 — flaky test fix: run evidence (text only). Full outputs, the scratch tools and raw measurements are in
+the Git-ignored folder frontend/tests/offscreen/artifacts/m29-repair/t2/ (listed at the end with size and
+SHA-256). <root> = repository root, <tmp> = a temporary directory. No key, no absolute user path.
+
+Runner: .../t2/scripts/load18.py (scratch, not product code). It imports .codex/hooks/stop.py and starts all of
+its pytest groups ([*PYTEST_GROUPS, REST_GROUP]) at once, each as `<python> -m pytest -q <group args>` from
+<root>, with the hook's CHECK_TIMEOUT (480 s; process group SIGTERM, 0.2 s, SIGKILL). The hook had eighteen
+groups until the M29 T5 merge (2da787e9 added a structure repair group) and nineteen after; a run uses the
+groups of its source. A run passes only if every group exits 0 without timeout and with skip 0. Nothing is
+re-run inside a count.
+
+Contamination (coordinator's instruction): a run during which other agents' or the coordinator's Stop hook
+pytest groups also ran is not counted, pass or fail. From series C on, a sampler logs every 30 s the load
+average and the pytest group processes outside the run; 9 or more in any sample marks the run
+contaminated. Before series C the overlap was seen with ps (noted per run).
+
+T2 commits: e1da210b, 16aa05d8, ea608e33, 0218cfa5, 0a9a602a (comments only), cddc638a (files: backend/tests
+only). Other tasks merged into the branch meanwhile (T3b, T4, T5, T7).
+
+====================================================================================================
+VERDICT
+====================================================================================================
+gateC1 (HEAD cddc638a, 19 groups): PASS; wall 385.66 s; longest group 385.64 s; tests passed 6531; foreign pytest group processes at most 0 -> clean
+gateC2 (HEAD cddc638a, 19 groups): PASS; wall 388.05 s; longest group 388.03 s; tests passed 6531; foreign pytest group processes at most 2 -> clean
+gateC3 (HEAD cddc638a, 19 groups): PASS; wall 390.05 s; longest group 390.03 s; tests passed 6531; foreign pytest group processes at most 3 -> clean
+three consecutive clean passes on the same source without re-run: YES
+
+====================================================================================================
+1. BEFORE THE CHANGE
+====================================================================================================
+
+## R0 baseline (test code before T2; 18 groups + extra load: probe, two test_docking_batch_reports.py, one sequence GA SIGTERM selection)
+source HEAD: 34c6786f716d566f3f76d62de272b1d868abbb82
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 420.52 s
+all groups exit 0, no timeout, skip 0: False
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 18 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 381.61 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 333.25 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 386.27 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 378.3 |
+| group05 | test_docking_batch_api.py … (10 files) | 1 | 377 | 0 | 13 | 0 | 378.72 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 387.62 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 346.92 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 353.39 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 319.16 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 359.94 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 380.88 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 1 | 418 | 1 | 0 | 0 | 336.75 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 355.66 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 225.57 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 273.32 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 51.47 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 129 | 0 | 0 | 0 | 271.87 |
+| group18 | REST (backend/tests minus the named files, plus the script tests) | 0 | 3918 | 0 | 0 | 0 | 410.78 |
+
+extra commands (load only, not part of the eighteen):
+- probe: exit 0; p99_ms": 3.31, "p999_ms": 3.98, "max_ms": 3.98, "over_100ms": 0, "over_300ms": 0, "over_800ms": 0}, "scan_s": {"n": 185, "p50_ms": 365.4, "p99_ms": 7456.71, "p999_ms": 8078.02, "max_ms": 8078.02, "over_100ms": 151, "over_300ms": 98, "over_800ms": 66}, "load1_max": 37.8974609375, "load1_mean": 24.79}
+- batchrep1: exit 0; 19 passed, 1 warning in 86.26s (0:01:26)
+- batchrep2: exit 0; 19 passed, 1 warning in 87.06s (0:01:27)
+- seqterm: exit 0; 3 passed, 89 deselected in 203.84s (0:03:23)
+
+failed / errored test ids:
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_hand_values_rows_reuse_and_no_side_effects
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_reuse_n0_and_existing_complete_batch
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_admission_refusals_have_reasons_and_no_numbers[empty-batch_empty-input_invalid]
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_admission_refusals_have_reasons_and_no_numbers[too_large-batch_too_large-input_invalid]
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_admission_refusals_have_reasons_and_no_numbers[parent_core-batch_parent_not_allowed-input_invalid]
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_admission_refusals_have_reasons_and_no_numbers[unknown_id-candidate_unknown-input_invalid]
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_admission_refusals_have_reasons_and_no_numbers[parent_mismatch-parent_mismatch-input_invalid]
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_admission_refusals_have_reasons_and_no_numbers[other_run_handle-invalid_job_arguments-input_invalid]
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_admission_refusals_have_reasons_and_no_numbers[unknown_key-invalid_job_arguments-input_invalid]
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_preflight_capability_unavailable_and_query_and_body_limits
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_list_summaries_validated_in_publication_order
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_detail_matches_stored_summary_and_per_row_m18_results
+- group05: ERROR backend/tests/test_docking_batch_api.py::test_detail_refuses_wrong_kind_other_run_unknown_params_and_tampered_summary
+- group12: FAILED backend/tests/test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/r0-baseline/
+  batchrep1.txt  614 B  sha256 3c720dbcd8489634b465c77b0548d58cbea241187b7588b1849c622b16e47da3
+  batchrep2.txt  614 B  sha256 49143594a3b69fce06cf58a1b7ad7d94d48d4a520ea2c6db9aba23d2fd8d21c7
+  group01.txt  111 B  sha256 fe846cc43d4160a9894edfbced6c0f8cfbd0d3cc58ad2bf9720839f32171d51f
+  group02.txt  615 B  sha256 9ac279229f041d395f9a0509ac2b5cfb0ad2f6c2d712fb6b117bc5f5a0c9badb
+  group03.txt  856 B  sha256 2508ee18a3b5483dcb1fe0ad51746c8ff80b5ad4b32f069a7115715f0543501d
+  group04.txt  696 B  sha256 49b83808ffd0e2301773de6de1415a2393e250b42f9ac4c1c70eff640db1868c
+  group05.txt  55370 B  sha256 10038fc6859b503c358c2ce05ced2a52b051e6f4baa5b9d3f95cc3c63510a7d5
+  group06.txt  615 B  sha256 6b96b489c143e29ef12f037653a388da7054db20a4ebd8037bd19d08612aeb63
+  group07.txt  111 B  sha256 187b3ad0a2986e9338e94b0346df52f2c024ea4ec374c6c1f64ef2ce5b1b1c7d
+  group08.txt  614 B  sha256 eee9b81f30e419567ae05efb7c784ed37d68ed10799da28422df3fb1324d40ac
+  group09.txt  615 B  sha256 67d7d400e36634f1968c1b8329858a3840207975b1219090460b3cf1ee81921c
+  group10.txt  615 B  sha256 10f521b699b648ade66510f4ccff5c01d7fbbc7ea7af12eb446553aa5f7f3d25
+  group11.txt  615 B  sha256 4388cbfd3eed0a509826462cdf37e7ce536307792757af972f38942d5367f100
+  group12.txt  5781 B  sha256 86f899d7b144cd26ab870e3155af0feb87da54b506eab65f6ef284be8edf9c69
+  group13.txt  856 B  sha256 559dd9b65ca2c37ad0612959e5bfb09e39417ec3d06dfdd8902e2026a9eff421
+  group14.txt  776 B  sha256 1e8680c07988ee90aa53379e2d69a03846f65c3f72b30091faf5accb8435b742
+  group15.txt  615 B  sha256 e3b6a99e83931089e8c40ef79a40e9ccddf7c7938c8466f0cdd281fb17c83151
+  group16.txt  1165 B  sha256 6f15b7a1bd9e8d35fb5634efdc3faa03522777c09a022e435c5fd302dd53da4a
+  group17.txt  696 B  sha256 03130ddc5380054844238413f56bf94ea178adb9ef4e0ebd39530200a7c9a3de
+  group18.txt  4937 B  sha256 4d923054ca81bd2c12df9ebc82fc89c432d84cd3d430e9658cfc65b00f6af904
+  probe.txt  504 B  sha256 c092b249e8a042e90023705219819af045c1228d0428d569fc1103bd7d7bfec0
+  seqterm.txt  125 B  sha256 fe249e12827e0b77fe320ec9423eebfdd8d82619d898ca5bbddbe3513c21599e
+  summary.json  15391 B  sha256 5002d1a2f22bab1638d3c5ce6c99c7631f0d61ebfabec5e5e002d4e135ce1432
+R0 group05 error text (each of the 13 errors; a fixture module, so no assertion rewriting):
+    docking_batch_fixture.py:148: AssertionError
+    assert [row['state'] for row in world['stored']['partial']['rows']][2:] == ['cancelled', 'not_run']
+R0 group12 failure text:
+    AssertionError: individual 0 ended before it was held
+
+## R1 diagnostic (test code before T2; 18 groups + stand-in reproduction)
+source HEAD: 34c6786f (reflog: HEAD 14:24-15:17 KST; the run was 14:41-14:48 KST)
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 379.58 s
+all groups exit 0, no timeout, skip 0: True
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 18 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 372.06 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 321.53 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 368.36 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 354.4 |
+| group05 | test_docking_batch_api.py … (10 files) | 0 | 390 | 0 | 0 | 0 | 363.78 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 371.82 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 337.52 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 337.87 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 298.43 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 341.34 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 365.33 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 304.35 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 335.73 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 208.76 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 258.07 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 46.43 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 129 | 0 | 0 | 0 | 248.82 |
+| group18 | REST (backend/tests minus the named files, plus the script tests) | 0 | 3918 | 0 | 0 | 0 | 379.56 |
+
+extra commands (load only, not part of the eighteen):
+- micro_old: exit 0; SUMMARY algo=old scenario=none passed 35/40
+- micro_new: exit 0; SUMMARY algo=new scenario=none passed 35/40
+- micro_new32: exit 0; SUMMARY algo=new scenario=none passed 25/25
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/r1-micro/
+  group01.txt  111 B  sha256 22444e8976a3a6ae04af05ab62fba66b5b208dfae1b87e2db73b981d360bc614
+  group02.txt  615 B  sha256 00dd72ea61e56d263cb21a725ceef44cf128a714acff072d4bd5993897034cb1
+  group03.txt  856 B  sha256 8ae41db9bf02756ca8bbae9da4938d8b4d9ce0687dfc9dbb6bfea9d43db9ccff
+  group04.txt  696 B  sha256 0bbb5d7ab268a67adb155a5dd633a40f2cf23c50c239e49144b2977474bf6ac8
+  group05.txt  1016 B  sha256 4c575a965a5c3310879ca30b0e35ab6df568b7fad5a5de6a837057dcab8b3aef
+  group06.txt  615 B  sha256 c29a203feec4401bbe4f40bca3a026310f096f402827aea79f2d9d018b57cac8
+  group07.txt  111 B  sha256 2c881ea54778a01a5fc0069f0290ff3be60fcebea648c92477ac7081bb50925b
+  group08.txt  614 B  sha256 b672db2bf2f6e76a53347f332d1602c6407f34470839d4583922842000570f11
+  group09.txt  615 B  sha256 5224ef89f281faa7326506d26ac4c514be020184f70a6364d7328bf8301abd8b
+  group10.txt  615 B  sha256 15fa5d2927328ce8d8a6653f11dda6619f8c82d971c70d48889c5ab0be2ed40c
+  group11.txt  615 B  sha256 353c2383eabe2c93fe64d326bbcb75bd13f3bc9c29fb6958ee99c3058f95e512
+  group12.txt  1016 B  sha256 c0e0a57c6a5f2f53c3c7e18f05455c55ad32159a58978089ff5e81eca9b945d2
+  group13.txt  856 B  sha256 f5b5614409f7b7c02a682646e8d9f1969ec36063c261e3f5677b04c4c3ba0cb4
+  group14.txt  776 B  sha256 61ba99969f754eae40936042c13b3a60564e193dd5bbf38f3dadac22afb760ae
+  group15.txt  615 B  sha256 1b19f4d8060a9667520b4013f14f2bd51946a660ea6a10868795345529ace8f5
+  group16.txt  1165 B  sha256 6692be12d834a3707d7fe40bfb217e47e1a534bda191716f172de7a2a59cb9d7
+  group17.txt  696 B  sha256 9f7a7f91cbe18e41b8f8231d1a0160d452cc8044ea1f69604bc3babbbae1d16d
+  group18.txt  4937 B  sha256 700d11540712e5353f1e6fe6648a511c87111378efffce4fdfea2b1f339ce762
+  micro_new.txt  15255 B  sha256 5cba914a5241dd6b1320ac9c14705087371b33fe4a2a7d976ce337b50ab7e66e
+  micro_new32.txt  9078 B  sha256 2d30e8888922bd102ab727fec1f8d2e7485920376462679cb837c93323b9ce36
+  micro_old.txt  12242 B  sha256 708263557cabf087785e3201eff88a9d9211f0d8c6e04e48da4652f1544c480f
+  summary.json  14738 B  sha256 c428cf960f30b025d6f02026e8d1d46674b1f62c3b10d40856b30eb6de9c82b5
+stand-in failures (old hold, then first-sight hold with the full scan):
+    trial 16: individual 0 ended before it was held | qvina2 called -0.002 s, returned 1.851 s after the first sign sighting; longest look 1.8426 s
+    trial 19: individual 0 ended before it was held | qvina2 called -0.001 s, returned 1.306 s after the first sign sighting; longest look 1.3678 s
+    trial 21: individual 0 ended before it was held | qvina2 called 0.001 s, returned 1.914 s after the first sign sighting; longest look 1.9085 s
+    trial 25: individual 0 ended before it was held | qvina2 called -0.001 s, returned 1.017 s after the first sign sighting; longest look 2.0119 s
+    trial 29: individual 0 ended before it was held | qvina2 called -0.002 s, returned 1.444 s after the first sign sighting; longest look 2.2125 s
+    trial 31: individual 0 ended before it was held: 0.sta | qvina2 called -0.006 s, returned 1.692 s after the first sign sighting; longest look 1.6872 s
+    trial 32: individual 0 ended before it was held: 0.sta | qvina2 called 0.0 s, returned 1.282 s after the first sign sighting; longest look 2.0137 s
+    trial 34: individual 0 ended before it was held: 0.sta | qvina2 called -0.001 s, returned 1.558 s after the first sign sighting; longest look 1.9507 s
+    trial 35: individual 0 ended before it was held: 0.sta | qvina2 called -0.006 s, returned 1.441 s after the first sign sighting; longest look 2.1417 s
+    trial 39: individual 0 ended before it was held: 0.sta | qvina2 called -0.001 s, returned 1.998 s after the first sign sighting; longest look 2.3012 s
+
+====================================================================================================
+2. DIAGNOSTIC RUN AND EARLIER SERIES (not the final count)
+====================================================================================================
+
+## R2 pre-gate (T2 hold fixes in the working tree before 0218cfa5; 18 groups + stand-in old 60 / fixed 150)
+source HEAD: 34c6786f + uncommitted T2 edits (the T4 merge landed at 15:17 KST during the run, after pytest had collected)
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 417.98 s
+all groups exit 0, no timeout, skip 0: True
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 18 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 405.52 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 357.87 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 404.6 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 392.97 |
+| group05 | test_docking_batch_api.py … (10 files) | 0 | 390 | 0 | 0 | 0 | 397.06 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 405.09 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 372.0 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 370.71 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 325.71 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 377.88 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 400.34 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 337.02 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 376.21 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 243.55 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 294.39 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 64.23 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 130 | 0 | 0 | 0 | 286.35 |
+| group18 | REST (backend/tests minus the named files, plus the script tests) | 0 | 3919 | 0 | 0 | 0 | 417.9 |
+
+extra commands (load only, not part of the eighteen):
+- micro_old: exit 0; SUMMARY algo=old scenario=none passed 54/60
+- micro_new2: exit 0; SUMMARY algo=new2 scenario=none passed 150/150
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/r2-pregate/
+  group01.txt  111 B  sha256 77aa94596f84c2f1239c9db9c06a73ae0685d626a1dda6d523e5c80206350aeb
+  group02.txt  615 B  sha256 2654df0d289cdd32fd72bf8389553fcd763c4fff9d017036e29b15060cc3fb9c
+  group03.txt  856 B  sha256 75572970e166d15713ef14c894b9c3ecb38dd2e5da728965b177e649ec2b4678
+  group04.txt  696 B  sha256 3a7cb6f6f4df878f3b985986b8f9fe521907df25de2a836befc4506a0a42d14e
+  group05.txt  1016 B  sha256 d43be26fdd9258348b3ce1475647e1728d4725f64cc3be8ef3274cc70c60d121
+  group06.txt  615 B  sha256 6f257e6f64f51a6913ad1aa0d26ea8baa56fae05e2adc60fedf49cefb40d8ed6
+  group07.txt  111 B  sha256 9856daad8c625e3c2f523532567552cd0238a60c59417a289bd4fceea161ba00
+  group08.txt  614 B  sha256 3e63cdaffec51f9a7576e76f33a69913daee1bc01784f47f14d66a77ec0e1f11
+  group09.txt  615 B  sha256 b6b57dc4144f694bdc904be550da8eba90ef9869e3c455a8228a93d170604d08
+  group10.txt  615 B  sha256 f4081aafe8070a6a8f002db151913e887a4e34706c2e8899a0764902e76fc07c
+  group11.txt  615 B  sha256 20c8ae517c6069fab6aebea231bd69be43b6f0d4c617c5f0d28735bfff667ce0
+  group12.txt  1016 B  sha256 2a0a6c64f775f578749e4c72227dfbf161cb0a884e088556376b36c45b0b3a96
+  group13.txt  856 B  sha256 66000cbec5fa97c3344b74448a81e3ae7fbf3979fd6bab1abadadc5c7041f7a0
+  group14.txt  776 B  sha256 4e1003815bb9f5912b5a38b2afca182e5ee5c8dfb77cefa418cb2c8109836907
+  group15.txt  615 B  sha256 5ef0bd6a4c32493c02386e49f15d83f3838e6e94efe79ed79a6f2988e800c709
+  group16.txt  1175 B  sha256 edd2975ae70d7b22096fdccdb9476bc552557ba4cbcae07b41a73a7f961f37a2
+  group17.txt  696 B  sha256 5851fcd5890dac7597b2d51b31d694a9d251972af54948883cdf9eabfbaaf8c8
+  group18.txt  4937 B  sha256 95e48e1b44950e5611549ec958e373eb9442cf618b90d5d0ca2fd32015b59b0e
+  micro_new2.txt  59242 B  sha256 9106038a314da598965b8d96c9ed5bedcbd37bb67cc188c2158f1a1b84c6de2c
+  micro_old.txt  18126 B  sha256 17748dbc6dcf728ed9fc967536d940776ae92edb068c29818a69d0e79e6b8c49
+  summary.json  14329 B  sha256 cfc477fcbea84fab8e8163af8fd88045123afe7a03f90c1db5f88f4cccbb2a4a
+stand-in failures (old hold):
+    trial 14: individual 0 ended before it was held | qvina2 called -0.009 s, returned 1.404 s after the first sign sighting; longest look 1.4054 s
+    trial 18: individual 0 ended before it was held | qvina2 called -0.009 s, returned 1.239 s after the first sign sighting; longest look 1.6979 s
+    trial 25: individual 0 ended before it was held | qvina2 called 0.0 s, returned 1.506 s after the first sign sighting; longest look 2.3485 s
+    trial 35: individual 0 ended before it was held | qvina2 called -0.002 s, returned 1.773 s after the first sign sighting; longest look 1.9214 s
+    trial 40: individual 0 ended before it was held | qvina2 called -0.004 s, returned 1.351 s after the first sign sighting; longest look 1.7729 s
+    trial 45: individual 0 ended before it was held | qvina2 called -0.006 s, returned 1.157 s after the first sign sighting; longest look 1.1486 s
+
+## series A run 1
+source HEAD: ea608e33cc1ab4868d17718e1a4663f227212d40
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 376.25 s
+all groups exit 0, no timeout, skip 0: True
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 18 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 366.35 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 316.99 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 358.85 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 347.32 |
+| group05 | test_docking_batch_api.py … (10 files) | 0 | 390 | 0 | 0 | 0 | 355.83 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 367.99 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 331.11 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 329.95 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 285.72 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 336.37 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 359.47 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 296.18 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 333.91 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 206.42 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 253.76 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 41.95 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 130 | 0 | 0 | 0 | 247.72 |
+| group18 | REST (backend/tests minus the named files, plus the script tests) | 0 | 4012 | 0 | 0 | 0 | 376.23 |
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/gate1/
+  group01.txt  111 B  sha256 2769f94c523a3d156f96a4d7be2dd03b394342469e9917f1c41125bda8a01ae5
+  group02.txt  615 B  sha256 a513ad928d963e68e7d2d0a2b3b75a586fe8e94e59dd5f580ec4cceb52d6aeb1
+  group03.txt  856 B  sha256 f10a89c66309199cfd94c4689e8d4e8ad4a9d45ac2f24c64e874ffbe36aefb73
+  group04.txt  696 B  sha256 eb5ce2ab67ad5811f08c122dad2f67e752cd39dda8863d4f74f927c457c27e70
+  group05.txt  1016 B  sha256 a1fd41f04cad7487d821400f54d83e13cfa300c8f060ce458db30ad238907045
+  group06.txt  615 B  sha256 2985dd23e4fd792c8ccb476a10a2e91b2c957023cdf94b5cdae283096285ac64
+  group07.txt  111 B  sha256 9c3b5a8027f069b98f3c20b99b4fcfe90b5ea4a368d9777b8994d5dbaa399c1d
+  group08.txt  614 B  sha256 f8243f55651b52678f0a6b5fc0ad74e6287417998c6e4bd0516ecfdec6164b1f
+  group09.txt  615 B  sha256 618416d89485235b0355a7a8bea76b8ed60544976e2a4a1050fe72d576241ec0
+  group10.txt  615 B  sha256 2cc53995e69108237009db2cbe8fbd72fcf95db841aede982d54b7ddcb29a6c5
+  group11.txt  615 B  sha256 f9f348a87611d7b186c128e28fa035b6317b565b6f4401be2664f948b31c30ed
+  group12.txt  1016 B  sha256 0e280766312886d0db3ed104fc2486e1032a10e80bbdeb1fece9059080be0561
+  group13.txt  856 B  sha256 20ada4d4ba4c5c5bc87a8028936fdfd8849865c0a9774ab968bd0855a375b870
+  group14.txt  776 B  sha256 735aeb545d025e554ee3d87b28fa6f67d2abe4ccefcc3331e5159ba3209342fb
+  group15.txt  615 B  sha256 eddf74e7fd479d4ee33442e7a16bada9e88f5a105e46859ec9b2be138d4b2f88
+  group16.txt  1165 B  sha256 07bdeceff6bceeadd94b1bcd16ae0c069be239991729f1a9bf87ad0a136e434f
+  group17.txt  696 B  sha256 010dfa56818b4ac36eb35d97b7391d847f5ca54244f8d26dd67d3b8a4021176f
+  group18.txt  5017 B  sha256 70376ba6163acaecaec3139cc5ef90e2904b8cd7d9429f175d5bf30ea6ad1f03
+  summary.json  13577 B  sha256 83b4caad03d802771a42c3fe5985fa6ecad52ff8afd49ad72b0a73098ea3fd2b
+load average at start / end: 15:22  up 42 days, 49 mins, 9 users, load averages: 10.16 26.20 25.76 / 15:28  up 42 days, 55 mins, 9 users, load averages: 17.14 26.27 26.72
+
+## series A run 2
+source HEAD: ea608e33cc1ab4868d17718e1a4663f227212d40
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 383.89 s
+all groups exit 0, no timeout, skip 0: True
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 18 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 369.37 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 322.83 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 369.16 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 352.21 |
+| group05 | test_docking_batch_api.py … (10 files) | 0 | 390 | 0 | 0 | 0 | 357.66 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 370.27 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 334.84 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 337.57 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 291.36 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 341.88 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 364.9 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 299.94 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 340.56 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 203.29 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 259.85 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 46.38 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 130 | 0 | 0 | 0 | 248.32 |
+| group18 | REST (backend/tests minus the named files, plus the script tests) | 0 | 4012 | 0 | 0 | 0 | 383.87 |
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/gate2/
+  group01.txt  111 B  sha256 8471449b3b7bb4e59ef19d45d81c401e44f4dda9d820a39bb23f81a3dd770828
+  group02.txt  615 B  sha256 1bfd1ede4f834e9acc66882b0da424da4180561dfb3a9f9c40fc4ce70de79792
+  group03.txt  856 B  sha256 6dfb361db61e72c1063bc3bef33897bb2a9fe70ab2403c99210d995393eb67e0
+  group04.txt  696 B  sha256 60798a8d0e70b972d27f90ea3d8f59da4ceecf71efb277f09ff6ecff4d67d68b
+  group05.txt  1016 B  sha256 98b28e644dfed2bdd0d2efbd630bf1a7a85dfa54fc63071369218e3a753a5292
+  group06.txt  615 B  sha256 75ab6c443e0f917ca02723fc67920ac6f0ba615d7bf8f96d54ca6002a52f7809
+  group07.txt  111 B  sha256 27896a5443042f5ad889a2a0a6b8085f653dcd56aa3b74b2fe0006bdc8aee5bf
+  group08.txt  614 B  sha256 b0d7e72099130c626097fa67fe78b3d6e9993430badecda198cb6ecb514a70d0
+  group09.txt  615 B  sha256 a6af8254dbfb46a603d4fd2920bb114d59cef624235cc6c097093e9f791affcc
+  group10.txt  615 B  sha256 50fc0dd45eb96d073c229b5c0ed8e542f2d793b244fce17131ec065ca0289488
+  group11.txt  615 B  sha256 24b4d11e460b1cf516f2b1bf1d4352e2562f706746fa4fd4d507eba480bd8ec9
+  group12.txt  1016 B  sha256 73888d6fbe9c36bfd37edfc4a4af1dbd9007e0e79b5689b606746a5197ce29db
+  group13.txt  856 B  sha256 13c26ecccaca78ce9fee803dd51a6e4c484d3368b9d3db6b8664cf2844582e76
+  group14.txt  776 B  sha256 68512645718f0148a90a4080d4a87fd571592c2bfb31f234e2ea465edd68be38
+  group15.txt  615 B  sha256 8aa24e1c7d50f06c4757f79b6eff0c9e1245ad6c20ad67d1fc044a51ab40e1de
+  group16.txt  1165 B  sha256 6692be12d834a3707d7fe40bfb217e47e1a534bda191716f172de7a2a59cb9d7
+  group17.txt  696 B  sha256 83efd4c32f1deb78f457e3338a6827ea4c9f90f418ac0905fe08837b5f770a91
+  group18.txt  5017 B  sha256 398edcc156aeac376c03fc461a3380b06a17aa01ea68dde09062c27d9a7516a3
+  summary.json  13575 B  sha256 8b989c6e6009c7a6a5688bf27104b191570728b435d85cca38dc847ec6af41e1
+load average at start / end: 15:28  up 42 days, 55 mins, 9 users, load averages: 17.14 26.27 26.72 / 15:35  up 42 days,  1:02, 9 users, load averages: 17.67 26.77 27.54
+
+## series A run 3
+source HEAD: ea608e33cc1ab4868d17718e1a4663f227212d40
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 402.28 s
+all groups exit 0, no timeout, skip 0: False
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 18 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 372.27 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 327.02 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 380.12 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 363.48 |
+| group05 | test_docking_batch_api.py … (10 files) | 1 | 379 | 0 | 11 | 0 | 359.63 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 376.16 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 337.73 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 342.75 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 299.46 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 347.33 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 370.67 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 307.38 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 349.79 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 214.91 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 266.63 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 48.69 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 130 | 0 | 0 | 0 | 256.28 |
+| group18 | REST (backend/tests minus the named files, plus the script tests) | 0 | 4012 | 0 | 0 | 0 | 402.27 |
+
+failed / errored test ids:
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_free_complete_report_round_trips_and_every_score_traces_to_both_objects
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_partial_report_lists_reasons_only_and_carries_b2_b3
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_core_fixed_report_names_samples
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_snapshot_carries_human_raised_limits
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_score_claims_for_rows_without_a_score_are_rejected
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_mixed_evidence_and_other_statement_fields_are_rejected
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_wrong_rounding_is_rejected
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_interpretive_statements_and_missing_fields_are_rejected
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_reopen_rejects_tampered_summary_per_row_result_and_manifest
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_wrong_kind_and_unpublished_summaries_are_refused
+- group05: ERROR backend/tests/test_docking_batch_reports.py::test_existing_report_kinds_and_saved_bytes_are_unchanged
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/gate3/
+  group01.txt  111 B  sha256 6406bf85f5d315ab0de3768fab2908aa70e4930723988a781e3ffb125ebec61c
+  group02.txt  615 B  sha256 a8d8270c50214371bddf059fe0457e894546ba5531dd493c7266575d31d9d999
+  group03.txt  856 B  sha256 627dd27cada0d825b7585400ee8d145fa7960c34054e97f672029e42860513cd
+  group04.txt  696 B  sha256 d201e46b092999d91d0d3d4b4302a0695673419e6a9012273a2aeec82780b81f
+  group05.txt  54240 B  sha256 a938e634a4d0a53d378a23de3feb302d60f4698b9d00625d975c68be426cb4bd
+  group06.txt  615 B  sha256 82835b645c8e792ef9b7390b059aae48f38753148b47e8f26b2357f03a4b37fa
+  group07.txt  111 B  sha256 1a7ed0c5d7462b740126272a3e89d2524a1628c8bd92f276366babc23b549bc4
+  group08.txt  614 B  sha256 035daa399bac25979fbbdb6a64ef443b843977301ee2385661be906ff56f909b
+  group09.txt  615 B  sha256 779ea876efb5acf9dee79b8233c7b0f1550db9202fe76ca5ee80b763504948eb
+  group10.txt  615 B  sha256 400a0f96c2f55c5e2307140257460e1071c956fa7cdbd65fe434a295d836a6ec
+  group11.txt  615 B  sha256 1ebfa8d1c28503fcd263bc9c35b95290a840aae9c92a779c91026c0a8c9fbe61
+  group12.txt  1016 B  sha256 d8b9f03de008c44ccc9be7166c19f6211b4342f63e22ddd74f084040aaba389a
+  group13.txt  856 B  sha256 a54442cfd3952b64d4df1b2afbef2eec874ec38d17e3283f7df40abd24184893
+  group14.txt  776 B  sha256 4d3cb0fb67c57c256e1a7288dcf4df39df2b9091e311eafb3ec0189f62819f51
+  group15.txt  615 B  sha256 5122cd79b383d63452e10d9a6c48e0638ed6f39514566b2a9b75e78f7868d27e
+  group16.txt  1165 B  sha256 d37803ca8701cd25b9165cac55ca6a0a500e31124d11fc8f8d2686f082d3a784
+  group17.txt  696 B  sha256 cf272f8437a670ae53e843fcdf487250a8841cb2eb2579b7c25624c2988defe3
+  group18.txt  5017 B  sha256 0a6af654c54377d9525afe98856eac3531cebee97a51f68a9db180248819cf77
+  summary.json  13605 B  sha256 dd4cea8a8f61971f3126f485b94287a18a07ff44df197dbce20688458428436d
+load average at start / end: 15:35  up 42 days,  1:02, 9 users, load averages: 17.67 26.77 27.54 / 15:41  up 42 days,  1:09, 9 users, load averages: 15.09 26.15 28.02
+
+series A run 3, group05 error text (the same for the 11 errors):
+    E       AssertionError: ([{'pid': 469, 'looks': 29, 'cpu_s': [0.001, 0.0019]}], [('scored', None), ('scored', None), ('failed', 'engine_failed'), ('cancelled', 'cancelled')])
+    -> the held qvina2 had pid 469 (after a pid wrap, below the worker's); the guardian signals members in
+       pid order, so qvina2 died first and the worker recorded engine_failed (analysis 2.3).
+       Fixed by 0218cfa5 (engine_hold.hold_then_cancel). Series A ended here.
+
+aborted attempt (not counted): series B first started on 0218cfa5 and was stopped after about 3 minutes
+to commit the comment-only correction 0a9a602a; partial outputs under aborted/gateB1*.
+
+## series B run 1
+source HEAD: 0a9a602a31babfec104d997f0181ee4a2ff42d3f
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 478.54 s
+all groups exit 0, no timeout, skip 0: True
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 18 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 408.48 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 324.5 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 408.71 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 401.4 |
+| group05 | test_docking_batch_api.py … (10 files) | 0 | 390 | 0 | 0 | 0 | 407.45 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 423.13 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 356.35 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 365.91 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 295.69 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 366.55 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 403.6 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 307.57 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 364.23 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 211.6 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 261.66 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 44.51 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 130 | 0 | 0 | 0 | 262.34 |
+| group18 | REST (backend/tests minus the named files, plus the script tests) | 0 | 4012 | 0 | 0 | 0 | 478.51 |
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/gateB1/
+  group01.txt  111 B  sha256 4935f7dd79e8d53cdceae45146d1e7938da4c9c22efbd45e4b9eb967738098c2
+  group02.txt  615 B  sha256 d245b0c39070a3379c0376c895fa63169d90acde4d080bfedf8bd5b1952cdaec
+  group03.txt  856 B  sha256 2611ebc5ad0d0909e8447b1d457258fdfd5763241faa0dd021d1d1a9b05ce3fc
+  group04.txt  696 B  sha256 5d3b0b156169578004e104e910afb8fd79ff3afd3913d521c27e9edde4793430
+  group05.txt  1016 B  sha256 572b6c33b4b920352f5fce7ff3ff713f1f29a857efcc2632a8d57518c990b67e
+  group06.txt  615 B  sha256 97f8a3b583fe1fa3b4c762f4dcdcb2426b6e9c9979ac32824eedc3be602e799a
+  group07.txt  111 B  sha256 5b3c17b1030b7752a065bb410ccce0e235fb4f0cb8cf3ac4de11f502e13ad1e7
+  group08.txt  614 B  sha256 50043c972fdecaf7b800490235ef7c4e97b1e8e5c27d3aaf5d5301eb4b4482b0
+  group09.txt  615 B  sha256 9249993fa885a05fe5da009ffd9a182a9fb72d96a5767444971f9e8a41c9646a
+  group10.txt  615 B  sha256 7a95e2ccd023599cecfd51f8823f9f23f26d8abd3fd9be0d727e0f1360f00bc4
+  group11.txt  615 B  sha256 dc7a69c7e508044d1f071f60868b974cfc360d08ad50acdad38535385e2b1a74
+  group12.txt  1016 B  sha256 427c3a67778cf408fe164ae44bc86c3d5e9f4d0c7bdf6a19b6f0a09d3120a89b
+  group13.txt  856 B  sha256 4a87a3dfd98c2ee0fabd5abf304921e4fad2a3b8cf51884a4ed02e11fa83daa8
+  group14.txt  776 B  sha256 0f923a49a052e07eb99f0a09019384b1347f61efbbf1d2ed2eeef6944dbe113e
+  group15.txt  615 B  sha256 842132d004a9dc0c2b98191890636ed5cde74dafc33332b8ccf5d66281f7f5b6
+  group16.txt  1165 B  sha256 37e3587be3dfd8a23c0938cbab8c0247b0ea9bda4261012ee093b266adf496a9
+  group17.txt  696 B  sha256 f09e5e6902dd578425f7fe2089bfee235ad5537d3559bb96373f33d7ddeb5e9e
+  group18.txt  5017 B  sha256 9b0392fd8555973483a82b19365551f5ee9a8bce8c479828efe2a6a50c2e8f9f
+  summary.json  13571 B  sha256 c8fc14077983fbc19baf597c9e44c7f81b3498d2fe6f1032bfd0b13c3c488ae3
+load samples (no foreign-process column yet):
+    15:58:29 loadavg={ 25.80 36.78 32.35 } stop_hook_running=0
+    15:58:59 loadavg={ 41.36 39.48 33.48 } stop_hook_running=0
+    15:59:29 loadavg={ 42.52 40.22 33.98 } stop_hook_running=0
+    15:59:59 loadavg={ 37.22 39.17 33.81 } stop_hook_running=0
+    16:00:30 loadavg={ 32.33 37.80 33.50 } stop_hook_running=0
+    16:01:00 loadavg={ 29.13 36.50 33.18 } stop_hook_running=0
+    16:01:30 loadavg={ 33.16 36.76 33.38 } stop_hook_running=0
+    16:02:00 loadavg={ 29.95 35.63 33.09 } stop_hook_running=0
+    16:02:30 loadavg={ 28.03 34.64 32.82 } stop_hook_running=0
+    16:03:00 loadavg={ 33.03 35.24 33.10 } stop_hook_running=0
+    16:03:31 loadavg={ 28.35 33.91 32.69 } stop_hook_running=0
+    16:04:01 loadavg={ 33.95 34.51 32.94 } stop_hook_running=0
+    16:04:31 loadavg={ 56.94 39.94 34.95 } stop_hook_running=1
+    16:05:01 loadavg={ 60.79 42.55 36.08 } stop_hook_running=1
+    16:05:31 loadavg={ 52.44 42.39 36.25 } stop_hook_running=0
+    16:06:01 loadavg={ 43.34 41.15 36.01 } stop_hook_running=0
+
+## series B run 2
+source HEAD: 0a9a602a31babfec104d997f0181ee4a2ff42d3f
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 480.46 s
+all groups exit 0, no timeout, skip 0: False
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 18 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.22 |
+| group02 | test_m11_job_api.py | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.25 |
+| group03 | test_docking_api.py … (6 files) | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.22 |
+| group04 | test_docking_batch_jobs.py … (5 files) | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.23 |
+| group05 | test_docking_batch_api.py … (10 files) | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.24 |
+| group06 | test_ligand_ga_jobs.py | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.25 |
+| group07 | test_ligand_ga_worker.py | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.23 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.24 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.24 |
+| group10 | test_sequence_ga_api.py | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.4 |
+| group11 | test_sequence_ga_reports.py | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.35 |
+| group12 | test_sequence_ga_budget.py … (6 files) | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.33 |
+| group13 | test_mutation_model_api.py … (8 files) | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.37 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 421.79 |
+| group15 | test_jev_loops_compute.py | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.31 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 67.2 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.23 |
+| group18 | REST (backend/tests minus the named files, plus the script tests) | -15 TIMEOUT | 0 | 0 | 0 | 0 | 480.23 |
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/gateB2/
+  group01.txt  19 B  sha256 82601adc3b4caebae2bff11ac53e2ee51f0d317d6fdf58b972cf3b4d6833b538
+  group02.txt  19 B  sha256 82601adc3b4caebae2bff11ac53e2ee51f0d317d6fdf58b972cf3b4d6833b538
+  group03.txt  174 B  sha256 b21048d08a02ec620157fd771d8e23307d9f20eec938644155da6e5b8e78fbc6
+  group04.txt  15 B  sha256 03a77fc8fe616a35134e8c35e252aace6bea37480f6891a20d745ace74e35464
+  group05.txt  389 B  sha256 8ac8a67244c5e3f576f36a0725b1ae3a07d155f80bf8762bd6c74e612936cc0a
+  group06.txt  4 B  sha256 dfa3476846ce31adf8b1496b34595fb3f5ca2adf22b6df8ca2264c718b985cd9
+  group07.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  group08.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  group09.txt  10 B  sha256 537f3fb69ba01fc388a3a5c920c485b2873d5f327305c3dd2004d6a04451659b
+  group10.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  group11.txt  8 B  sha256 d09f0ad06d6e59b908037317d6c044f7ababd3466cb46d5b901cf6f0855baf04
+  group12.txt  95 B  sha256 f41cc4a634b41b122764c6ef5983445ddf965e5465a484a8dd7965022aafb4cd
+  group13.txt  245 B  sha256 911e72586e04327cff0782d2e0fb230761bfae6f1539ddf32bf7acbcce88a6dc
+  group14.txt  776 B  sha256 61807bf7c35fdcbd4f73851188c262512adc84b5c277e6132e21aef45f799779
+  group15.txt  27 B  sha256 552803ac8fa8a59ac5ed2238a8ec39d45b285aad29e815c1cdd478082c9861e4
+  group16.txt  1175 B  sha256 9bc3f6693c3e24caaba1fa06ae4fd0b1473843ec527a71490fbd56c29eff9917
+  group17.txt  87 B  sha256 61ef831e3981f6a74cc431dc8a1c5e4d5bb9c79a7046821d5f6e8e09fb951624
+  group18.txt  2508 B  sha256 819e4ba76d0b3cff9ee9f1f243c9c16803de541bdf1660dd7e3e9ac38f84cf2a
+  summary.json  12690 B  sha256 f793e16bcdee4360da2818eacdf8ee266bad4917bbb4cde102af60a0134404f7
+load samples (no foreign-process column yet):
+    16:06:28 loadavg={ 36.77 39.79 35.67 } stop_hook_running=0
+    16:06:59 loadavg={ 62.21 45.90 38.07 } stop_hook_running=0
+    16:07:29 loadavg={ 68.39 48.98 39.45 } stop_hook_running=0
+    16:07:59 loadavg={ 73.62 52.04 40.89 } stop_hook_running=0
+    16:08:29 loadavg={ 76.19 54.70 42.24 } stop_hook_running=0
+    16:09:00 loadavg={ 73.11 55.96 43.12 } stop_hook_running=0
+    16:09:30 loadavg={ 70.15 56.90 43.91 } stop_hook_running=0
+    16:10:00 loadavg={ 69.45 58.01 44.76 } stop_hook_running=0
+    16:10:30 loadavg={ 76.85 60.74 46.20 } stop_hook_running=0
+    16:11:00 loadavg={ 83.18 63.84 47.83 } stop_hook_running=1
+    16:11:31 loadavg={ 84.90 66.14 49.22 } stop_hook_running=1
+    16:12:01 loadavg={ 90.54 69.33 50.96 } stop_hook_running=1
+    16:12:31 loadavg={ 89.63 71.21 52.28 } stop_hook_running=1
+    16:13:02 loadavg={ 88.47 72.64 53.46 } stop_hook_running=1
+    16:13:32 loadavg={ 85.40 73.38 54.39 } stop_hook_running=2
+    16:14:02 loadavg={ 85.24 74.45 55.43 } stop_hook_running=1
+series B run 1: CONTAMINATED pass, not counted. ps at 16:14 KST showed another agent's full 18-group run
+    (T5 worktree) started about 16:03:30, i.e. during the last 3 minutes of this run (REST group 478.5 s).
+series B run 2: CONTAMINATED failure, not counted. That T5 run and a Stop hook run (from 16:11) overlapped
+    it (load average 62-91); 16 of 18 groups hit the 480 s bound. group15 printed one F before it was
+    stopped: by collection order the 18th test, test_jev_loops_compute.py::
+    test_first_approval_wait_cancel_another_candidate_running_press_and_a_failed_model (no failure text:
+    the group was stopped before its summary). Not seen in any other run here.
+
+aborted attempt (not counted): series C first stopped at once because the runner still expected eighteen
+groups and the T5 merge had added a nineteenth; outputs under aborted/gateC1*.
+
+====================================================================================================
+3. ANALYSIS FLOW STOP TEST (coordinator's added case) - diagnostics under doubled load
+====================================================================================================
+scratch_stop_probe.py: an instrumented copy of test_stop_during_owned_real_job_cancels_only_that_job
+that records timings and the run's job events and never fails on timing. Each diagnostic run started two
+full 18/19-group runs at once (r3/r4/r5 + *-second) and the probe as extra commands.
+r3 (probes ran in the first 14 s, before the load built up):
+    trials 24; state right after the owner's advance returned: {'cancelled/verified': 24}
+    owner's advance returned at most 2.981 s after release; main thread reached->released at most 0.078 s
+r4 (probes delayed 60-330 s into the doubled load):
+    trials 95; state right after the owner's advance returned: {'running/pending': 69, 'cancelled/verified': 26}
+    owner's advance returned at most 5.329 s after release; main thread reached->released at most 0.040 s
+r5 (same, the probe also records the pending reason and reconciles):
+    trials 95; state right after the owner's advance returned: {'cancelled/verified': 85, 'running/pending': 10}
+    owner's advance returned at most 4.762 s after release; main thread reached->released at most 0.044 s
+    job_cleanup_pending reasons: {(): 85, ('guardian_result_missing',): 10}
+    after reconcile_run: {'cancelled/verified/orphan_reconciliation': 10}; slowest reconciliation 0.075 s
+
+====================================================================================================
+4. FINAL SERIES C (the count)
+====================================================================================================
+
+## series C run 1
+source HEAD: cddc638a0c71625349e646d1ea302d9a7715a876
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 385.66 s
+all groups exit 0, no timeout, skip 0: True
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 19 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 361.81 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 314.87 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 352.45 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 342.79 |
+| group05 | test_docking_batch_api.py … (10 files) | 0 | 390 | 0 | 0 | 0 | 351.48 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 363.58 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 328.14 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 326.57 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 282.01 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 331.81 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 354.51 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 292.02 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 327.6 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 200.85 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 248.74 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 45.12 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 130 | 0 | 0 | 0 | 242.45 |
+| group18 | test_structure_repair_jobs.py, test_structure_repair_lane.py, test_structure_repair_worker.py | 0 | 38 | 0 | 0 | 0 | 119.39 |
+| group19 | REST (backend/tests minus the named files, plus the script tests) | 0 | 4031 | 0 | 0 | 0 | 385.64 |
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/gateC1/
+  group01.txt  111 B  sha256 db1bdedf2ec5d597761f64db79bcc8fd18ef7cbcb83767580496639b765a7bd4
+  group02.txt  615 B  sha256 3ba7a4ca976bd3317b069f50fe391a3d8a2157eeb7bb7575c85d32b4bae0057a
+  group03.txt  856 B  sha256 18018c3fe1f5222fbbc1b882368051b55cbac25692088dc00c46696a6ea06f71
+  group04.txt  696 B  sha256 efb80e8281958df6bc520873d4e870d63e2a1765975de89575dd043bed58d48a
+  group05.txt  1016 B  sha256 7922950a9388507cd4dd7c5a65ad34904a163d0247b4846d9d8067d2293f66c2
+  group06.txt  615 B  sha256 26498f68c419696509d9bbf4bb9742e3946d994ca403d5ab640d90640530a8ec
+  group07.txt  111 B  sha256 64fe0d8b7ec5eaf119c950f073338345fc34ef5a7c09ef6857644cea7780aaa7
+  group08.txt  614 B  sha256 4492aa66db49618ceffbf451664af01d4cdf6a985f937a9a74cc0cdba5b53a0f
+  group09.txt  615 B  sha256 ce2ad8f3d4834dfc4626d2d917e7742917713e488e1678eb4099ee123d65be45
+  group10.txt  615 B  sha256 3c5f42d21633d3f08001078cacc81ab2d6a77891b894e8581b388175920a8987
+  group11.txt  615 B  sha256 74487899442909dc2da3f52d610954b73ba30304404f8bae4b9d453451aaee50
+  group12.txt  1016 B  sha256 9bf3b51b159f7293da5be333ade2c7af9b8766174ea4947d403937c7c55637b7
+  group13.txt  856 B  sha256 a3810abd229cc6e82b56f4b434a0460375de7bf3ba33ebab54323cf5fb24d210
+  group14.txt  776 B  sha256 9f9e8fbe1ab36616a891f058eb6def678740af9f7f810a99e830097e92ca5479
+  group15.txt  615 B  sha256 add545486877e8f90de84abb7e43ee96fa70e7513836eac92297f110d9413fef
+  group16.txt  1165 B  sha256 48166e79e310b0070dafe143f5d76c566f81526623a237113ac61465fbd985a8
+  group17.txt  696 B  sha256 98c0d6991f3406bccb54385af2a24ccbf0cccc9e3d4a4b3df31599030a6009fd
+  group18.txt  615 B  sha256 0f86c65ad60112ac02cba900cfaa959f09590f1e4b84ae3944ae6bbcbc5ee403
+  group19.txt  5017 B  sha256 3d0e99a589c5aaf19c0a6300555ffb46a0342cf66b86ed994d2489ba187d0cf3
+  summary.json  14202 B  sha256 b7d2059c817ee67c0656f906d8150fee7395db20556e1621d544dc207257148b
+git status at start: ?? docs/qa/m29-repair-20261013/t2-flaky-tests.md
+load samples every 30 s:
+    16:57:03 loadavg={ 6.54 26.15 48.05 } stop_hook=0 pytest_groups_all=19 mine=19
+    16:57:33 loadavg={ 27.41 29.34 48.44 } stop_hook=0 pytest_groups_all=19 mine=19
+    16:58:04 loadavg={ 29.76 29.84 47.97 } stop_hook=0 pytest_groups_all=18 mine=18
+    16:58:34 loadavg={ 29.14 29.70 47.29 } stop_hook=0 pytest_groups_all=18 mine=18
+    16:59:04 loadavg={ 27.09 29.15 46.48 } stop_hook=0 pytest_groups_all=17 mine=17
+    16:59:34 loadavg={ 25.39 28.55 45.67 } stop_hook=0 pytest_groups_all=17 mine=17
+    17:00:05 loadavg={ 27.15 28.69 45.12 } stop_hook=0 pytest_groups_all=17 mine=17
+    17:00:35 loadavg={ 28.35 28.88 44.62 } stop_hook=0 pytest_groups_all=16 mine=16
+    17:01:05 loadavg={ 27.24 28.57 43.96 } stop_hook=0 pytest_groups_all=15 mine=15
+    17:01:36 loadavg={ 26.71 28.41 43.38 } stop_hook=0 pytest_groups_all=14 mine=14
+    17:02:06 loadavg={ 24.01 27.59 42.56 } stop_hook=0 pytest_groups_all=12 mine=12
+    17:02:36 loadavg={ 21.50 26.65 41.70 } stop_hook=0 pytest_groups_all=7 mine=7
+    17:03:06 loadavg={ 16.94 25.07 40.61 } stop_hook=0 pytest_groups_all=2 mine=2
+
+## series C run 2
+source HEAD: cddc638a0c71625349e646d1ea302d9a7715a876
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 388.05 s
+all groups exit 0, no timeout, skip 0: True
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 19 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 362.96 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 312.28 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 351.6 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 343.26 |
+| group05 | test_docking_batch_api.py … (10 files) | 0 | 390 | 0 | 0 | 0 | 352.72 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 364.18 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 329.24 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 329.15 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 286.09 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 333.14 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 357.59 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 293.47 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 331.2 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 201.51 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 247.92 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 45.18 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 130 | 0 | 0 | 0 | 242.9 |
+| group18 | test_structure_repair_jobs.py, test_structure_repair_lane.py, test_structure_repair_worker.py | 0 | 38 | 0 | 0 | 0 | 120.93 |
+| group19 | REST (backend/tests minus the named files, plus the script tests) | 0 | 4031 | 0 | 0 | 0 | 388.03 |
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/gateC2/
+  group01.txt  111 B  sha256 1f7057f66e15c0fc1b22eeb837ffb64148ae70a416e6688c8319a70dd315ddf8
+  group02.txt  615 B  sha256 2593679e67b36b92104b7425c869a3e0a0b98ce5591aa87d68e79e701fd8c944
+  group03.txt  856 B  sha256 48909e95a96f2be94816a3cf67f6232626435e26614de21c469cc2e92421a848
+  group04.txt  696 B  sha256 a1f17a803d97203745a53231974c49c6267510e4b32888768fed1671473009db
+  group05.txt  1016 B  sha256 bd9130607f004b1ba6e200485946569d36321c5b8d0d2d5665eb6446eefbfa0f
+  group06.txt  615 B  sha256 42feb9ca37b0c182212036b0ec8025d3f36a38234314b54b79b97f15c9b3ac25
+  group07.txt  111 B  sha256 ffa93862ada1a7477a5462d6a82ea86f18fe873a0321478463cbf6c777a79e57
+  group08.txt  614 B  sha256 b5d1cac136e7975f0d51163e57806c560b88d15fa0fbf58c562187ebef100964
+  group09.txt  615 B  sha256 dd2e187f62bc9f69b453c45d8effc23a872ce82d3a495326cd40703b4d0ed7b6
+  group10.txt  615 B  sha256 63d2d56960fb03783aa01ef15cef0257954b4768718bfee1fe621a395452158b
+  group11.txt  615 B  sha256 795c593dea0cd46e0619adc55d27fbeac64b5f8b21a54d56995785c31c5b733c
+  group12.txt  1016 B  sha256 9f368e86a24ec74ceff113f701dcb2ba02935a9c1196f5e8fcd6e419f4e83a18
+  group13.txt  856 B  sha256 e426d0750e9d33c7935311315f95227f5d65030d2f7512b5a25d060fc682464a
+  group14.txt  776 B  sha256 09d1eb26fce0321ff1fbace92b70606b5adfd4fdd06a36c2e990777c4d7a503f
+  group15.txt  615 B  sha256 79e55c63b57532bc5b2177d2a6bed7c0e7d7fb1f4ede185adc065d376d05342f
+  group16.txt  1165 B  sha256 407c2adc12cb593b25728a02cbebb72ce04faf6997aa100b7501bfa6cf6fde9d
+  group17.txt  696 B  sha256 d9b339a26569fa2e72304bcd9c8be5fc7fe921280b5181c9258695677a6c7ea5
+  group18.txt  615 B  sha256 06a9bdb03a04c7f7ab37b407cfddc1b34bd3e5b3100fdd82a5660791e64a7361
+  group19.txt  5017 B  sha256 5bad88f897c445417308931b3bb3087a3cff193ffc577659127bda5d2620d814
+  summary.json  14201 B  sha256 8bae7e6db2dadb678a44b1c5f14662be8c7cd061583c90ef126fcf86b669d827
+git status at start: ?? docs/qa/m29-repair-20261013/t2-flaky-tests.md
+load samples every 30 s:
+    17:03:29 loadavg={ 12.95 23.49 39.59 } stop_hook=0 pytest_groups_all=19 mine=17
+    17:03:59 loadavg={ 33.04 27.28 40.40 } stop_hook=0 pytest_groups_all=19 mine=19
+    17:04:29 loadavg={ 33.63 28.11 40.25 } stop_hook=0 pytest_groups_all=18 mine=18
+    17:05:00 loadavg={ 30.53 27.90 39.75 } stop_hook=0 pytest_groups_all=18 mine=18
+    17:05:30 loadavg={ 28.24 27.59 39.23 } stop_hook=0 pytest_groups_all=17 mine=17
+    17:06:00 loadavg={ 26.61 27.31 38.73 } stop_hook=0 pytest_groups_all=17 mine=17
+    17:06:31 loadavg={ 31.36 28.44 38.74 } stop_hook=0 pytest_groups_all=17 mine=17
+    17:07:01 loadavg={ 30.74 28.54 38.42 } stop_hook=0 pytest_groups_all=16 mine=16
+    17:07:31 loadavg={ 30.11 28.60 38.10 } stop_hook=0 pytest_groups_all=16 mine=16
+    17:08:02 loadavg={ 29.68 28.69 37.80 } stop_hook=0 pytest_groups_all=14 mine=14
+    17:08:32 loadavg={ 28.04 28.41 37.39 } stop_hook=0 pytest_groups_all=12 mine=12
+    17:09:02 loadavg={ 23.70 27.31 36.63 } stop_hook=0 pytest_groups_all=7 mine=7
+    17:09:32 loadavg={ 18.16 25.64 35.70 } stop_hook=0 pytest_groups_all=2 mine=2
+
+## series C run 3
+source HEAD: cddc638a0c71625349e646d1ea302d9a7715a876
+python: <root>/.venv/bin/python
+bound per group: 480 s
+wall: 390.05 s
+all groups exit 0, no timeout, skip 0: True
+
+command per group: <python> -m pytest -q <group args>  (cwd <root>; all 19 Stop hook groups started at once)
+
+| group | files | exit | passed | failed | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| group01 | test_chemical_interactions.py | 0 | 24 | 0 | 0 | 0 | 364.44 |
+| group02 | test_m11_job_api.py | 0 | 25 | 0 | 0 | 0 | 315.77 |
+| group03 | test_docking_api.py … (6 files) | 0 | 220 | 0 | 0 | 0 | 355.11 |
+| group04 | test_docking_batch_jobs.py … (5 files) | 0 | 120 | 0 | 0 | 0 | 345.5 |
+| group05 | test_docking_batch_api.py … (10 files) | 0 | 390 | 0 | 0 | 0 | 353.77 |
+| group06 | test_ligand_ga_jobs.py | 0 | 12 | 0 | 0 | 0 | 366.02 |
+| group07 | test_ligand_ga_worker.py | 0 | 15 | 0 | 0 | 0 | 330.44 |
+| group08 | test_sequence_ga_jobs.py (2 node ids) | 0 | 2 | 0 | 0 | 0 | 327.29 |
+| group09 | test_sequence_ga_jobs.py (12 node ids) | 0 | 12 | 0 | 0 | 0 | 284.08 |
+| group10 | test_sequence_ga_api.py | 0 | 24 | 0 | 0 | 0 | 335.03 |
+| group11 | test_sequence_ga_reports.py | 0 | 20 | 0 | 0 | 0 | 358.45 |
+| group12 | test_sequence_ga_budget.py … (6 files) | 0 | 419 | 0 | 0 | 0 | 296.44 |
+| group13 | test_mutation_model_api.py … (8 files) | 0 | 247 | 0 | 0 | 0 | 329.67 |
+| group14 | test_jev_loop_choice.py … (5 files) | 0 | 202 | 0 | 0 | 0 | 198.5 |
+| group15 | test_jev_loops_compute.py | 0 | 43 | 0 | 0 | 0 | 249.35 |
+| group16 | test_kinase_precedents.py … (7 files) | 0 | 557 | 0 | 0 | 0 | 44.91 |
+| group17 | test_analysis_workflows.py, test_jev_loop_reports.py | 0 | 130 | 0 | 0 | 0 | 239.7 |
+| group18 | test_structure_repair_jobs.py, test_structure_repair_lane.py, test_structure_repair_worker.py | 0 | 38 | 0 | 0 | 0 | 120.24 |
+| group19 | REST (backend/tests minus the named files, plus the script tests) | 0 | 4031 | 0 | 0 | 0 | 390.03 |
+
+failed / errored test ids: none
+
+full outputs (Git-ignored): frontend/tests/offscreen/artifacts/m29-repair/t2/gateC3/
+  group01.txt  111 B  sha256 255be0881f274bf0f651ecf67eec1d076b6efd66b9881e88d8f69f8a64c27182
+  group02.txt  615 B  sha256 a98c7b3d87d321e4d4354a027a3231f2bf27e82980b961894869c3d36113afea
+  group03.txt  856 B  sha256 cea647fa71397f8e159809eab93858ca7cbb62a5371c002ad72fb8f8d1def7db
+  group04.txt  696 B  sha256 1a449439d560ce68e3f74630bb20c98013d06fa856f865a64565a7d4379755e5
+  group05.txt  1016 B  sha256 38c9ba5c3050ef5582642cc14ecdacdd94e8c5bc13d0e169fb8232e773be65f4
+  group06.txt  615 B  sha256 8c894a8bc35b9c464442700bbfeed04812cebe65175a9821a3a8b3d3cf4ed66c
+  group07.txt  111 B  sha256 b93c01617a7155edbb641f9c14e63a15120a02963c40372661b7d72df4effcd0
+  group08.txt  614 B  sha256 607fa1406e25be802d5de4283015973830bb7a73158dacce843162a60d5cb758
+  group09.txt  615 B  sha256 baaebce84e062de36a36b784753159f44208516ee020bd08e2845881afb55b41
+  group10.txt  615 B  sha256 f8868821826748e8da87c355d33eeaaa82259277038a08b58f78593ad2e43cff
+  group11.txt  615 B  sha256 6586881cb1d1c8c0099bca1d516fdf99ce46f6f11495fa9216d4cf1026e9f544
+  group12.txt  1016 B  sha256 c9636d6004e68c30358a64a7d4479dfcf936b9313baf6cdd3685aba058928c77
+  group13.txt  856 B  sha256 e44e4d29cb686bd3388b0564f3b1547c2616d2f84d0718b3a58eb7767a6e0c5d
+  group14.txt  776 B  sha256 60f3717430b1d9bb44c96df5c32f89b5b46bbc2cf837f1e0dc921675d3d7f205
+  group15.txt  615 B  sha256 152af9b76f7837733bbe4690bb98575169979aa05d2a1f2aeece09e402226fe2
+  group16.txt  1165 B  sha256 83ceda2ce6383c4599e9168ab7b300e084a01242443fc90a3d992af45256c5ff
+  group17.txt  696 B  sha256 8249e60975e7a94cd03412a65bbb0083167acd419f5979d7b9690549e165abc7
+  group18.txt  615 B  sha256 83711762d982dc3bfa3ebafa0e155fd8ab6161d7d3189bad8222bb64bf164096
+  group19.txt  5017 B  sha256 ff297760e9077098d08711a993610a7430fa72263ea37040544bc156ab44629d
+  summary.json  14201 B  sha256 b99fdfe1723dcea1df80e6338be4c27e4dbaf375807bb2ea9229e1220989333d
+git status at start: ?? docs/qa/m29-repair-20261013/t2-flaky-tests.md
+load samples every 30 s:
+    17:09:57 loadavg={ 15.12 24.28 34.91 } stop_hook=0 pytest_groups_all=19 mine=16
+    17:10:27 loadavg={ 32.68 27.66 35.77 } stop_hook=0 pytest_groups_all=19 mine=19
+    17:10:58 loadavg={ 32.98 28.28 35.71 } stop_hook=0 pytest_groups_all=18 mine=18
+    17:11:28 loadavg={ 30.00 28.02 35.36 } stop_hook=0 pytest_groups_all=18 mine=18
+    17:11:58 loadavg={ 27.10 27.52 34.93 } stop_hook=0 pytest_groups_all=17 mine=17
+    17:12:29 loadavg={ 25.84 27.18 34.55 } stop_hook=0 pytest_groups_all=17 mine=17
+    17:12:59 loadavg={ 31.11 28.35 34.72 } stop_hook=0 pytest_groups_all=17 mine=17
+    17:13:29 loadavg={ 28.18 27.90 34.33 } stop_hook=0 pytest_groups_all=16 mine=16
+    17:14:00 loadavg={ 27.20 27.65 34.02 } stop_hook=0 pytest_groups_all=15 mine=15
+    17:14:30 loadavg={ 29.52 28.26 34.02 } stop_hook=0 pytest_groups_all=14 mine=14
+    17:15:00 loadavg={ 27.01 27.76 33.64 } stop_hook=0 pytest_groups_all=12 mine=12
+    17:15:30 loadavg={ 25.86 27.35 33.28 } stop_hook=0 pytest_groups_all=8 mine=8
+    17:16:01 loadavg={ 20.31 25.88 32.54 } stop_hook=0 pytest_groups_all=3 mine=3
+
+====================================================================================================
+5. MEASUREMENTS (scratch tools under .../t2/scripts/, results under .../t2/probe-results/)
+====================================================================================================
+latency_probe.py during R0 (420 s): { "light_wake_extra": { "n": 9250, "p50_ms": 2.51, "p99_ms": 3.14, "p999_ms": 5.4, "max_ms": 13.19, "over_100ms": 0, "over_300ms": 0, "over_800ms": 0 }, "after_scan_wake_extra": { "n": 185, "p50_ms": 2.51, "p99_ms": 3.31, "p999_ms": 3.98, "max_ms": 3.98, "over_100ms": 0, "over_300ms": 0, "over_800ms": 0 }, "scan_s": { "n": 185, "p50_ms": 365.4, "p99_ms": 7456.71, "p999_ms": 8078.02, "max_ms": 8078.02, "over_100ms": 151, "over_300ms": 98, "over_800ms": 66 }, "load1_max": 37.8974609375, "load1_mean": 24.79 }
+  (its scan_s unit is two psutil passes: the probe's own children, recursive, and pid 1's children)
+forkstop.py (group SIGSTOP while a 400 MiB Python leader runs subprocess.run in a loop):
+    plain 300 stops (console only): leader thread on CPU after psutil 'stopped' 3, members running 50 ms
+    later 1; wait_threads 300 stops (console only): 0 / 0
+    mode=plain trials=800 leader_thread_running_after_psutil_stopped=12 escaped_children=2
+    mode=plain trials=800 leader_thread_running_after_psutil_stopped=3 escaped_children=2
+    mode=plain trials=800 leader_thread_running_after_psutil_stopped=13 escaped_children=17 verify_passes_max=None verify_multi_pass=0
+    mode=wait_threads trials=800 leader_thread_running_after_psutil_stopped=6 escaped_children=2
+    mode=wait_threads trials=800 leader_thread_running_after_psutil_stopped=6 escaped_children=2
+    mode=verify trials=800 leader_thread_running_after_psutil_stopped=24 escaped_children=6 verify_passes_max=3 verify_multi_pass=15
+    mode=verify trials=800 leader_thread_running_after_psutil_stopped=17 escaped_children=5 verify_passes_max=2 verify_multi_pass=17
+    mode=verify trials=800 leader_thread_running_after_psutil_stopped=19 escaped_children=10 verify_passes_max=5 verify_multi_pass=19
+sigorder.py (real batch worker, three FAST rows, row 1's qvina2 held, SIGTERM order varied, 5 ms apart):
+    engine_first_0: 0.status.json={"reason_code":null,"state":"scored"} 1.status.json={"reason_code":"engine_failed","state":"failed"} 2.status.json={"reason_code":"cancelled","state":"cancelled"} 
+    engine_first_2: 0.status.json={"reason_code":null,"state":"scored"} 1.status.json={"reason_code":"engine_failed","state":"failed"} 2.status.json={"reason_code":"cancelled","state":"cancelled"} 
+    worker_first_1: 0.status.json={"reason_code":null,"state":"scored"} 1.status.json={"reason_code":"cancelled","state":"cancelled"} 
+    worker_first_3: 0.status.json={"reason_code":null,"state":"scored"} 1.status.json={"reason_code":"cancelled","state":"cancelled"}
+m7_timing.py: the M7 worker on public 1UBQ ran 7.934 s after preparation.json (load average about 6).
+capture_qvina.py: real qvina2 on individual 0's inputs: 0.88 s CPU (exhaustiveness 4); exhaustiveness 32:
+    6.52 s user (measured only; no test uses it).
+
+====================================================================================================
+6. FILES (Git-ignored), size and SHA-256
+====================================================================================================
+scripts/
+  scripts/capture_qvina.py  2767 B  sha256 92e57b37343c95889afb1f1171871dcecff7d9c0ab32c24ad6ad689f2ee5d51d
+  scripts/compose.py  13595 B  sha256 3012eb7aaf4bac3a499b4d83d929ee931e0a1363876218da0bb915a6cd53ee56
+  scripts/fake_worker.py  3159 B  sha256 0f77a78b6b6d4c92e2b2b4a0730f19ddead303b57cf23fa019b5e92cbd2f523e
+  scripts/forkstop.py  4495 B  sha256 6db1e35f60ac50589cc9970024c54c6d99f61c0d3e7df8b17b47a7b5f6a61b25
+  scripts/latency_probe.py  2161 B  sha256 c32af2c8bd49e92620ff5a0f61b463266a52d71e298e2525364f04b559d43fc1
+  scripts/load18.py  4416 B  sha256 786dca2018be904fd4dd72acec795154e85316d31a485c0413818481b67e917e
+  scripts/m7_timing.py  1261 B  sha256 a780379ded99cace812c65225aaa1e4260235150edc1ce779ed733694e4bfe1b
+  scripts/micro.py  13309 B  sha256 49b59665da2699e293da458cd6dc8eaadc9ec4dc68514078b12177612c132f6c
+  scripts/probe_loop.sh  392 B  sha256 806573cdf1cee38adea7de52fdd6f16fe6430339a39113d63779105eea7f573a
+  scripts/sampler.sh  520 B  sha256 078794ada7a4a7d9b2d1c01adf8598334707b4e55758410da0289e8aebcfc609
+  scripts/scratch_stop_probe.py  3651 B  sha256 086fa97622b7a4c3039bad155f3ba20f1051ef55725b82fc39896f4b27c3864e
+  scripts/sigorder.py  2502 B  sha256 ff5e4a168a49bdff7233bbb294c175942318832b80a8440db0e91f918969db42
+  scripts/summarize.py  3374 B  sha256 8868bf478b0f9023ab1bf50c920a5123e0f1f328031915582f9e712fd8cd3b21
+probe-results/
+  probe-results/fs_plain1.txt  87 B  sha256 7895d67586e1e8c2442d6ec4a87b4a148a88d6a949b9acf5375b3d0afc61a033
+  probe-results/fs_plain2.txt  86 B  sha256 f69657d375f043fb08364d59e31f2354315d9e42927ee12dfcdbfe564571e56b
+  probe-results/fs_plain3.txt  131 B  sha256 a21a7f39dbbebb957264f9842f25664bc57d46818940049f88cf3b46613fd6e9
+  probe-results/fs_verify1.txt  129 B  sha256 2eac744fa750a8720f6d44a0181e69a4e684a05a946f29485b31abad9b09eb5f
+  probe-results/fs_verify2.txt  129 B  sha256 e57eb0721f7969fd872517e89c2b651edfca27bd252d25c40f74fa8ab60fa063
+  probe-results/fs_verify3.txt  130 B  sha256 9a30c1750bad2ff546227afcb0d6b35153d02d3651b63564ef9511365eaff22b
+  probe-results/fs_wait1.txt  93 B  sha256 8df2f7854ad2016eb45b48d5bf8ebc9a215c3c36625ce10ae2c682038b2681dc
+  probe-results/fs_wait2.txt  93 B  sha256 8df2f7854ad2016eb45b48d5bf8ebc9a215c3c36625ce10ae2c682038b2681dc
+  probe-results/r0-latency.json  567 B  sha256 ba1e5cde912fffd471efe110cbcb92e9f2509c64c08982a5cb1e3a38379da0d4
+  probe-results/sigorder.txt  650 B  sha256 5da08b1cac8893e6d956cd5731f9fd6ad6d014cca91c1cc0156c5a0ecc2eae34
+  probe-results/stop_probe_load.jsonl  16405 B  sha256 44db3b555b8400c981f5299674519dfa160ae828853ccb2a4278ec0212b5424a
+  probe-results/stop_probe_load2.jsonl  57669 B  sha256 e5dfccdb2680d2a6e668c4cfd7ddd2b21c45484d9edd47f47ee242b253fceed9
+  probe-results/stop_probe_load3.jsonl  69810 B  sha256 604b452979e8f7f8f7c5b23cd398f198ab2fab61d519b2793cb1b8320dec65b3
+r0-baseline/
+  r0-baseline/batchrep1.txt  614 B  sha256 3c720dbcd8489634b465c77b0548d58cbea241187b7588b1849c622b16e47da3
+  r0-baseline/batchrep2.txt  614 B  sha256 49143594a3b69fce06cf58a1b7ad7d94d48d4a520ea2c6db9aba23d2fd8d21c7
+  r0-baseline/group01.txt  111 B  sha256 fe846cc43d4160a9894edfbced6c0f8cfbd0d3cc58ad2bf9720839f32171d51f
+  r0-baseline/group02.txt  615 B  sha256 9ac279229f041d395f9a0509ac2b5cfb0ad2f6c2d712fb6b117bc5f5a0c9badb
+  r0-baseline/group03.txt  856 B  sha256 2508ee18a3b5483dcb1fe0ad51746c8ff80b5ad4b32f069a7115715f0543501d
+  r0-baseline/group04.txt  696 B  sha256 49b83808ffd0e2301773de6de1415a2393e250b42f9ac4c1c70eff640db1868c
+  r0-baseline/group05.txt  55370 B  sha256 10038fc6859b503c358c2ce05ced2a52b051e6f4baa5b9d3f95cc3c63510a7d5
+  r0-baseline/group06.txt  615 B  sha256 6b96b489c143e29ef12f037653a388da7054db20a4ebd8037bd19d08612aeb63
+  r0-baseline/group07.txt  111 B  sha256 187b3ad0a2986e9338e94b0346df52f2c024ea4ec374c6c1f64ef2ce5b1b1c7d
+  r0-baseline/group08.txt  614 B  sha256 eee9b81f30e419567ae05efb7c784ed37d68ed10799da28422df3fb1324d40ac
+  r0-baseline/group09.txt  615 B  sha256 67d7d400e36634f1968c1b8329858a3840207975b1219090460b3cf1ee81921c
+  r0-baseline/group10.txt  615 B  sha256 10f521b699b648ade66510f4ccff5c01d7fbbc7ea7af12eb446553aa5f7f3d25
+  r0-baseline/group11.txt  615 B  sha256 4388cbfd3eed0a509826462cdf37e7ce536307792757af972f38942d5367f100
+  r0-baseline/group12.txt  5781 B  sha256 86f899d7b144cd26ab870e3155af0feb87da54b506eab65f6ef284be8edf9c69
+  r0-baseline/group13.txt  856 B  sha256 559dd9b65ca2c37ad0612959e5bfb09e39417ec3d06dfdd8902e2026a9eff421
+  r0-baseline/group14.txt  776 B  sha256 1e8680c07988ee90aa53379e2d69a03846f65c3f72b30091faf5accb8435b742
+  r0-baseline/group15.txt  615 B  sha256 e3b6a99e83931089e8c40ef79a40e9ccddf7c7938c8466f0cdd281fb17c83151
+  r0-baseline/group16.txt  1165 B  sha256 6f15b7a1bd9e8d35fb5634efdc3faa03522777c09a022e435c5fd302dd53da4a
+  r0-baseline/group17.txt  696 B  sha256 03130ddc5380054844238413f56bf94ea178adb9ef4e0ebd39530200a7c9a3de
+  r0-baseline/group18.txt  4937 B  sha256 4d923054ca81bd2c12df9ebc82fc89c432d84cd3d430e9658cfc65b00f6af904
+  r0-baseline/probe.txt  504 B  sha256 c092b249e8a042e90023705219819af045c1228d0428d569fc1103bd7d7bfec0
+  r0-baseline/seqterm.txt  125 B  sha256 fe249e12827e0b77fe320ec9423eebfdd8d82619d898ca5bbddbe3513c21599e
+  r0-baseline/summary.json  15391 B  sha256 5002d1a2f22bab1638d3c5ce6c99c7631f0d61ebfabec5e5e002d4e135ce1432
+r1-micro/
+  r1-micro/group01.txt  111 B  sha256 22444e8976a3a6ae04af05ab62fba66b5b208dfae1b87e2db73b981d360bc614
+  r1-micro/group02.txt  615 B  sha256 00dd72ea61e56d263cb21a725ceef44cf128a714acff072d4bd5993897034cb1
+  r1-micro/group03.txt  856 B  sha256 8ae41db9bf02756ca8bbae9da4938d8b4d9ce0687dfc9dbb6bfea9d43db9ccff
+  r1-micro/group04.txt  696 B  sha256 0bbb5d7ab268a67adb155a5dd633a40f2cf23c50c239e49144b2977474bf6ac8
+  r1-micro/group05.txt  1016 B  sha256 4c575a965a5c3310879ca30b0e35ab6df568b7fad5a5de6a837057dcab8b3aef
+  r1-micro/group06.txt  615 B  sha256 c29a203feec4401bbe4f40bca3a026310f096f402827aea79f2d9d018b57cac8
+  r1-micro/group07.txt  111 B  sha256 2c881ea54778a01a5fc0069f0290ff3be60fcebea648c92477ac7081bb50925b
+  r1-micro/group08.txt  614 B  sha256 b672db2bf2f6e76a53347f332d1602c6407f34470839d4583922842000570f11
+  r1-micro/group09.txt  615 B  sha256 5224ef89f281faa7326506d26ac4c514be020184f70a6364d7328bf8301abd8b
+  r1-micro/group10.txt  615 B  sha256 15fa5d2927328ce8d8a6653f11dda6619f8c82d971c70d48889c5ab0be2ed40c
+  r1-micro/group11.txt  615 B  sha256 353c2383eabe2c93fe64d326bbcb75bd13f3bc9c29fb6958ee99c3058f95e512
+  r1-micro/group12.txt  1016 B  sha256 c0e0a57c6a5f2f53c3c7e18f05455c55ad32159a58978089ff5e81eca9b945d2
+  r1-micro/group13.txt  856 B  sha256 f5b5614409f7b7c02a682646e8d9f1969ec36063c261e3f5677b04c4c3ba0cb4
+  r1-micro/group14.txt  776 B  sha256 61ba99969f754eae40936042c13b3a60564e193dd5bbf38f3dadac22afb760ae
+  r1-micro/group15.txt  615 B  sha256 1b19f4d8060a9667520b4013f14f2bd51946a660ea6a10868795345529ace8f5
+  r1-micro/group16.txt  1165 B  sha256 6692be12d834a3707d7fe40bfb217e47e1a534bda191716f172de7a2a59cb9d7
+  r1-micro/group17.txt  696 B  sha256 9f7a7f91cbe18e41b8f8231d1a0160d452cc8044ea1f69604bc3babbbae1d16d
+  r1-micro/group18.txt  4937 B  sha256 700d11540712e5353f1e6fe6648a511c87111378efffce4fdfea2b1f339ce762
+  r1-micro/micro_new.txt  15255 B  sha256 5cba914a5241dd6b1320ac9c14705087371b33fe4a2a7d976ce337b50ab7e66e
+  r1-micro/micro_new32.txt  9078 B  sha256 2d30e8888922bd102ab727fec1f8d2e7485920376462679cb837c93323b9ce36
+  r1-micro/micro_old.txt  12242 B  sha256 708263557cabf087785e3201eff88a9d9211f0d8c6e04e48da4652f1544c480f
+  r1-micro/summary.json  14738 B  sha256 c428cf960f30b025d6f02026e8d1d46674b1f62c3b10d40856b30eb6de9c82b5
+r2-pregate/
+  r2-pregate/group01.txt  111 B  sha256 77aa94596f84c2f1239c9db9c06a73ae0685d626a1dda6d523e5c80206350aeb
+  r2-pregate/group02.txt  615 B  sha256 2654df0d289cdd32fd72bf8389553fcd763c4fff9d017036e29b15060cc3fb9c
+  r2-pregate/group03.txt  856 B  sha256 75572970e166d15713ef14c894b9c3ecb38dd2e5da728965b177e649ec2b4678
+  r2-pregate/group04.txt  696 B  sha256 3a7cb6f6f4df878f3b985986b8f9fe521907df25de2a836befc4506a0a42d14e
+  r2-pregate/group05.txt  1016 B  sha256 d43be26fdd9258348b3ce1475647e1728d4725f64cc3be8ef3274cc70c60d121
+  r2-pregate/group06.txt  615 B  sha256 6f257e6f64f51a6913ad1aa0d26ea8baa56fae05e2adc60fedf49cefb40d8ed6
+  r2-pregate/group07.txt  111 B  sha256 9856daad8c625e3c2f523532567552cd0238a60c59417a289bd4fceea161ba00
+  r2-pregate/group08.txt  614 B  sha256 3e63cdaffec51f9a7576e76f33a69913daee1bc01784f47f14d66a77ec0e1f11
+  r2-pregate/group09.txt  615 B  sha256 b6b57dc4144f694bdc904be550da8eba90ef9869e3c455a8228a93d170604d08
+  r2-pregate/group10.txt  615 B  sha256 f4081aafe8070a6a8f002db151913e887a4e34706c2e8899a0764902e76fc07c
+  r2-pregate/group11.txt  615 B  sha256 20c8ae517c6069fab6aebea231bd69be43b6f0d4c617c5f0d28735bfff667ce0
+  r2-pregate/group12.txt  1016 B  sha256 2a0a6c64f775f578749e4c72227dfbf161cb0a884e088556376b36c45b0b3a96
+  r2-pregate/group13.txt  856 B  sha256 66000cbec5fa97c3344b74448a81e3ae7fbf3979fd6bab1abadadc5c7041f7a0
+  r2-pregate/group14.txt  776 B  sha256 4e1003815bb9f5912b5a38b2afca182e5ee5c8dfb77cefa418cb2c8109836907
+  r2-pregate/group15.txt  615 B  sha256 5ef0bd6a4c32493c02386e49f15d83f3838e6e94efe79ed79a6f2988e800c709
+  r2-pregate/group16.txt  1175 B  sha256 edd2975ae70d7b22096fdccdb9476bc552557ba4cbcae07b41a73a7f961f37a2
+  r2-pregate/group17.txt  696 B  sha256 5851fcd5890dac7597b2d51b31d694a9d251972af54948883cdf9eabfbaaf8c8
+  r2-pregate/group18.txt  4937 B  sha256 95e48e1b44950e5611549ec958e373eb9442cf618b90d5d0ca2fd32015b59b0e
+  r2-pregate/micro_new2.txt  59242 B  sha256 9106038a314da598965b8d96c9ed5bedcbd37bb67cc188c2158f1a1b84c6de2c
+  r2-pregate/micro_old.txt  18126 B  sha256 17748dbc6dcf728ed9fc967536d940776ae92edb068c29818a69d0e79e6b8c49
+  r2-pregate/summary.json  14329 B  sha256 cfc477fcbea84fab8e8163af8fd88045123afe7a03f90c1db5f88f4cccbb2a4a
+gate1/
+  gate1/group01.txt  111 B  sha256 2769f94c523a3d156f96a4d7be2dd03b394342469e9917f1c41125bda8a01ae5
+  gate1/group02.txt  615 B  sha256 a513ad928d963e68e7d2d0a2b3b75a586fe8e94e59dd5f580ec4cceb52d6aeb1
+  gate1/group03.txt  856 B  sha256 f10a89c66309199cfd94c4689e8d4e8ad4a9d45ac2f24c64e874ffbe36aefb73
+  gate1/group04.txt  696 B  sha256 eb5ce2ab67ad5811f08c122dad2f67e752cd39dda8863d4f74f927c457c27e70
+  gate1/group05.txt  1016 B  sha256 a1fd41f04cad7487d821400f54d83e13cfa300c8f060ce458db30ad238907045
+  gate1/group06.txt  615 B  sha256 2985dd23e4fd792c8ccb476a10a2e91b2c957023cdf94b5cdae283096285ac64
+  gate1/group07.txt  111 B  sha256 9c3b5a8027f069b98f3c20b99b4fcfe90b5ea4a368d9777b8994d5dbaa399c1d
+  gate1/group08.txt  614 B  sha256 f8243f55651b52678f0a6b5fc0ad74e6287417998c6e4bd0516ecfdec6164b1f
+  gate1/group09.txt  615 B  sha256 618416d89485235b0355a7a8bea76b8ed60544976e2a4a1050fe72d576241ec0
+  gate1/group10.txt  615 B  sha256 2cc53995e69108237009db2cbe8fbd72fcf95db841aede982d54b7ddcb29a6c5
+  gate1/group11.txt  615 B  sha256 f9f348a87611d7b186c128e28fa035b6317b565b6f4401be2664f948b31c30ed
+  gate1/group12.txt  1016 B  sha256 0e280766312886d0db3ed104fc2486e1032a10e80bbdeb1fece9059080be0561
+  gate1/group13.txt  856 B  sha256 20ada4d4ba4c5c5bc87a8028936fdfd8849865c0a9774ab968bd0855a375b870
+  gate1/group14.txt  776 B  sha256 735aeb545d025e554ee3d87b28fa6f67d2abe4ccefcc3331e5159ba3209342fb
+  gate1/group15.txt  615 B  sha256 eddf74e7fd479d4ee33442e7a16bada9e88f5a105e46859ec9b2be138d4b2f88
+  gate1/group16.txt  1165 B  sha256 07bdeceff6bceeadd94b1bcd16ae0c069be239991729f1a9bf87ad0a136e434f
+  gate1/group17.txt  696 B  sha256 010dfa56818b4ac36eb35d97b7391d847f5ca54244f8d26dd67d3b8a4021176f
+  gate1/group18.txt  5017 B  sha256 70376ba6163acaecaec3139cc5ef90e2904b8cd7d9429f175d5bf30ea6ad1f03
+  gate1/summary.json  13577 B  sha256 83b4caad03d802771a42c3fe5985fa6ecad52ff8afd49ad72b0a73098ea3fd2b
+gate2/
+  gate2/group01.txt  111 B  sha256 8471449b3b7bb4e59ef19d45d81c401e44f4dda9d820a39bb23f81a3dd770828
+  gate2/group02.txt  615 B  sha256 1bfd1ede4f834e9acc66882b0da424da4180561dfb3a9f9c40fc4ce70de79792
+  gate2/group03.txt  856 B  sha256 6dfb361db61e72c1063bc3bef33897bb2a9fe70ab2403c99210d995393eb67e0
+  gate2/group04.txt  696 B  sha256 60798a8d0e70b972d27f90ea3d8f59da4ceecf71efb277f09ff6ecff4d67d68b
+  gate2/group05.txt  1016 B  sha256 98b28e644dfed2bdd0d2efbd630bf1a7a85dfa54fc63071369218e3a753a5292
+  gate2/group06.txt  615 B  sha256 75ab6c443e0f917ca02723fc67920ac6f0ba615d7bf8f96d54ca6002a52f7809
+  gate2/group07.txt  111 B  sha256 27896a5443042f5ad889a2a0a6b8085f653dcd56aa3b74b2fe0006bdc8aee5bf
+  gate2/group08.txt  614 B  sha256 b0d7e72099130c626097fa67fe78b3d6e9993430badecda198cb6ecb514a70d0
+  gate2/group09.txt  615 B  sha256 a6af8254dbfb46a603d4fd2920bb114d59cef624235cc6c097093e9f791affcc
+  gate2/group10.txt  615 B  sha256 50fc0dd45eb96d073c229b5c0ed8e542f2d793b244fce17131ec065ca0289488
+  gate2/group11.txt  615 B  sha256 24b4d11e460b1cf516f2b1bf1d4352e2562f706746fa4fd4d507eba480bd8ec9
+  gate2/group12.txt  1016 B  sha256 73888d6fbe9c36bfd37edfc4a4af1dbd9007e0e79b5689b606746a5197ce29db
+  gate2/group13.txt  856 B  sha256 13c26ecccaca78ce9fee803dd51a6e4c484d3368b9d3db6b8664cf2844582e76
+  gate2/group14.txt  776 B  sha256 68512645718f0148a90a4080d4a87fd571592c2bfb31f234e2ea465edd68be38
+  gate2/group15.txt  615 B  sha256 8aa24e1c7d50f06c4757f79b6eff0c9e1245ad6c20ad67d1fc044a51ab40e1de
+  gate2/group16.txt  1165 B  sha256 6692be12d834a3707d7fe40bfb217e47e1a534bda191716f172de7a2a59cb9d7
+  gate2/group17.txt  696 B  sha256 83efd4c32f1deb78f457e3338a6827ea4c9f90f418ac0905fe08837b5f770a91
+  gate2/group18.txt  5017 B  sha256 398edcc156aeac376c03fc461a3380b06a17aa01ea68dde09062c27d9a7516a3
+  gate2/summary.json  13575 B  sha256 8b989c6e6009c7a6a5688bf27104b191570728b435d85cca38dc847ec6af41e1
+gate3/
+  gate3/group01.txt  111 B  sha256 6406bf85f5d315ab0de3768fab2908aa70e4930723988a781e3ffb125ebec61c
+  gate3/group02.txt  615 B  sha256 a8d8270c50214371bddf059fe0457e894546ba5531dd493c7266575d31d9d999
+  gate3/group03.txt  856 B  sha256 627dd27cada0d825b7585400ee8d145fa7960c34054e97f672029e42860513cd
+  gate3/group04.txt  696 B  sha256 d201e46b092999d91d0d3d4b4302a0695673419e6a9012273a2aeec82780b81f
+  gate3/group05.txt  54240 B  sha256 a938e634a4d0a53d378a23de3feb302d60f4698b9d00625d975c68be426cb4bd
+  gate3/group06.txt  615 B  sha256 82835b645c8e792ef9b7390b059aae48f38753148b47e8f26b2357f03a4b37fa
+  gate3/group07.txt  111 B  sha256 1a7ed0c5d7462b740126272a3e89d2524a1628c8bd92f276366babc23b549bc4
+  gate3/group08.txt  614 B  sha256 035daa399bac25979fbbdb6a64ef443b843977301ee2385661be906ff56f909b
+  gate3/group09.txt  615 B  sha256 779ea876efb5acf9dee79b8233c7b0f1550db9202fe76ca5ee80b763504948eb
+  gate3/group10.txt  615 B  sha256 400a0f96c2f55c5e2307140257460e1071c956fa7cdbd65fe434a295d836a6ec
+  gate3/group11.txt  615 B  sha256 1ebfa8d1c28503fcd263bc9c35b95290a840aae9c92a779c91026c0a8c9fbe61
+  gate3/group12.txt  1016 B  sha256 d8b9f03de008c44ccc9be7166c19f6211b4342f63e22ddd74f084040aaba389a
+  gate3/group13.txt  856 B  sha256 a54442cfd3952b64d4df1b2afbef2eec874ec38d17e3283f7df40abd24184893
+  gate3/group14.txt  776 B  sha256 4d3cb0fb67c57c256e1a7288dcf4df39df2b9091e311eafb3ec0189f62819f51
+  gate3/group15.txt  615 B  sha256 5122cd79b383d63452e10d9a6c48e0638ed6f39514566b2a9b75e78f7868d27e
+  gate3/group16.txt  1165 B  sha256 d37803ca8701cd25b9165cac55ca6a0a500e31124d11fc8f8d2686f082d3a784
+  gate3/group17.txt  696 B  sha256 cf272f8437a670ae53e843fcdf487250a8841cb2eb2579b7c25624c2988defe3
+  gate3/group18.txt  5017 B  sha256 0a6af654c54377d9525afe98856eac3531cebee97a51f68a9db180248819cf77
+  gate3/summary.json  13605 B  sha256 dd4cea8a8f61971f3126f485b94287a18a07ff44df197dbce20688458428436d
+gateB1/
+  gateB1/group01.txt  111 B  sha256 4935f7dd79e8d53cdceae45146d1e7938da4c9c22efbd45e4b9eb967738098c2
+  gateB1/group02.txt  615 B  sha256 d245b0c39070a3379c0376c895fa63169d90acde4d080bfedf8bd5b1952cdaec
+  gateB1/group03.txt  856 B  sha256 2611ebc5ad0d0909e8447b1d457258fdfd5763241faa0dd021d1d1a9b05ce3fc
+  gateB1/group04.txt  696 B  sha256 5d3b0b156169578004e104e910afb8fd79ff3afd3913d521c27e9edde4793430
+  gateB1/group05.txt  1016 B  sha256 572b6c33b4b920352f5fce7ff3ff713f1f29a857efcc2632a8d57518c990b67e
+  gateB1/group06.txt  615 B  sha256 97f8a3b583fe1fa3b4c762f4dcdcb2426b6e9c9979ac32824eedc3be602e799a
+  gateB1/group07.txt  111 B  sha256 5b3c17b1030b7752a065bb410ccce0e235fb4f0cb8cf3ac4de11f502e13ad1e7
+  gateB1/group08.txt  614 B  sha256 50043c972fdecaf7b800490235ef7c4e97b1e8e5c27d3aaf5d5301eb4b4482b0
+  gateB1/group09.txt  615 B  sha256 9249993fa885a05fe5da009ffd9a182a9fb72d96a5767444971f9e8a41c9646a
+  gateB1/group10.txt  615 B  sha256 7a95e2ccd023599cecfd51f8823f9f23f26d8abd3fd9be0d727e0f1360f00bc4
+  gateB1/group11.txt  615 B  sha256 dc7a69c7e508044d1f071f60868b974cfc360d08ad50acdad38535385e2b1a74
+  gateB1/group12.txt  1016 B  sha256 427c3a67778cf408fe164ae44bc86c3d5e9f4d0c7bdf6a19b6f0a09d3120a89b
+  gateB1/group13.txt  856 B  sha256 4a87a3dfd98c2ee0fabd5abf304921e4fad2a3b8cf51884a4ed02e11fa83daa8
+  gateB1/group14.txt  776 B  sha256 0f923a49a052e07eb99f0a09019384b1347f61efbbf1d2ed2eeef6944dbe113e
+  gateB1/group15.txt  615 B  sha256 842132d004a9dc0c2b98191890636ed5cde74dafc33332b8ccf5d66281f7f5b6
+  gateB1/group16.txt  1165 B  sha256 37e3587be3dfd8a23c0938cbab8c0247b0ea9bda4261012ee093b266adf496a9
+  gateB1/group17.txt  696 B  sha256 f09e5e6902dd578425f7fe2089bfee235ad5537d3559bb96373f33d7ddeb5e9e
+  gateB1/group18.txt  5017 B  sha256 9b0392fd8555973483a82b19365551f5ee9a8bce8c479828efe2a6a50c2e8f9f
+  gateB1/summary.json  13571 B  sha256 c8fc14077983fbc19baf597c9e44c7f81b3498d2fe6f1032bfd0b13c3c488ae3
+gateB2/
+  gateB2/group01.txt  19 B  sha256 82601adc3b4caebae2bff11ac53e2ee51f0d317d6fdf58b972cf3b4d6833b538
+  gateB2/group02.txt  19 B  sha256 82601adc3b4caebae2bff11ac53e2ee51f0d317d6fdf58b972cf3b4d6833b538
+  gateB2/group03.txt  174 B  sha256 b21048d08a02ec620157fd771d8e23307d9f20eec938644155da6e5b8e78fbc6
+  gateB2/group04.txt  15 B  sha256 03a77fc8fe616a35134e8c35e252aace6bea37480f6891a20d745ace74e35464
+  gateB2/group05.txt  389 B  sha256 8ac8a67244c5e3f576f36a0725b1ae3a07d155f80bf8762bd6c74e612936cc0a
+  gateB2/group06.txt  4 B  sha256 dfa3476846ce31adf8b1496b34595fb3f5ca2adf22b6df8ca2264c718b985cd9
+  gateB2/group07.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  gateB2/group08.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  gateB2/group09.txt  10 B  sha256 537f3fb69ba01fc388a3a5c920c485b2873d5f327305c3dd2004d6a04451659b
+  gateB2/group10.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  gateB2/group11.txt  8 B  sha256 d09f0ad06d6e59b908037317d6c044f7ababd3466cb46d5b901cf6f0855baf04
+  gateB2/group12.txt  95 B  sha256 f41cc4a634b41b122764c6ef5983445ddf965e5465a484a8dd7965022aafb4cd
+  gateB2/group13.txt  245 B  sha256 911e72586e04327cff0782d2e0fb230761bfae6f1539ddf32bf7acbcce88a6dc
+  gateB2/group14.txt  776 B  sha256 61807bf7c35fdcbd4f73851188c262512adc84b5c277e6132e21aef45f799779
+  gateB2/group15.txt  27 B  sha256 552803ac8fa8a59ac5ed2238a8ec39d45b285aad29e815c1cdd478082c9861e4
+  gateB2/group16.txt  1175 B  sha256 9bc3f6693c3e24caaba1fa06ae4fd0b1473843ec527a71490fbd56c29eff9917
+  gateB2/group17.txt  87 B  sha256 61ef831e3981f6a74cc431dc8a1c5e4d5bb9c79a7046821d5f6e8e09fb951624
+  gateB2/group18.txt  2508 B  sha256 819e4ba76d0b3cff9ee9f1f243c9c16803de541bdf1660dd7e3e9ac38f84cf2a
+  gateB2/summary.json  12690 B  sha256 f793e16bcdee4360da2818eacdf8ee266bad4917bbb4cde102af60a0134404f7
+aborted/
+  aborted/gateB1/group16.txt  1175 B  sha256 f496f150a6a9e3d98c3444e4d4590f2a1230820fbd874af44bca50fa32b4ab31
+  aborted/gateB1-head.txt  41 B  sha256 09ff0f58006ee7231853bb0360c983c027a203e65eb10f67d7479c44373e2700
+  aborted/gateB1-start.txt  21 B  sha256 93e7eee7920b3270f831fd78150584b260a2339dcc465d59b24afde7378045fe
+  aborted/gateB1-status.txt  49 B  sha256 b0a5d47653e4c74ac3bc1da7b7d0b5f7d88f71398900851c98e5c6f8cc0b30bc
+  aborted/gateB1-uptime-start.txt  68 B  sha256 133fabb7b3ae8929ceeda7a1463383fe125524bfe3123d44f7413ca5c2f15714
+  aborted/gateB1.log  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  aborted/gateC1-head.txt  41 B  sha256 b57d0c45d4b4f83d5f0fdc27fc627ce1f18459d06f24eecde3f9fbd0bc557c8d
+  aborted/gateC1-sampler.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  aborted/gateC1-start.txt  21 B  sha256 3d33f6fa897e4f0ed93482dc6addff283ac0f35a9b98f0625c82fabfd58f4fb1
+  aborted/gateC1-status.txt  49 B  sha256 b0a5d47653e4c74ac3bc1da7b7d0b5f7d88f71398900851c98e5c6f8cc0b30bc
+  aborted/gateC1.log  461 B  sha256 d0549b3c68b77ce68fb3253218f72f479d0abce4b2cae7660768acaa2fbd9fe8
+r3-extreme/
+  r3-extreme/group01.txt  17 B  sha256 576082dffd1a6950a0f4bdc61fdaae538ff6e768d569d972c7df5572bfa4d597
+  r3-extreme/group02.txt  12 B  sha256 fb3a85cd297aacb976a843a7a21df19eec92701e4e67a41d1a406e0498c7d307
+  r3-extreme/group03.txt  170 B  sha256 cc9f185f7e01d9b6b007fedcdee439047ce242f546763a940c47d659c5a82327
+  r3-extreme/group04.txt  14 B  sha256 656362fab7149b791b9940333bce3c500437d55bfa584cc1f50b747288c722b0
+  r3-extreme/group05.txt  389 B  sha256 8ac8a67244c5e3f576f36a0725b1ae3a07d155f80bf8762bd6c74e612936cc0a
+  r3-extreme/group06.txt  3 B  sha256 ab5df625bc76dbd4e163bed2dd888df828f90159bb93556525c31821b6541d46
+  r3-extreme/group07.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  r3-extreme/group08.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r3-extreme/group09.txt  10 B  sha256 537f3fb69ba01fc388a3a5c920c485b2873d5f327305c3dd2004d6a04451659b
+  r3-extreme/group10.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r3-extreme/group11.txt  8 B  sha256 d09f0ad06d6e59b908037317d6c044f7ababd3466cb46d5b901cf6f0855baf04
+  r3-extreme/group12.txt  67 B  sha256 d40ca1173d0af4f915050bfb948d5d27549ec4133625f2a2700d1fe11ff325e5
+  r3-extreme/group13.txt  175 B  sha256 817ad35c918e6c87f13420290db761c9caaf7283b171ee16b3bf1bbf7eb1a719
+  r3-extreme/group14.txt  182 B  sha256 4bfd90785fef6e4b692353344d071f631639eedc20236fc1260cb18e026e846d
+  r3-extreme/group15.txt  17 B  sha256 576082dffd1a6950a0f4bdc61fdaae538ff6e768d569d972c7df5572bfa4d597
+  r3-extreme/group16.txt  1175 B  sha256 260d9232dc5f1897f5e3ff235493e74f9d9c84c5e6dd66b0d1122559d9003238
+  r3-extreme/group17.txt  86 B  sha256 ff15e6208d037009ce8817426c4537ac9b3f39f3718d32ac48f39a32ec4b5b31
+  r3-extreme/group18.txt  1692 B  sha256 30d702f48e5d358b01dea30f6ed86859d1e0c8c71f952d7dd9d12084d2c4e596
+  r3-extreme/probe1.txt  603 B  sha256 9760021c998511ecb2b9c3fca2c9ec1b85e215e049fa42a871395eeab1c60d9d
+  r3-extreme/probe2.txt  603 B  sha256 0e4ca57bae854ffa955f551f139eecd4eafa074564a22d9ae3c6dbbd3a31b791
+  r3-extreme/probe3.txt  603 B  sha256 31b2357e798d78ddae776a6e3ebc866471f2add289163bf318a75740d5634c91
+  r3-extreme/probe4.txt  603 B  sha256 b904ee80a161316fa30a3cc22070871108946a2e30c1c89289ad1de87cf1caf0
+  r3-extreme/probe5.txt  603 B  sha256 433f3da90c243aefc1a0df4ce0de3c27b125d85165ed0d880b6a4139dbb16715
+  r3-extreme/probe6.txt  603 B  sha256 f50bf94ffe7f188dc63bdfa0301d5e968a4c540abb60d537f07d3a091b2deedc
+  r3-extreme/summary.json  17305 B  sha256 617ccf9d2f4b22b1bde13776f5408b87eacfbee8a6baf9ede700e5cadfb3f86c
+r3-extreme-second/
+  r3-extreme-second/group01.txt  17 B  sha256 576082dffd1a6950a0f4bdc61fdaae538ff6e768d569d972c7df5572bfa4d597
+  r3-extreme-second/group02.txt  12 B  sha256 fb3a85cd297aacb976a843a7a21df19eec92701e4e67a41d1a406e0498c7d307
+  r3-extreme-second/group03.txt  170 B  sha256 cc9f185f7e01d9b6b007fedcdee439047ce242f546763a940c47d659c5a82327
+  r3-extreme-second/group04.txt  14 B  sha256 656362fab7149b791b9940333bce3c500437d55bfa584cc1f50b747288c722b0
+  r3-extreme-second/group05.txt  389 B  sha256 8ac8a67244c5e3f576f36a0725b1ae3a07d155f80bf8762bd6c74e612936cc0a
+  r3-extreme-second/group06.txt  3 B  sha256 ab5df625bc76dbd4e163bed2dd888df828f90159bb93556525c31821b6541d46
+  r3-extreme-second/group07.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  r3-extreme-second/group08.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r3-extreme-second/group09.txt  10 B  sha256 537f3fb69ba01fc388a3a5c920c485b2873d5f327305c3dd2004d6a04451659b
+  r3-extreme-second/group10.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r3-extreme-second/group11.txt  8 B  sha256 d09f0ad06d6e59b908037317d6c044f7ababd3466cb46d5b901cf6f0855baf04
+  r3-extreme-second/group12.txt  67 B  sha256 d40ca1173d0af4f915050bfb948d5d27549ec4133625f2a2700d1fe11ff325e5
+  r3-extreme-second/group13.txt  175 B  sha256 817ad35c918e6c87f13420290db761c9caaf7283b171ee16b3bf1bbf7eb1a719
+  r3-extreme-second/group14.txt  182 B  sha256 4bfd90785fef6e4b692353344d071f631639eedc20236fc1260cb18e026e846d
+  r3-extreme-second/group15.txt  17 B  sha256 b1c42b7cc6d27eedac268bba62dc6e232a8180a861defbea4b87fde441857c10
+  r3-extreme-second/group16.txt  1175 B  sha256 dc40bf81a77bb8f36e418bba8391f28e38dc38c15d614a0e7ff083a5b614350d
+  r3-extreme-second/group17.txt  86 B  sha256 da515d6c81bc89d92c81dfdef604b3e326e7e1754159c7a04930206df83e46b0
+  r3-extreme-second/group18.txt  1659 B  sha256 30b81d526066ccd0b5b9e9175c974925c7bbb190ee7ff15b93f31f035658bcfe
+  r3-extreme-second/summary.json  12703 B  sha256 a81eedf7a42f0aabcdb0e0e97b032d00c98b49cf3b25d5116d12d4e1998c4802
+r4-extreme/
+  r4-extreme/group01.txt  17 B  sha256 576082dffd1a6950a0f4bdc61fdaae538ff6e768d569d972c7df5572bfa4d597
+  r4-extreme/group02.txt  12 B  sha256 fb3a85cd297aacb976a843a7a21df19eec92701e4e67a41d1a406e0498c7d307
+  r4-extreme/group03.txt  170 B  sha256 cc9f185f7e01d9b6b007fedcdee439047ce242f546763a940c47d659c5a82327
+  r4-extreme/group04.txt  14 B  sha256 656362fab7149b791b9940333bce3c500437d55bfa584cc1f50b747288c722b0
+  r4-extreme/group05.txt  385 B  sha256 1f240cad1df7e145602bc9488a041edda4a01418ee3943b378b266dd243773f7
+  r4-extreme/group06.txt  3 B  sha256 ab5df625bc76dbd4e163bed2dd888df828f90159bb93556525c31821b6541d46
+  r4-extreme/group07.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  r4-extreme/group08.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r4-extreme/group09.txt  10 B  sha256 537f3fb69ba01fc388a3a5c920c485b2873d5f327305c3dd2004d6a04451659b
+  r4-extreme/group10.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r4-extreme/group11.txt  8 B  sha256 d09f0ad06d6e59b908037317d6c044f7ababd3466cb46d5b901cf6f0855baf04
+  r4-extreme/group12.txt  67 B  sha256 d40ca1173d0af4f915050bfb948d5d27549ec4133625f2a2700d1fe11ff325e5
+  r4-extreme/group13.txt  175 B  sha256 8c91334740795683b1fa3022c8ffbb54c801a9e9958827fac48b232a4185dc77
+  r4-extreme/group14.txt  51 B  sha256 f7a77cb7b99b814b6095d61956e7c020905a8cb44c103be537115b3fe6c2e1da
+  r4-extreme/group15.txt  17 B  sha256 b1c42b7cc6d27eedac268bba62dc6e232a8180a861defbea4b87fde441857c10
+  r4-extreme/group16.txt  1175 B  sha256 48ebe531afb2485d5382eae7dd04f3ed6a9e1f909f70b8c662162298e9ade47b
+  r4-extreme/group17.txt  86 B  sha256 da515d6c81bc89d92c81dfdef604b3e326e7e1754159c7a04930206df83e46b0
+  r4-extreme/group18.txt  1451 B  sha256 6b1e0d5aae7acd3700de05e440a5427352edbeb83b9f06f43a4252feea65ed9b
+  r4-extreme/probeA.txt  615 B  sha256 6ea1617aa6e62a9456c7a9bec35e33783ad0baa3e597532caded223eae4fba4d
+  r4-extreme/probeB.txt  615 B  sha256 6407db6e89d6bb1ee1b03d55740c112276f48c5c9cb76e16b4ab2dbc00e6fe99
+  r4-extreme/probeC.txt  615 B  sha256 d387c1428c147b67634061ff94902120f3521a0891d35703931c9b124131e2f7
+  r4-extreme/probeD.txt  615 B  sha256 360c99fc537454c5769211f980cc154f08d8fde13f06fae18b0aa441ace52163
+  r4-extreme/summary.json  14666 B  sha256 7f7a1d473e46cd6174177027adf98d0b52a5b927e34f8fdfc6328ad131156cb3
+r4-extreme-second/
+  r4-extreme-second/group01.txt  16 B  sha256 3784a47f2cd20fa090fb9a92c7f302fe1b4edcdf7b0246f46157490e703f56e2
+  r4-extreme-second/group02.txt  12 B  sha256 fb3a85cd297aacb976a843a7a21df19eec92701e4e67a41d1a406e0498c7d307
+  r4-extreme-second/group03.txt  170 B  sha256 cc9f185f7e01d9b6b007fedcdee439047ce242f546763a940c47d659c5a82327
+  r4-extreme-second/group04.txt  14 B  sha256 656362fab7149b791b9940333bce3c500437d55bfa584cc1f50b747288c722b0
+  r4-extreme-second/group05.txt  386 B  sha256 f583a682beb0a4f42c1723392bec658f4ce5a0f3a5a486ac26114a5436501ce6
+  r4-extreme-second/group06.txt  3 B  sha256 ab5df625bc76dbd4e163bed2dd888df828f90159bb93556525c31821b6541d46
+  r4-extreme-second/group07.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  r4-extreme-second/group08.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r4-extreme-second/group09.txt  10 B  sha256 20826af2669b0736e26262a951d8293bec59d1b533f8fb06810a14215a715b79
+  r4-extreme-second/group10.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r4-extreme-second/group11.txt  8 B  sha256 d09f0ad06d6e59b908037317d6c044f7ababd3466cb46d5b901cf6f0855baf04
+  r4-extreme-second/group12.txt  67 B  sha256 d40ca1173d0af4f915050bfb948d5d27549ec4133625f2a2700d1fe11ff325e5
+  r4-extreme-second/group13.txt  175 B  sha256 8c91334740795683b1fa3022c8ffbb54c801a9e9958827fac48b232a4185dc77
+  r4-extreme-second/group14.txt  47 B  sha256 8971f6d844af0a99a9e1f183395a631f6b962091bccd29785a84a2c18f28253d
+  r4-extreme-second/group15.txt  17 B  sha256 b1c42b7cc6d27eedac268bba62dc6e232a8180a861defbea4b87fde441857c10
+  r4-extreme-second/group16.txt  1175 B  sha256 05d3e13d450e251019b283e6a466e3f721c74357548c99ab0cad6d3ffa107d39
+  r4-extreme-second/group17.txt  86 B  sha256 ff15e6208d037009ce8817426c4537ac9b3f39f3718d32ac48f39a32ec4b5b31
+  r4-extreme-second/group18.txt  1451 B  sha256 79fb4344deb95c0c40e5442aad2e65ef2ec8ee5cfc65c76eeb76e59536909502
+  r4-extreme-second/summary.json  12678 B  sha256 582c125840a5cf3ab274b73f4b0625d375896bad70014de29ea04d645f3356bb
+r5-extreme/
+  r5-extreme/group01.txt  20 B  sha256 5ed321bce1f0091ed4b438161637abb3bc8b8e8e4e459d07f3a64593ea0e5b2c
+  r5-extreme/group02.txt  21 B  sha256 ee3707bcc8eb259af9c0a7807a88ceff0b461d07506062497ef97e8f2279c40f
+  r5-extreme/group03.txt  199 B  sha256 021276ff798bae460a3b8c3ca6510edcc34444c3dc6284553c656bb14bc62c2d
+  r5-extreme/group04.txt  15 B  sha256 03a77fc8fe616a35134e8c35e252aace6bea37480f6891a20d745ace74e35464
+  r5-extreme/group05.txt  389 B  sha256 8ac8a67244c5e3f576f36a0725b1ae3a07d155f80bf8762bd6c74e612936cc0a
+  r5-extreme/group06.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  r5-extreme/group07.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  r5-extreme/group08.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r5-extreme/group09.txt  10 B  sha256 537f3fb69ba01fc388a3a5c920c485b2873d5f327305c3dd2004d6a04451659b
+  r5-extreme/group10.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r5-extreme/group11.txt  8 B  sha256 d09f0ad06d6e59b908037317d6c044f7ababd3466cb46d5b901cf6f0855baf04
+  r5-extreme/group12.txt  100 B  sha256 413a1d8687a4436d755938489adb30f60a887904fa42e1b223d2f4744ae7ecf5
+  r5-extreme/group13.txt  249 B  sha256 94701ce9af3ed5d9ea768352aab2becdf0b0eb7691127e6a12462e5709c0b180
+  r5-extreme/group14.txt  776 B  sha256 da15fe408d4c8991feea4c69d9d51e58b48e3ee0d5acf5c8a4ba3bf8f2cfc06d
+  r5-extreme/group15.txt  36 B  sha256 9c667cd717f0ba315019e47c50fa6ffe96658203f2e06d62b09e0416d95dc371
+  r5-extreme/group16.txt  1175 B  sha256 4729c11b2a8b976a3b10a79af201ad7f74a522f68448dbcd2a03d73e53d9b13e
+  r5-extreme/group17.txt  696 B  sha256 0e65082944c07d096a911651d9ab3c2d71679f12fa4d734ff4196fa749a74edd
+  r5-extreme/group18.txt  2763 B  sha256 071c222956f4a3d19c541ed078ca0bb2e05d48a6c95905a065cbf0db347e0c07
+  r5-extreme/probeA.txt  614 B  sha256 194cdb262233dfc606a0902a00609db21ab08cd0830c60fbf5ef86ddeed57f44
+  r5-extreme/probeB.txt  614 B  sha256 15e72a2a11c6c701c2f56cca01cc4435ae6c722de80235326d4bdbe3b8e478d3
+  r5-extreme/probeC.txt  614 B  sha256 ae7140ea2eef6a0cb265f6552d498bfefd2e7976d6b1045f5ec118a5b9834fda
+  r5-extreme/probeD.txt  614 B  sha256 c1b1243e699329bcd903d4808758686f18fc973996c839c302acf49364fd3e4a
+  r5-extreme/summary.json  14807 B  sha256 e25671dbdbc73771dabae7b431552c552dc49200a57fc1618a7fb8c87584f471
+r5-extreme-second/
+  r5-extreme-second/group01.txt  20 B  sha256 5ed321bce1f0091ed4b438161637abb3bc8b8e8e4e459d07f3a64593ea0e5b2c
+  r5-extreme-second/group02.txt  21 B  sha256 ee3707bcc8eb259af9c0a7807a88ceff0b461d07506062497ef97e8f2279c40f
+  r5-extreme-second/group03.txt  199 B  sha256 021276ff798bae460a3b8c3ca6510edcc34444c3dc6284553c656bb14bc62c2d
+  r5-extreme-second/group04.txt  15 B  sha256 03a77fc8fe616a35134e8c35e252aace6bea37480f6891a20d745ace74e35464
+  r5-extreme-second/group05.txt  389 B  sha256 8ac8a67244c5e3f576f36a0725b1ae3a07d155f80bf8762bd6c74e612936cc0a
+  r5-extreme-second/group06.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  r5-extreme-second/group07.txt  6 B  sha256 895361ffbf88d5a8c40d47f8dd3d03df2042ca9360d08738bcbb4faa39495404
+  r5-extreme-second/group08.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r5-extreme-second/group09.txt  10 B  sha256 537f3fb69ba01fc388a3a5c920c485b2873d5f327305c3dd2004d6a04451659b
+  r5-extreme-second/group10.txt  0 B  sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  r5-extreme-second/group11.txt  8 B  sha256 d09f0ad06d6e59b908037317d6c044f7ababd3466cb46d5b901cf6f0855baf04
+  r5-extreme-second/group12.txt  100 B  sha256 413a1d8687a4436d755938489adb30f60a887904fa42e1b223d2f4744ae7ecf5
+  r5-extreme-second/group13.txt  249 B  sha256 94701ce9af3ed5d9ea768352aab2becdf0b0eb7691127e6a12462e5709c0b180
+  r5-extreme-second/group14.txt  776 B  sha256 cf5deda033dd860a4ab4fe77061444d4f99d2096d91be2fb76f2c972536e9db0
+  r5-extreme-second/group15.txt  35 B  sha256 c5a75fa1a4bb27a365319555e92dbae4683403443b01452195b8bbe007b6b5ad
+  r5-extreme-second/group16.txt  1175 B  sha256 6f2a393c42e00d6ab055dadc0f834d280809129650e4579b6cc8eaa57a61a11e
+  r5-extreme-second/group17.txt  159 B  sha256 a0787049e93336486f10261154d4aaa972359474e1168cb72f36254aa1fc1334
+  r5-extreme-second/group18.txt  2763 B  sha256 071c222956f4a3d19c541ed078ca0bb2e05d48a6c95905a065cbf0db347e0c07
+  r5-extreme-second/summary.json  12826 B  sha256 54878ed01ad4e4afaf9a9d7b0b706dcf525441533f0ab5dfe94ec8c12b5c4cc0
+gateC1/
+  gateC1/group01.txt  111 B  sha256 db1bdedf2ec5d597761f64db79bcc8fd18ef7cbcb83767580496639b765a7bd4
+  gateC1/group02.txt  615 B  sha256 3ba7a4ca976bd3317b069f50fe391a3d8a2157eeb7bb7575c85d32b4bae0057a
+  gateC1/group03.txt  856 B  sha256 18018c3fe1f5222fbbc1b882368051b55cbac25692088dc00c46696a6ea06f71
+  gateC1/group04.txt  696 B  sha256 efb80e8281958df6bc520873d4e870d63e2a1765975de89575dd043bed58d48a
+  gateC1/group05.txt  1016 B  sha256 7922950a9388507cd4dd7c5a65ad34904a163d0247b4846d9d8067d2293f66c2
+  gateC1/group06.txt  615 B  sha256 26498f68c419696509d9bbf4bb9742e3946d994ca403d5ab640d90640530a8ec
+  gateC1/group07.txt  111 B  sha256 64fe0d8b7ec5eaf119c950f073338345fc34ef5a7c09ef6857644cea7780aaa7
+  gateC1/group08.txt  614 B  sha256 4492aa66db49618ceffbf451664af01d4cdf6a985f937a9a74cc0cdba5b53a0f
+  gateC1/group09.txt  615 B  sha256 ce2ad8f3d4834dfc4626d2d917e7742917713e488e1678eb4099ee123d65be45
+  gateC1/group10.txt  615 B  sha256 3c5f42d21633d3f08001078cacc81ab2d6a77891b894e8581b388175920a8987
+  gateC1/group11.txt  615 B  sha256 74487899442909dc2da3f52d610954b73ba30304404f8bae4b9d453451aaee50
+  gateC1/group12.txt  1016 B  sha256 9bf3b51b159f7293da5be333ade2c7af9b8766174ea4947d403937c7c55637b7
+  gateC1/group13.txt  856 B  sha256 a3810abd229cc6e82b56f4b434a0460375de7bf3ba33ebab54323cf5fb24d210
+  gateC1/group14.txt  776 B  sha256 9f9e8fbe1ab36616a891f058eb6def678740af9f7f810a99e830097e92ca5479
+  gateC1/group15.txt  615 B  sha256 add545486877e8f90de84abb7e43ee96fa70e7513836eac92297f110d9413fef
+  gateC1/group16.txt  1165 B  sha256 48166e79e310b0070dafe143f5d76c566f81526623a237113ac61465fbd985a8
+  gateC1/group17.txt  696 B  sha256 98c0d6991f3406bccb54385af2a24ccbf0cccc9e3d4a4b3df31599030a6009fd
+  gateC1/group18.txt  615 B  sha256 0f86c65ad60112ac02cba900cfaa959f09590f1e4b84ae3944ae6bbcbc5ee403
+  gateC1/group19.txt  5017 B  sha256 3d0e99a589c5aaf19c0a6300555ffb46a0342cf66b86ed994d2489ba187d0cf3
+  gateC1/summary.json  14202 B  sha256 b7d2059c817ee67c0656f906d8150fee7395db20556e1621d544dc207257148b
+gateC2/
+  gateC2/group01.txt  111 B  sha256 1f7057f66e15c0fc1b22eeb837ffb64148ae70a416e6688c8319a70dd315ddf8
+  gateC2/group02.txt  615 B  sha256 2593679e67b36b92104b7425c869a3e0a0b98ce5591aa87d68e79e701fd8c944
+  gateC2/group03.txt  856 B  sha256 48909e95a96f2be94816a3cf67f6232626435e26614de21c469cc2e92421a848
+  gateC2/group04.txt  696 B  sha256 a1f17a803d97203745a53231974c49c6267510e4b32888768fed1671473009db
+  gateC2/group05.txt  1016 B  sha256 bd9130607f004b1ba6e200485946569d36321c5b8d0d2d5665eb6446eefbfa0f
+  gateC2/group06.txt  615 B  sha256 42feb9ca37b0c182212036b0ec8025d3f36a38234314b54b79b97f15c9b3ac25
+  gateC2/group07.txt  111 B  sha256 ffa93862ada1a7477a5462d6a82ea86f18fe873a0321478463cbf6c777a79e57
+  gateC2/group08.txt  614 B  sha256 b5d1cac136e7975f0d51163e57806c560b88d15fa0fbf58c562187ebef100964
+  gateC2/group09.txt  615 B  sha256 dd2e187f62bc9f69b453c45d8effc23a872ce82d3a495326cd40703b4d0ed7b6
+  gateC2/group10.txt  615 B  sha256 63d2d56960fb03783aa01ef15cef0257954b4768718bfee1fe621a395452158b
+  gateC2/group11.txt  615 B  sha256 795c593dea0cd46e0619adc55d27fbeac64b5f8b21a54d56995785c31c5b733c
+  gateC2/group12.txt  1016 B  sha256 9f368e86a24ec74ceff113f701dcb2ba02935a9c1196f5e8fcd6e419f4e83a18
+  gateC2/group13.txt  856 B  sha256 e426d0750e9d33c7935311315f95227f5d65030d2f7512b5a25d060fc682464a
+  gateC2/group14.txt  776 B  sha256 09d1eb26fce0321ff1fbace92b70606b5adfd4fdd06a36c2e990777c4d7a503f
+  gateC2/group15.txt  615 B  sha256 79e55c63b57532bc5b2177d2a6bed7c0e7d7fb1f4ede185adc065d376d05342f
+  gateC2/group16.txt  1165 B  sha256 407c2adc12cb593b25728a02cbebb72ce04faf6997aa100b7501bfa6cf6fde9d
+  gateC2/group17.txt  696 B  sha256 d9b339a26569fa2e72304bcd9c8be5fc7fe921280b5181c9258695677a6c7ea5
+  gateC2/group18.txt  615 B  sha256 06a9bdb03a04c7f7ab37b407cfddc1b34bd3e5b3100fdd82a5660791e64a7361
+  gateC2/group19.txt  5017 B  sha256 5bad88f897c445417308931b3bb3087a3cff193ffc577659127bda5d2620d814
+  gateC2/summary.json  14201 B  sha256 8bae7e6db2dadb678a44b1c5f14662be8c7cd061583c90ef126fcf86b669d827
+gateC3/
+  gateC3/group01.txt  111 B  sha256 255be0881f274bf0f651ecf67eec1d076b6efd66b9881e88d8f69f8a64c27182
+  gateC3/group02.txt  615 B  sha256 a98c7b3d87d321e4d4354a027a3231f2bf27e82980b961894869c3d36113afea
+  gateC3/group03.txt  856 B  sha256 cea647fa71397f8e159809eab93858ca7cbb62a5371c002ad72fb8f8d1def7db
+  gateC3/group04.txt  696 B  sha256 1a449439d560ce68e3f74630bb20c98013d06fa856f865a64565a7d4379755e5
+  gateC3/group05.txt  1016 B  sha256 38c9ba5c3050ef5582642cc14ecdacdd94e8c5bc13d0e169fb8232e773be65f4
+  gateC3/group06.txt  615 B  sha256 8c894a8bc35b9c464442700bbfeed04812cebe65175a9821a3a8b3d3cf4ed66c
+  gateC3/group07.txt  111 B  sha256 b93c01617a7155edbb641f9c14e63a15120a02963c40372661b7d72df4effcd0
+  gateC3/group08.txt  614 B  sha256 607fa1406e25be802d5de4283015973830bb7a73158dacce843162a60d5cb758
+  gateC3/group09.txt  615 B  sha256 baaebce84e062de36a36b784753159f44208516ee020bd08e2845881afb55b41
+  gateC3/group10.txt  615 B  sha256 f8868821826748e8da87c355d33eeaaa82259277038a08b58f78593ad2e43cff
+  gateC3/group11.txt  615 B  sha256 6586881cb1d1c8c0099bca1d516fdf99ce46f6f11495fa9216d4cf1026e9f544
+  gateC3/group12.txt  1016 B  sha256 c9636d6004e68c30358a64a7d4479dfcf936b9313baf6cdd3685aba058928c77
+  gateC3/group13.txt  856 B  sha256 e44e4d29cb686bd3388b0564f3b1547c2616d2f84d0718b3a58eb7767a6e0c5d
+  gateC3/group14.txt  776 B  sha256 60f3717430b1d9bb44c96df5c32f89b5b46bbc2cf837f1e0dc921675d3d7f205
+  gateC3/group15.txt  615 B  sha256 152af9b76f7837733bbe4690bb98575169979aa05d2a1f2aeece09e402226fe2
+  gateC3/group16.txt  1165 B  sha256 83ceda2ce6383c4599e9168ab7b300e084a01242443fc90a3d992af45256c5ff
+  gateC3/group17.txt  696 B  sha256 8249e60975e7a94cd03412a65bbb0083167acd419f5979d7b9690549e165abc7
+  gateC3/group18.txt  615 B  sha256 83711762d982dc3bfa3ebafa0e155fd8ab6161d7d3189bad8222bb64bf164096
+  gateC3/group19.txt  5017 B  sha256 ff297760e9077098d08711a993610a7430fa72263ea37040544bc156ab44629d
+  gateC3/summary.json  14201 B  sha256 b99fdfe1723dcea1df80e6338be4c27e4dbaf375807bb2ea9229e1220989333d
+smoke/
+  smoke/batchrep.txt  611 B  sha256 24c90a2d575a0f200ad4892989d17cef7af0ee7e8027b849be67785470aad1fe
+  smoke/batchworker.txt  120 B  sha256 47bab86d7833a7bae24a6121033ad7ca5ea997caa3c43ad8ae165177594b9072
+  smoke/jev.txt  701 B  sha256 bebbd8e0623d34406f63536304451318754187d0a2e22d8759f88fa7d9c1c4cd
+  smoke/ligandga.txt  132 B  sha256 c2270551743c11370c7a2ecf5d88b828a00e97e64b8bb9862b2df065aa2d59ba
+  smoke/pocket.txt  625 B  sha256 4ddd0551868fe9d8ffa405c5abee3e5b6e162a7689cbe9765a32fa04a0dd2653
+  smoke/seqga.txt  132 B  sha256 426707205db9fe8307682b4804d48d554c218ec82fffd5eb5639525619b2e514
+smoke2/
+  smoke2/batchapi.txt  621 B  sha256 f0a78b514abf496daa0ad035dddb64fa589d494be6e0a0d8e39f1cf49ccc43e3
+  smoke2/batchjobs.txt  634 B  sha256 38645f16913d53908992dc7555cafc2c5a074ecb0fba0484b5d41b72e5fc3e1c
+  smoke2/ligandgajobs.txt  625 B  sha256 24c62950ed7fb757a7e6855eaff731d6e20f469016bbaa6f8f9c7e81ca28880e
+  smoke2/pocket.txt  625 B  sha256 f77373f8770e2569fd2b448b30c71563907e98a20f58f5822f0e14d9abb3f86e
+  smoke2/workers.txt  132 B  sha256 06eeb0968aeaa519551d1301fc040b2ca7091c11b498e934fe6e8f4eb3d1bc98
+smoke3/
+  smoke3/batchjobs.txt  625 B  sha256 1d8806b7670582457d10bf4f71204f65f37071e66fc04cae5d7785069cdf4fa8
+  smoke3/batchrep.txt  611 B  sha256 63b256cb59b640adf3ad7179e7f18b6d07e92f9ed989683e844055a759225f91
+  smoke3/ligandgajobs.txt  625 B  sha256 232a8937e85f474ada10b56b9207b8cda9e2039c5621d9ca03e01c6e1e57c9e9

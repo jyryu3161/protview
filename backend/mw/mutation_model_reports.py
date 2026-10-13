@@ -26,6 +26,14 @@ rebuilt from the stored model, and the Markdown is compared byte for byte with a
 identifiers go into slots; the forbidden-word check (the M20 list: M15 words plus 안정성·ΔΔG·순위·추천·최적·개선·
 활성·예측·유망·좋은·나쁜·안전·점수·에너지·수소결합 and the English words) runs on every template line with the slots
 empty, except a line exactly equal to a fixed limitation sentence. The template says "OpenMM 전위", never "에너지".
+
+M29 T8 (report format ``mutation_model_markdown@2``, spec .dryforge/spec.md 6.3): the report of a model whose candidate
+set's structure is a repaired structure (``structure_origin_reports.origin``, the record re-validated with its
+publication) is @2, and only such a model's report is: the @1 manifest keys plus ``structure_origin``, the two
+record-count claims (``counts.added_residues`` / ``counts.added_atoms`` of the ``structure_repair@1`` record, neither a
+difference nor a change) after the @1 claims, and a "구조 출처" section (SO1, the handles, the two counts) before the
+limitations. Any other model's report is @1 with the @1 bytes; an @1 manifest for a repaired structure or an @2 one
+for another structure is refused.
 """
 from __future__ import annotations
 
@@ -38,6 +46,7 @@ from typing import Any
 from . import mutation_model_bundle as bundle
 from . import mutation_reports as m20
 from . import numbering_reports as nr
+from . import structure_origin_reports as origin_reports
 from .core.handles import canonical_json
 from .mutation_candidates import identity
 from .mutation_constants import IDENTITY_FIELDS
@@ -48,6 +57,7 @@ from .reports import EvidenceError, _md, _ref
 
 ANALYSIS_TYPE = "mutation_model"
 RENDER_VERSION = "mutation_model_markdown@1"
+RENDER_VERSION_V2 = "mutation_model_markdown@2"   # M29 T8: a model on a repaired structure (구조 출처 section)
 REPORT_BYTES = nr.REPORT_BYTES
 FIXED_LIMITATIONS = frozenset(LIMITATION_ORDER)
 EVIDENCE_STATEMENT = ("이 보고서의 수치는 저장된 변이 구조 모델 결과의 OpenMM 전위·변이 위치 SASA 값과, 저장된 접촉 "
@@ -87,6 +97,7 @@ MANIFEST_KEYS = frozenset({
     "schema", "analysis_type", "status", "render_version", "generation_mode", "result_handle", "result_schema",
     "result_sha256", *COPIED_FIELDS, "structures", "claims", "provenance", "evidence_statement", "snapshot",
     "markdown_handle"})
+MANIFEST_KEYS_BY_VERSION = {RENDER_VERSION: MANIFEST_KEYS, RENDER_VERSION_V2: MANIFEST_KEYS | {"structure_origin"}}
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -123,9 +134,10 @@ def _render(value: Any, rounding: str) -> str:
 
 
 def check_no_interpretation(text: str) -> str:
-    """Refuse interpretive wording on any line that is not exactly one of the fixed limitation sentences."""
+    """Refuse interpretive wording on any line that is not exactly one of the fixed limitation sentences or the M29
+    structure origin sentence (SO1)."""
     for line in text.split("\n"):
-        if line in FIXED_LIMITATIONS:
+        if line in FIXED_LIMITATIONS or line in origin_reports.FIXED_LINES:
             continue
         match = INTERPRETIVE.search(line)
         if match is not None:
@@ -219,6 +231,8 @@ def match_claim(expected_claims: list[dict[str, Any]], proposed: Any) -> dict[st
     if DIFFERENCE.search(named.replace("protonation_difference", "")):
         raise EvidenceError("mutation_model_claim_difference_not_allowed")
     statement = proposed["statement_id"]
+    if statement in origin_reports.STATEMENT_IDS:   # M29 @2: the record counts of a repaired structure
+        return origin_reports.match_claim(expected_claims, proposed, "mutation_model")
     if statement not in STATEMENTS:
         raise EvidenceError("mutation_model_claim_statement_not_allowed")
     if proposed["evidence_kind"] not in EVIDENCE_KINDS or proposed["reference"] is not None:
@@ -250,26 +264,43 @@ def validate_mutation_model_claim(run: Any, result_handle: str, proposed: dict[s
 # ---------------------------------------------------------------------------------------------------------------
 # source validation, manifest
 
-def _expected(run: Any, handle: str) -> dict[str, Any]:
-    """Every manifest field that follows from the validated stored model (not snapshot / markdown handle)."""
+def _expected(run: Any, handle: str, version: str | None = None) -> dict[str, Any]:
+    """Every manifest field that follows from the validated stored model (not snapshot / markdown handle).
+
+    ``version`` is the render version of a stored report; None picks it for a new report: @2 when the model's
+    structure (its candidate set's structure) is a repaired structure, else @1."""
     try:
         content = bundle.validated_result(run, handle)
         source = bundle.producer(run, handle)
     except bundle.MutationEvidenceError as exc:
         raise EvidenceError(f"mutation_model_invalid: {exc}") from exc
     try:
-        return {"schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
-                "render_version": RENDER_VERSION, "generation_mode": "local_rules_no_egress", "result_handle": handle,
+        origin = origin_reports.origin(run, content["structure"]["handle"])
+    except (KeyError, TypeError) as exc:
+        raise EvidenceError("mutation_model_report_evidence_unresolved") from exc
+    if version is None:
+        version = RENDER_VERSION if origin is None else RENDER_VERSION_V2
+    if version not in MANIFEST_KEYS_BY_VERSION:
+        raise EvidenceError("mutation_model_report_schema_invalid")
+    if (version == RENDER_VERSION_V2) is (origin is None):
+        raise EvidenceError("mutation_model_report_structure_origin_mismatch")   # @2 is a repaired structure's only
+    try:
+        expected = {
+                "schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
+                "render_version": version, "generation_mode": "local_rules_no_egress", "result_handle": handle,
                 "result_schema": SCHEMA, "result_sha256": handle.rsplit("/", 1)[-1],
                 **{key: content[key] for key in COPIED_FIELDS},
                 "structures": {side: structure_summary(content["structures"][side]) for side in STRUCTURE_SIDES},
-                "claims": claims_for(handle, content),
+                "claims": claims_for(handle, content) + ([] if origin is None else origin_reports.claims(origin)),
                 "provenance": {"mutation_model": {"job_id": source["job_id"], "attempt_id": source["attempt_id"],
                                                   "protocol_id": source["job"]["protocol_id"],
                                                   "tool_id": source["job"]["tool_id"],
                                                   "created_event_seq": source["created_seq"],
                                                   "completed_event_seq": source["published_seq"]}},
                 "evidence_statement": EVIDENCE_STATEMENT}
+        if origin is not None:
+            expected["structure_origin"] = origin_reports.manifest_field(origin)
+        return expected
     except (KeyError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("mutation_model_report_evidence_unresolved") from exc
 
@@ -367,6 +398,8 @@ def render_mutation_model_report(manifest: dict[str, Any]) -> str:
     for item in manifest["protonation_differences"]:
         lines.append(f"  - {md(_ref(item['residue']))}: 야생형 기준 {md(item['wild_type_reference'] or 'default')}, "
                      f"변이형 {md(item['mutant'] or 'default')}")
+    if manifest["render_version"] == RENDER_VERSION_V2:   # M29 T8: the structure origin section
+        lines.extend(origin_reports.section_lines(manifest["structure_origin"], claims, md))
     lines.extend(["", "## Limitations", ""])
     for item in manifest["limitations"]:
         lines.extend([item, ""])
@@ -414,10 +447,12 @@ def saved_mutation_model_report(run: Any, report_handle: str) -> dict[str, Any]:
     if (meta["kind"], meta["schema"], meta["fmt"]) != ("method_report_manifest", "method_report_manifest@1", "json"):
         raise EvidenceError("mutation_model_report_type")
     report = run.store.load_bounded_json(report_handle, REPORT_BYTES)
-    if (type(report) is not dict or set(report) != MANIFEST_KEYS or report["analysis_type"] != ANALYSIS_TYPE or
-            type(report["result_handle"]) is not str or report["render_version"] != RENDER_VERSION):
+    version = report.get("render_version") if type(report) is dict else None
+    keys = MANIFEST_KEYS_BY_VERSION.get(version) if type(version) is str else None   # @1 and @2 are read
+    if (keys is None or set(report) != keys or report["analysis_type"] != ANALYSIS_TYPE or
+            type(report["result_handle"]) is not str):
         raise EvidenceError("mutation_model_report_schema_invalid")
-    expected = _expected(run, report["result_handle"])
+    expected = _expected(run, report["result_handle"], version)
     if type(report["claims"]) is not list:
         raise EvidenceError("mutation_model_report_claims_invalid")
     for claim in report["claims"]:

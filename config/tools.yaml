@@ -115,6 +115,18 @@ tools:
     typical_runtime_s: 30
     description: M20 변이 후보 하나의 변이 구조를 PDBFixer 1.12.0으로 만들고 같은 절차의 야생형 기준 구조와 함께 OpenMM Amber14-all + GBn2로 최대 50회 최소화해 각 구조의 전위(kJ/mol)·변이 위치 SASA·주변 중원자 접촉을 남긴다(구조 간 차이·ΔΔG·안정성 아님); durable_job lane
 
+  # Fixed asynchronous M29 lane (protocol pdbfixer_repair_v1); execution is JobQueue, not Run.call. One job = one
+  # prepared structure: PDBFixer 1.12.0 adds only the approved missing atoms and residues, the server splices them into
+  # the prepared structure and stores a new prepared_structure@1 (manifest key repair) with the structure_repair@1
+  # record. The worker module and interpreter are fixed by code; arguments are validated on admission.
+  - name: repair_structure
+    level: L3
+    version: '1'
+    emits: structure_repair
+    cost_class: expensive
+    typical_runtime_s: 30
+    description: 전처리 구조에서 빠진 곁사슬 중원자·C 말단 OXT·내부 틈 잔기를 PDBFixer 1.12.0으로 더하고 같은 저자 체인 조각을 합치며 MSE를 MET로 바꾼 새 전처리 구조와 보완 기록을 만든다(추가 원자는 모델링 좌표이며 실험으로 관측한 좌표가 아니다; 관측 원자 좌표는 그대로); durable_job lane
+
   - name: compute_interactions
     level: L2
     accepts: { structure: [prepared_structure, relaxed_structure] }

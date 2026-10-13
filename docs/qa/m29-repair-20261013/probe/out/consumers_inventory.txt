@@ -1,0 +1,560 @@
+PROTOTYPE (M29 T1 (b) measurement only; never product code, never imported by mw).
+M29 T1 (b) prepared_structure / preparation_manifest consumer inventory (repo-relative paths)
+backend files scanned: 138; hashed files known: 31
+module-level names resolved as prepared_structure aliases: analysis_plans.OPERATIONS, analysis_plans.STRUCTURE_SCHEMAS, core/contracts.CONVERSIONS, jev_constants.STRUCTURE_KIND, jobs/sequence_ga_worker.STRUCTURE_KIND, kinase_precedents.STRUCTURE_KINDS, mutation_constants.STRUCTURE_KIND, mutation_model_constants.STRUCTURE_KIND, mutation_model_inputs.PREPARED_TYPE, numbering_reads.HINT_KINDS, pocket_bundle.SOURCE_KINDS, pocket_input.SOURCE_KINDS, reaction_knowledge.STRUCTURE_KINDS, saved_scenes.SOURCE_SCHEMAS, tools/comparison.SOURCE_TYPES, tools/jev.STRUCTURE_TYPE, tools/mutations.STRUCTURE_TYPE, tools/numbering.ALLOWED_KINDS
+
+== 1. backend hits (file:line | function [route] | pattern | category | hash | note)
+backend/mw/analysis_executions.py:870 | _identity_check | call:tools/structural.structure_residues( | blocked_upstream |  | M13 execution (reads chemical_preparation_manifest, not preparation_manifest@1)
+backend/mw/analysis_executions.py:874 | _identity_check | str:preparation_manifest | blocked_upstream |  | M13 execution (reads chemical_preparation_manifest, not preparation_manifest@1)
+backend/mw/analysis_executions.py:902 | _dispatch_record | alias:analysis_plans.OPERATIONS | blocked_upstream |  | M13 execution driver
+backend/mw/analysis_executions.py:1242 | _report_outcome | sub:["manifest"] | blocked_upstream |  | M13 execution driver
+backend/mw/analysis_plans.py:73 | <module> | str:prepared_structure | blocked_upstream |  | M13 STRUCTURE_SCHEMAS (plan route refuses)
+backend/mw/analysis_plans.py:73 | <module> | str:prepared_structure@1 | blocked_upstream |  | M13 STRUCTURE_SCHEMAS (plan route refuses)
+backend/mw/analysis_plans.py:86 | <module> | str:prepared_structure | blocked_upstream |  | M13 STRUCTURE_SCHEMAS (plan route refuses)
+backend/mw/analysis_plans.py:86 | <module> | str:prepared_structure | blocked_upstream |  | M13 STRUCTURE_SCHEMAS (plan route refuses)
+backend/mw/analysis_plans.py:86 | <module> | str:prepared_structure@1 | blocked_upstream |  | M13 STRUCTURE_SCHEMAS (plan route refuses)
+backend/mw/analysis_plans.py:103 | <module> | str:preparation_manifest | blocked_upstream |  | M13 STRUCTURE_SCHEMAS (plan route refuses)
+backend/mw/analysis_plans.py:213 | Preparation | request-model-field:altloc | blocked_upstream |  | M13 request model (no missing_residues field)
+backend/mw/analysis_plans.py:214 | Preparation | request-model-field:waters | blocked_upstream |  | M13 request model (no missing_residues field)
+backend/mw/analysis_plans.py:215 | Preparation | request-model-field:hydrogens | blocked_upstream |  | M13 request model (no missing_residues field)
+backend/mw/analysis_plans.py:311 | _compatibility | alias:analysis_plans.OPERATIONS | blocked_upstream |  | M13 OPERATIONS
+backend/mw/analysis_plans.py:374 | _structure_meta | alias:analysis_plans.STRUCTURE_SCHEMAS | blocked_upstream |  | M13 STRUCTURE_SCHEMAS kind/schema check
+backend/mw/analysis_plans.py:385 | _output | alias:analysis_plans.OPERATIONS | blocked_upstream |  | M13 OPERATIONS
+backend/mw/analysis_plans.py:425 | _inspect_ligand | kind-compare | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:425 | _inspect_ligand | str:prepared_structure | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:432 | _inspect_ligand | call:tools/structural.structure_residues( | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:437 | _inspect_ligand | str:leave_gaps | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:445 | _inspect_ligand | str:prepared_structure | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:468 | _measure_atoms | kind-compare | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:468 | _measure_atoms | str:prepared_structure | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:479 | _measure_atoms | call:tools/comparison.atom_rows( | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:495 | _compare | str:prepared_structure | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:512 | _compare | call:tools/comparison.atom_rows( | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:512 | _compare | call:tools/comparison.atom_rows( | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:543 | _chemical | call:chemical_inputs.preview( | blocked_upstream |  | M13 plan -> chemical_inputs.preview
+backend/mw/analysis_plans.py:575 | _find_cavities | kind-compare | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:575 | _find_cavities | str:prepared_structure | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:583 | _find_cavities | call:tools/openmm_method.preflight( | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:603 | _minimize | kind-compare | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:603 | _minimize | str:prepared_structure | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:609 | _minimize | call:tools/openmm_method.preflight( | blocked_upstream |  | M13 plan compile
+backend/mw/analysis_plans.py:656 | compile_plan | alias:analysis_plans.OPERATIONS | blocked_upstream |  | M13 OPERATIONS
+backend/mw/analysis_plans.py:707 | validate_plan | alias:analysis_plans.OPERATIONS | blocked_upstream |  | M13 OPERATIONS
+backend/mw/api/app.py:384 | _public_job | str:preparation_manifest | unrelated |  | chemical artifacts
+backend/mw/api/app.py:535 | chemical_preview [POST /runs/{rid}/chemical/preview] | call:chemical_inputs.preview( | refuse |  | POST /chemical/preview (M11)
+backend/mw/api/app.py:744 | analysis_plan_create [POST /runs/{rid}/analysis/plans] | call:analysis_plans.create_plan( | refuse |  | POST /runs/{rid}/analysis/plans (M13 refusal at route, spec 5.2)
+backend/mw/api/app.py:965 | viewer_session_create [POST /runs/{rid}/viewer/sessions] | call:viewer_intents.create_session( | refuse |  | POST /viewer/sessions
+backend/mw/api/app.py:1011 | viewer_scene_save [POST /runs/{rid}/viewer/scenes] | call:saved_scenes.save_scene( | refuse |  | POST /viewer/scenes
+backend/mw/api/app.py:1256 | inspection [POST /runs/{rid}/inspect_complex] | call:workflows.inspect_complex( | refuse |  | POST /runs/{rid}/inspect_complex route (new refusal target)
+backend/mw/api/app.py:1266 | create_report [POST /runs/{rid}/reports] | call:reports.build_inspection_report( | refuse |  | POST /reports
+backend/mw/api/app.py:1450 | report_download [GET /runs/{rid}/reports/download] | sub:["manifest"] | unrelated |  | report manifest
+backend/mw/api/app.py:1473 | job_preflight [GET /runs/{rid}/jobs/preflight] | call:tools/openmm_method.preflight( | refuse |  | GET /runs/{rid}/jobs/preflight (M7 preflight read, spec 5.2 lists it)
+backend/mw/api/app.py:1652 | reference_pdb_id_hint [GET /runs/{rid}/reference/pdb_id_hint] | call:numbering_reads.pdb_id_hint( | read_only |  | GET /reference/pdb_id_hint
+backend/mw/api/app.py:2832 | pockets_preflight [GET /runs/{rid}/pockets/preflight] | call:pocket_bundle.preflight( | refuse |  | GET /pockets/preflight (M12 read; judgement)
+backend/mw/api/app.py:2865 | residues [GET /runs/{rid}/structures/residues] | kind-compare | read_only |  | GET /structures/residues
+backend/mw/api/app.py:2865 | residues [GET /runs/{rid}/structures/residues] | str:prepared_structure | read_only |  | GET /structures/residues
+backend/mw/api/app.py:2870 | residues [GET /runs/{rid}/structures/residues] | call:tools/structural.structure_residues( | read_only |  | GET /structures/residues
+backend/mw/api/app.py:2884 | atoms [GET /runs/{rid}/structures/atoms] | call:tools/comparison.atom_rows( | read_only |  | GET /structures/atoms (atom catalog read)
+backend/mw/api/app.py:2910 | coordinates [GET /runs/{rid}/structures/bytes] | kind-compare | read_only |  | GET /structures/bytes (download; also the viewer's byte source)
+backend/mw/api/app.py:2910 | coordinates [GET /runs/{rid}/structures/bytes] | str:prepared_structure | read_only |  | GET /structures/bytes (download; also the viewer's byte source)
+backend/mw/api/app.py:2915 | coordinates [GET /runs/{rid}/structures/bytes] | call:tools/structural.structure_bytes( | read_only |  | GET /structures/bytes (download; also the viewer's byte source)
+backend/mw/chemical_bundle.py:127 | prepare_selected | call:chemical_inputs.preview( | unrelated |  | chemical_preparation_manifest@1 (a different object)
+backend/mw/chemical_bundle.py:130 | prepare_selected | call:chemical_inputs._source_rows( | unrelated |  | chemical_preparation_manifest@1 (a different object)
+backend/mw/chemical_bundle.py:257 | validated_source | manifest-field:manifest["model_number"] | unrelated |  | chemical_preparation_manifest@1 (a different object)
+backend/mw/chemical_bundle.py:325 | validated_graph | call:tools/comparison.atom_rows( | unrelated |  | chemical_preparation_manifest@1 (a different object)
+backend/mw/chemical_inputs.py:296 | _source_rows | str:prepared_structure | refuse |  | M11 attach_existing complex source; shared by /chemical/preview, prolif_prepare_v1 submit, M13 plan
+backend/mw/chemical_inputs.py:296 | _source_rows | str:prepared_structure@1 | refuse |  | M11 attach_existing complex source; shared by /chemical/preview, prolif_prepare_v1 submit, M13 plan
+backend/mw/chemical_inputs.py:298 | _source_rows | call:tools/structural._parse( | refuse |  | M11 attach_existing complex source; shared by /chemical/preview, prolif_prepare_v1 submit, M13 plan
+backend/mw/chemical_inputs.py:316 | _source_rows | call:tools/comparison.atom_rows( | refuse |  | M11 attach_existing complex source; shared by /chemical/preview, prolif_prepare_v1 submit, M13 plan
+backend/mw/chemical_inputs.py:570 | preview | call:chemical_inputs._source_rows( | refuse |  | M11 preview (shared by /chemical/preview, prolif_prepare_v1, M13 plan)
+backend/mw/comparison_reports.py:48 | _catalog | call:tools/comparison.atom_rows( | blocked_upstream |  | comparison report atom catalog
+backend/mw/core/contracts.py:39 | <module> | str:prepared_structure | unrelated |  | CONVERSIONS: prepare_structure fix hint for kind mismatch
+backend/mw/core/contracts.py:96 | check_args | alias:core/contracts.CONVERSIONS | judgement |  | generic accepts-kind check (kind only, no store); used by Run and queue else-branch
+backend/mw/core/contracts.py:99 | check_args | alias:core/contracts.CONVERSIONS | judgement |  | generic accepts-kind check (kind only, no store); used by Run and queue else-branch
+backend/mw/jev_constants.py:40 | <module> | str:prepared_structure | receive |  | M24 STRUCTURE_KIND
+backend/mw/jev_loop_projection.py:390 | _validate_header | alias:jev_constants.STRUCTURE_KIND | receive |  | M25 loop projection validation
+backend/mw/jev_loop_store.py:894 | _admit_setup | call:mutation_model_bundle.selection( | receive |  | M25 protein loop -> M21 selection (M7 preflight)
+backend/mw/jev_loop_store.py:1161 | step_job | call:mutation_model_bundle.selection( | receive |  | M25 protein loop compute -> M21 selection
+backend/mw/jev_loops.py:215 | parse_created | alias:jev_constants.STRUCTURE_KIND | receive |  | M25 pool structure handle regex by kind
+backend/mw/jev_projection.py:651 | _validate_projection | alias:jev_constants.STRUCTURE_KIND | receive |  | M24 projection validation (handle regex by kind)
+backend/mw/jobs/queue.py:565 | JobQueue._state | sub:["manifest"] | unrelated |  | openmm_preparation_manifest handle (M7 attempt state)
+backend/mw/jobs/queue.py:672 | JobQueue.submit | call:chemical_bundle.prepare_selected( | refuse |  | POST /jobs dispatch; openmm_protein_minimize branch (else-branch check_args then preflight)
+backend/mw/jobs/queue.py:683 | JobQueue.submit | call:pocket_bundle.submission( | refuse |  | POST /jobs dispatch; openmm_protein_minimize branch (else-branch check_args then preflight)
+backend/mw/jobs/queue.py:725 | JobQueue.submit | call:tools/openmm_method.preflight( | refuse |  | POST /jobs dispatch; openmm_protein_minimize branch (else-branch check_args then preflight)
+backend/mw/jobs/queue.py:775 | JobQueue.submit | call:sequence_ga_jobs.selection( | refuse |  | POST /jobs dispatch; openmm_protein_minimize branch (else-branch check_args then preflight)
+backend/mw/jobs/queue.py:784 | JobQueue.submit | call:mutation_model_bundle.selection( | refuse |  | POST /jobs dispatch; openmm_protein_minimize branch (else-branch check_args then preflight)
+backend/mw/jobs/queue.py:1870 | JobQueue._publish_openmm | sub:["manifest"] | unrelated |  | openmm_preparation_manifest
+backend/mw/jobs/queue.py:1883 | JobQueue._publish_openmm | sub:["manifest"] | unrelated |  | openmm_preparation_manifest
+backend/mw/jobs/queue.py:1893 | JobQueue._publish_openmm | str:preparation_manifest | unrelated |  | openmm_preparation_manifest
+backend/mw/jobs/sequence_ga_worker.py:149 | <module> | str:prepared_structure | receive | HASH | [HASH] M23 worker STRUCTURE_KIND
+backend/mw/jobs/sequence_ga_worker.py:542 | validate_manifest | alias:jobs/sequence_ga_worker.STRUCTURE_KIND | receive | HASH | [HASH] M23 worker input structure_kind == prepared_structure
+backend/mw/jobs/sequence_ga_worker.py:542 | validate_manifest | alias:jobs/sequence_ga_worker.STRUCTURE_KIND | receive | HASH | [HASH] M23 worker input structure_kind == prepared_structure
+backend/mw/kinase_precedents.py:57 | <module> | str:prepared_structure | blocked_upstream |  | M27 STRUCTURE_KINDS (input is a numbering map)
+backend/mw/kinase_precedents.py:686 | _validate | alias:kinase_precedents.STRUCTURE_KINDS | blocked_upstream |  | M27 result validation (structure_kind via numbering map)
+backend/mw/method_reports.py:55 | _source_links | str:prepared_structure | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:55 | _source_links | str:prepared_structure@1 | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:58 | _source_links | sub:["manifest"] | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:59 | _source_links | str:preparation_manifest | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:59 | _source_links | str:preparation_manifest@1 | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:62 | _source_links | manifest-field:manifest["source_handle"] | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:63 | _source_links | manifest-field:manifest["input"] | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:70 | _source_links | manifest-field:manifest["model_index"] | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:71 | _source_links | manifest-field:manifest["model_index"] | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:72 | _source_links | manifest-field:manifest["model_number"] | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:73 | _source_links | manifest-field:manifest["model_number"] | blocked_upstream |  | interface_sasa report; blocked by compute_interface_sasa refusal
+backend/mw/method_reports.py:92 | validated_sasa | call:tools/structural._parse( | blocked_upstream |  | interface_sasa report
+backend/mw/method_reports.py:269 | build_method_report | str:preparation_manifest | blocked_upstream |  | interface_sasa report
+backend/mw/method_reports.py:310 | render_method_report | manifest-field:manifest["source_handle"] | blocked_upstream |  | interface_sasa report
+backend/mw/mutation_candidates.py:561 | build_candidate_set | alias:mutation_constants.STRUCTURE_KIND | receive | HASH | [HASH] M20 build
+backend/mw/mutation_candidates.py:893 | validated_set | alias:mutation_constants.STRUCTURE_KIND | receive | HASH | [HASH] M20 set validation (structure_kind == prepared_structure)
+backend/mw/mutation_constants.py:19 | <module> | str:prepared_structure | receive |  | M20 STRUCTURE_KIND
+backend/mw/mutation_model_bundle.py:170 | _residues | call:tools/structural.structure_residues( | receive |  | M21 structure_residues
+backend/mw/mutation_model_bundle.py:188 | selection | call:tools/openmm_method.preflight( | receive |  | M21 -> M7 preflight
+backend/mw/mutation_model_bundle.py:213 | selection | alias:mutation_model_constants.STRUCTURE_KIND | receive |  | M21 -> M7 preflight
+backend/mw/mutation_model_bundle.py:409 | _check_relations | alias:mutation_model_inputs.PREPARED_TYPE | receive |  | M21 model validation: structure kind/schema == prepared_structure@1
+backend/mw/mutation_model_constants.py:14 | <module> | str:prepared_structure | receive | HASH | [HASH] M21 STRUCTURE_KIND
+backend/mw/mutation_model_inputs.py:36 | <module> | alias:mutation_model_constants.STRUCTURE_KIND | receive |  | M21 PREPARED_TYPE
+backend/mw/mutation_model_inputs.py:36 | <module> | alias:mutation_model_constants.STRUCTURE_KIND | receive |  | M21 PREPARED_TYPE
+backend/mw/mutation_model_inputs.py:111 | check_structure | alias:mutation_model_inputs.PREPARED_TYPE | receive |  | M21 admission check 6
+backend/mw/mutation_model_math.py:313 | _validated | alias:mutation_model_constants.STRUCTURE_KIND | receive | HASH | [HASH] M21 content structure_kind == prepared_structure
+backend/mw/numbering_reads.py:26 | <module> | str:prepared_structure | read_only |  | HINT_KINDS of /reference/pdb_id_hint
+backend/mw/numbering_reads.py:104 | pdb_id_hint | alias:numbering_reads.HINT_KINDS | read_only |  | GET /reference/pdb_id_hint reads manifest source_handle (original source bytes)
+backend/mw/numbering_reads.py:105 | pdb_id_hint | alias:numbering_reads.HINT_KINDS | read_only |  | GET /reference/pdb_id_hint reads manifest source_handle (original source bytes)
+backend/mw/numbering_reads.py:109 | pdb_id_hint | sub:["manifest"] | read_only |  | GET /reference/pdb_id_hint reads manifest source_handle (original source bytes)
+backend/mw/numbering_reports.py:277 | validated_numbering_map | kind-compare | blocked_upstream |  | M15 report; map cannot exist on a repaired structure
+backend/mw/numbering_reports.py:278 | validated_numbering_map | str:prepared_structure | blocked_upstream |  | M15 report; map cannot exist on a repaired structure
+backend/mw/openmm_bundle.py:52 | _selected_source | sub:["manifest"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:53 | _selected_source | manifest-field:manifest["input"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:56 | _selected_source | manifest-field:manifest["input"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:60 | _selected_source | str:prepared_coordinates | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:60 | _selected_source | str:prepared_coordinates@1 | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:62 | _selected_source | manifest-field:manifest["model_index"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:64 | _selected_source | sub:["manifest"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:64 | _selected_source | str:preparation_manifest | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:65 | _selected_source | manifest-field:manifest["source_handle"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:67 | _selected_source | call:tools/structural._parse( | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:68 | _selected_source | call:tools/structural._parse( | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:68 | _selected_source | manifest-field:manifest["input"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:72 | _selected_source | manifest-field:manifest["waters"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_bundle.py:79 | _selected_source | manifest-field:manifest["hydrogens"] | blocked_upstream |  | M7 result validation; only reachable after an M7 job on the structure
+backend/mw/openmm_reports.py:33 | validated_openmm | str:prepared_structure | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:33 | validated_openmm | str:prepared_structure@1 | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:34 | validated_openmm | sub:["manifest"] | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:34 | validated_openmm | str:preparation_manifest | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:34 | validated_openmm | str:preparation_manifest@1 | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:36 | validated_openmm | str:preparation_manifest | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:42 | validated_openmm | manifest-field:source_manifest["source_handle"] | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:47 | validated_openmm | str:preparation_manifest | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:101 | validated_openmm | str:preparation_manifest | blocked_upstream |  | M7 report validation; blocked by M7 submission refusal
+backend/mw/openmm_reports.py:159 | _markdown | manifest-field:manifest["source_handle"] | blocked_upstream |  | M7 report manifest (report object, not preparation manifest)
+backend/mw/openmm_reports.py:203 | build_openmm_report | str:preparation_manifest | blocked_upstream |  | M7 report
+backend/mw/openmm_reports.py:203 | build_openmm_report | str:preparation_manifest | blocked_upstream |  | M7 report
+backend/mw/openmm_reports.py:209 | build_openmm_report | str:preparation_manifest | blocked_upstream |  | M7 report
+backend/mw/openmm_reports.py:210 | build_openmm_report | str:preparation_manifest | blocked_upstream |  | M7 report
+backend/mw/openmm_reports.py:211 | build_openmm_report | str:preparation_manifest | blocked_upstream |  | M7 report
+backend/mw/openmm_reports.py:241 | saved_openmm_report | str:preparation_manifest | blocked_upstream |  | M7 report reopen
+backend/mw/openmm_reports.py:248 | saved_openmm_report | str:preparation_manifest | blocked_upstream |  | M7 report reopen
+backend/mw/openmm_reports.py:248 | saved_openmm_report | str:preparation_manifest | blocked_upstream |  | M7 report reopen
+backend/mw/pocket_bundle.py:42 | <module> | str:prepared_structure | blocked_upstream |  | pocket_set source kinds for result validation
+backend/mw/pocket_bundle.py:42 | <module> | str:prepared_structure@1 | blocked_upstream |  | pocket_set source kinds for result validation
+backend/mw/pocket_bundle.py:229 | _check_source | alias:pocket_bundle.SOURCE_KINDS | blocked_upstream |  | pocket_set source kind validation
+backend/mw/pocket_bundle.py:273 | preflight | call:pocket_input.preflight( | refuse |  | M12 preflight
+backend/mw/pocket_bundle.py:301 | submission | call:pocket_input.project( | refuse |  | fpocket_detect_v1 submission
+backend/mw/pocket_bundle.py:302 | submission | sub:["manifest"] | refuse |  | fpocket_detect_v1 submission
+backend/mw/pocket_bundle.py:303 | submission | manifest-field:manifest["source_handle"] | refuse |  | fpocket_detect_v1 submission
+backend/mw/pocket_bundle.py:304 | submission | manifest-field:manifest["model_number"] | refuse |  | fpocket_detect_v1 submission
+backend/mw/pocket_bundle.py:325 | _reproject | call:pocket_input.project( | blocked_upstream |  | re-projection of an admitted job
+backend/mw/pocket_bundle.py:431 | publish | sub:["manifest"] | blocked_upstream |  | pocket projection manifest (pocket_input@1, not preparation manifest)
+backend/mw/pocket_bundle.py:463 | publish | manifest-field:manifest["source_handle"] | blocked_upstream |  | pocket projection manifest (pocket_input@1, not preparation manifest)
+backend/mw/pocket_bundle.py:470 | publish | manifest-field:manifest["source_handle"] | blocked_upstream |  | pocket projection manifest (pocket_input@1, not preparation manifest)
+backend/mw/pocket_bundle.py:471 | publish | manifest-field:manifest["model_number"] | blocked_upstream |  | pocket projection manifest (pocket_input@1, not preparation manifest)
+backend/mw/pocket_bundle.py:479 | publish | manifest-field:manifest["source_handle"] | blocked_upstream |  | pocket projection manifest (pocket_input@1, not preparation manifest)
+backend/mw/pocket_bundle.py:480 | publish | manifest-field:manifest["model_number"] | blocked_upstream |  | pocket projection manifest (pocket_input@1, not preparation manifest)
+backend/mw/pocket_input.py:48 | <module> | str:prepared_structure | refuse |  | SOURCE_KINDS of M12 pocket projection
+backend/mw/pocket_input.py:48 | <module> | str:prepared_structure@1 | refuse |  | SOURCE_KINDS of M12 pocket projection
+backend/mw/pocket_input.py:98 | _load_source | alias:pocket_input.SOURCE_KINDS | refuse |  | M12 pocket projection source (preflight read + fpocket submit + reproject)
+backend/mw/pocket_input.py:117 | _load_source | call:tools/structural.structure_bytes( | refuse |  | M12 pocket projection source (preflight read + fpocket submit + reproject)
+backend/mw/pocket_input.py:120 | _load_source | call:tools/comparison.atom_rows( | refuse |  | M12 pocket projection source (preflight read + fpocket submit + reproject)
+backend/mw/pocket_input.py:121 | _load_source | call:tools/structural._parse( | refuse |  | M12 pocket projection source (preflight read + fpocket submit + reproject)
+backend/mw/pocket_input.py:134 | _load_source | sub:["manifest"] | refuse |  | M12 pocket projection source (preflight read + fpocket submit + reproject)
+backend/mw/pocket_input.py:385 | project | call:pocket_input._load_source( | refuse |  | M12 projection
+backend/mw/pocket_input.py:398 | preflight | call:pocket_input._load_source( | refuse |  | M12 /pockets/preflight read (judgement: spec 5.2 says 'M12 pocket')
+backend/mw/pocket_reports.py:209 | render_pocket_report | manifest-field:manifest["source_handle"] | blocked_upstream |  | pocket report manifest
+backend/mw/pocket_reports.py:210 | render_pocket_report | manifest-field:manifest["model_number"] | blocked_upstream |  | pocket report manifest
+backend/mw/reaction_knowledge.py:59 | <module> | str:prepared_structure | refuse |  | M26 STRUCTURE_KINDS
+backend/mw/reaction_knowledge.py:830 | _validate | alias:reaction_knowledge.STRUCTURE_KINDS | blocked_upstream |  | M26 result validation
+backend/mw/reference_snapshots.py:133 | _validate_manifest | strict-keys:set(manifest) | unrelated |  | M15 reference snapshot manifest (different object)
+backend/mw/reports.py:81 | _science_links | str:prepared_structure | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:81 | _science_links | str:prepared_structure@1 | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:86 | _science_links | sub:["manifest"] | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:88 | _science_links | str:preparation_manifest | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:88 | _science_links | str:preparation_manifest@1 | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:91 | _science_links | manifest-field:manifest["input"] | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:94 | _science_links | manifest-field:manifest["source_handle"] | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:99 | _science_links | manifest-field:manifest["model_index"] | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:100 | _science_links | manifest-field:manifest["model_index"] | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:101 | _science_links | manifest-field:manifest["model_number"] | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:103 | _science_links | manifest-field:manifest["model_number"] | blocked_upstream |  | /reports inspection report; needs an interaction_set (compute_interactions refused)
+backend/mw/reports.py:121 | validate_claim | str:preparation_manifest | blocked_upstream |  | /reports claim validation
+backend/mw/reports.py:121 | validate_claim | str:preparation_manifest@1 | blocked_upstream |  | /reports claim validation
+backend/mw/reports.py:130 | validate_claim | sub:["manifest"] | blocked_upstream |  | /reports claim validation
+backend/mw/reports.py:146 | validate_claim | manifest-field:manifest["model_number"] | blocked_upstream |  | /reports claim validation
+backend/mw/reports.py:313 | build_inspection_report | sub:["manifest"] | refuse |  | POST /reports
+backend/mw/reports.py:334 | _build_inspection_report | kind-compare | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:334 | _build_inspection_report | str:prepared_structure | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:337 | _build_inspection_report | sub:["manifest"] | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:338 | _build_inspection_report | kind-compare | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:338 | _build_inspection_report | str:preparation_manifest | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:341 | _build_inspection_report | manifest-field:prep["source_handle"] | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:347 | _build_inspection_report | manifest-field:prep["input"] | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:348 | _build_inspection_report | manifest-field:prep["input"] | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:349 | _build_inspection_report | manifest-field:prep["model_index"] | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:369 | _build_inspection_report | manifest-field:prep["model_number"] | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:409 | _build_inspection_report | manifest-field:prep["model_index"] | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:409 | _build_inspection_report | manifest-field:prep["model_number"] | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:419 | _build_inspection_report | str:preparation_manifest | refuse |  | POST /reports builder (spec 5.2 lists /reports); also blocked upstream
+backend/mw/reports.py:448 | render_report | manifest-field:manifest["source_handle"] | blocked_upstream |  | inspection report render
+backend/mw/reports.py:451 | render_report | manifest-field:manifest["model_index"] | blocked_upstream |  | inspection report render
+backend/mw/runtime/orchestrator.py:981 | Run.satisfy_precondition | str:prepared_structure | unrelated |  | prerequisite prepare_structure retry (creates a NEW prepared structure; never repaired)
+backend/mw/runtime/orchestrator.py:987 | Run.satisfy_precondition | str:prepared_structure | unrelated |  | prerequisite prepare_structure retry (creates a NEW prepared structure; never repaired)
+backend/mw/saved_scenes.py:50 | <module> | str:prepared_structure | refuse |  | SOURCE_SCHEMAS of saved scenes
+backend/mw/saved_scenes.py:50 | <module> | str:prepared_structure@1 | refuse |  | SOURCE_SCHEMAS of saved scenes
+backend/mw/saved_scenes.py:179 | SceneArtifact | str:prepared_structure | refuse |  | viewer_scene@1 model
+backend/mw/saved_scenes.py:180 | SceneArtifact | str:prepared_structure@1 | refuse |  | viewer_scene@1 model
+backend/mw/saved_scenes.py:264 | _source | alias:saved_scenes.SOURCE_SCHEMAS | refuse |  | POST /viewer/scenes source check
+backend/mw/saved_scenes.py:268 | _source | call:tools/structural.structure_residues( | refuse |  | POST /viewer/scenes source check
+backend/mw/saved_scenes.py:408 | scene_detail | call:saved_scenes._source( | blocked_upstream |  | saved scene reopen (only scenes that passed save)
+backend/mw/saved_scenes.py:421 | save_scene | call:saved_scenes._source( | refuse |  | POST /viewer/scenes
+backend/mw/sequence_ga_bundle.py:359 | _check_model | alias:mutation_model_constants.STRUCTURE_KIND | receive | HASH | [HASH] M23 set model structure_kind
+backend/mw/sequence_ga_jobs.py:543 | projection | call:tools/openmm_method.preflight( | receive | HASH | [HASH] M23 -> M7 preflight
+backend/mw/site_annotation_reports.py:344 | validated_annotation | call:tools/structural.structure_residues( | blocked_upstream |  | M16 report
+backend/mw/tools/comparison.py:21 | <module> | str:prepared_structure | refuse |  | SOURCE_TYPES of measure_distance/align_structures
+backend/mw/tools/comparison.py:21 | <module> | str:prepared_structure@1 | refuse |  | SOURCE_TYPES of measure_distance/align_structures
+backend/mw/tools/comparison.py:45 | AtomRefV1 | request-model-field:altloc | unrelated |  | AtomRef altloc field
+backend/mw/tools/comparison.py:55 | _source | alias:tools/comparison.SOURCE_TYPES | judgement |  | shared by atom_rows (read route /structures/atoms, pocket) and tools
+backend/mw/tools/comparison.py:68 | atom_rows | call:tools/structural.structure_bytes( | judgement |  | shared catalog: /structures/atoms read + measure/align + pocket
+backend/mw/tools/comparison.py:71 | atom_rows | call:tools/structural._parse( | judgement |  | shared catalog: /structures/atoms read + measure/align + pocket
+backend/mw/tools/comparison.py:163 | resolve | call:tools/comparison.atom_rows( | refuse |  | measure/align internal
+backend/mw/tools/comparison.py:196 | register.measure_distance | call:tools/comparison.atom_rows( | refuse |  | measure_distance impl
+backend/mw/tools/comparison.py:218 | register.align_structures | call:tools/comparison.atom_rows( | refuse |  | align_structures impl
+backend/mw/tools/comparison.py:218 | register.align_structures | call:tools/comparison.atom_rows( | refuse |  | align_structures impl
+backend/mw/tools/jev.py:112 | _structure | alias:tools/jev.STRUCTURE_TYPE | receive |  | M24 projection parses the set's structure
+backend/mw/tools/jev.py:115 | _structure | call:tools/structural._parse( | receive |  | M24 projection parses the set's structure
+backend/mw/tools/mutations.py:116 | _admit | alias:tools/mutations.STRUCTURE_TYPE | receive |  | M20 admission (spec 5.3 change point)
+backend/mw/tools/mutations.py:117 | _admit | call:tools/structural.structure_residues( | receive |  | M20 admission (spec 5.3 change point)
+backend/mw/tools/mutations.py:120 | _admit | call:tools/structural._parse( | receive |  | M20 admission (spec 5.3 change point)
+backend/mw/tools/mutations.py:167 | register.generate_mutation_candidates | call:tools/structural._parse( | receive |  | M20 impl
+backend/mw/tools/numbering.py:25 | <module> | str:prepared_structure | refuse |  | ALLOWED_KINDS map_residue_numbering
+backend/mw/tools/numbering.py:71 | _normalized | alias:tools/numbering.ALLOWED_KINDS | refuse |  | map_residue_numbering admission (ALLOWED_KINDS)
+backend/mw/tools/numbering.py:72 | _normalized | alias:tools/numbering.ALLOWED_KINDS | refuse |  | map_residue_numbering admission (ALLOWED_KINDS)
+backend/mw/tools/numbering.py:115 | precheck | call:tools/structural._parse( | refuse |  | map_residue_numbering precheck (parses the structure)
+backend/mw/tools/openmm_method.py:112 | preflight | str:prepared_structure | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:112 | preflight | str:prepared_structure@1 | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:115 | preflight | sub:["manifest"] | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:116 | preflight | call:tools/structural._parse( | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:117 | preflight | call:tools/structural._parse( | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:117 | preflight | manifest-field:manifest["input"] | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:120 | preflight | manifest-field:manifest["waters"] | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:127 | preflight | manifest-field:manifest["hydrogens"] | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:213 | preflight | str:preparation_manifest | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:213 | preflight | manifest-field:manifest["source_handle"] | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/openmm_method.py:213 | preflight | sub:["manifest"] | receive | HASH | [HASH] M7 preflight; reads manifest input/waters/hydrogens/source_handle only; used by M21/M23 (receive) and M7 job + /jobs/preflight (refuse at caller)
+backend/mw/tools/reaction_knowledge.py:85 | _structure | alias:reaction_knowledge.STRUCTURE_KINDS | refuse |  | link_reaction_knowledge precheck step 2
+backend/mw/tools/reaction_knowledge.py:86 | _structure | alias:reaction_knowledge.STRUCTURE_KINDS | refuse |  | link_reaction_knowledge precheck step 2
+backend/mw/tools/reaction_knowledge.py:88 | _structure | call:tools/structural._parse( | refuse |  | link_reaction_knowledge precheck step 2
+backend/mw/tools/sasa.py:139 | calculate | call:tools/structural._parse( | refuse |  | compute_interface_sasa impl
+backend/mw/tools/site_annotation.py:65 | register.annotate_reference_sites | call:tools/structural.structure_residues( | refuse |  | annotate_reference_sites (via numbering_map structure; upstream blocked by M15)
+backend/mw/tools/structural.py:95 | structure_residues | call:tools/structural._parse( | judgement |  | shared helper (/structures/residues read, viewer, M20, M21); no refusal here
+backend/mw/tools/structural.py:113 | structure_bytes | kind-compare | judgement |  | shared helper (/structures/bytes read, pocket, comparison); no refusal here
+backend/mw/tools/structural.py:113 | structure_bytes | str:prepared_structure | judgement |  | shared helper (/structures/bytes read, pocket, comparison); no refusal here
+backend/mw/tools/structural.py:118 | structure_bytes | call:tools/structural._parse( | judgement |  | shared helper (/structures/bytes read, pocket, comparison); no refusal here
+backend/mw/tools/structural.py:221 | register.prepare_structure | str:leave_gaps | unrelated |  | producer of prepared_structure@1 (manifest writer)
+backend/mw/tools/structural.py:223 | register.prepare_structure | call:tools/structural._parse( | unrelated |  | producer of prepared_structure@1 (manifest writer)
+backend/mw/tools/structural.py:241 | register.prepare_structure | str:preparation_manifest | unrelated |  | producer of prepared_structure@1 (manifest writer)
+backend/mw/tools/structural.py:241 | register.prepare_structure | str:preparation_manifest@1 | unrelated |  | producer of prepared_structure@1 (manifest writer)
+backend/mw/tools/structural.py:247 | register.prepare_structure | str:prepared_coordinates | unrelated |  | producer of prepared_structure@1 (manifest writer)
+backend/mw/tools/structural.py:247 | register.prepare_structure | str:prepared_coordinates@1 | unrelated |  | producer of prepared_structure@1 (manifest writer)
+backend/mw/tools/structural.py:251 | register.prepare_structure | str:prepared_structure | unrelated |  | producer of prepared_structure@1 (manifest writer)
+backend/mw/tools/structural.py:251 | register.prepare_structure | str:prepared_structure@1 | unrelated |  | producer of prepared_structure@1 (manifest writer)
+backend/mw/tools/structural.py:261 | register.compute_interactions | call:tools/structural._parse( | refuse |  | compute_interactions impl; earliest: Run._validated_bound
+backend/mw/viewer_intents.py:195 | create_session | str:prepared_structure | refuse |  | POST /viewer/sessions (intents/scene/figure bind to the session)
+backend/mw/viewer_intents.py:195 | create_session | str:prepared_structure@1 | refuse |  | POST /viewer/sessions (intents/scene/figure bind to the session)
+backend/mw/viewer_intents.py:201 | create_session | call:tools/structural.structure_residues( | refuse |  | POST /viewer/sessions (intents/scene/figure bind to the session)
+backend/mw/workflows.py:34 | InspectionRequest | request-model-field:altloc | refuse |  | inspect_complex request model: missing_residues Literal['leave_gaps'] (strict)
+backend/mw/workflows.py:35 | InspectionRequest | request-model-field:waters | refuse |  | inspect_complex request model: missing_residues Literal['leave_gaps'] (strict)
+backend/mw/workflows.py:36 | InspectionRequest | request-model-field:hydrogens | refuse |  | inspect_complex request model: missing_residues Literal['leave_gaps'] (strict)
+backend/mw/workflows.py:37 | InspectionRequest | request-model-field:missing_residues | refuse |  | inspect_complex request model: missing_residues Literal['leave_gaps'] (strict)
+backend/mw/workflows.py:37 | InspectionRequest | str:leave_gaps | refuse |  | inspect_complex request model: missing_residues Literal['leave_gaps'] (strict)
+backend/mw/workflows.py:37 | InspectionRequest | str:leave_gaps | refuse |  | inspect_complex request model: missing_residues Literal['leave_gaps'] (strict)
+backend/mw/workflows.py:38 | InspectionRequest | request-model-field:symmetry_mates | refuse |  | inspect_complex request model: missing_residues Literal['leave_gaps'] (strict)
+backend/mw/workflows.py:128 | _verified_content | str:prepared_structure | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:128 | _verified_content | str:prepared_structure@1 | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:142 | _verified_content | sub:["manifest"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:147 | _verified_content | str:preparation_manifest | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:147 | _verified_content | str:preparation_manifest@1 | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:149 | _verified_content | manifest-field:manifest["input"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:150 | _verified_content | manifest-field:manifest["source_handle"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:151 | _verified_content | manifest-field:manifest["model_index"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:152 | _verified_content | manifest-field:manifest["model_index"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:153 | _verified_content | manifest-field:manifest["model_number"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:159 | _verified_content | sub:["manifest"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:160 | _verified_content | kind-compare | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:160 | _verified_content | str:prepared_structure@1 | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:161 | _verified_content | kind-compare | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:161 | _verified_content | sub:["manifest"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:161 | _verified_content | str:preparation_manifest@1 | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:169 | _verified_content | manifest-field:manifest["model_number"] | blocked_upstream |  | inspect_complex replay verification
+backend/mw/workflows.py:365 | inspect_complex | str:handle-regex(prepared_structure) | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:416 | inspect_complex | str:prepared_structure | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:420 | inspect_complex | str:prepared_structure | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:428 | inspect_complex | str:prepared_structure | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:432 | inspect_complex | sub:["manifest"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:433 | inspect_complex | manifest-field:manifest["input"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:435 | inspect_complex | str:prepared_structure | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:435 | inspect_complex | str:prepared_structure@1 | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:436 | inspect_complex | sub:["manifest"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:437 | inspect_complex | sub:["manifest"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:438 | inspect_complex | str:preparation_manifest | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:438 | inspect_complex | str:preparation_manifest@1 | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:439 | inspect_complex | manifest-field:manifest["input"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:440 | inspect_complex | manifest-field:manifest["source_handle"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:441 | inspect_complex | manifest-field:manifest["model_index"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:442 | inspect_complex | manifest-field:manifest["model_index"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:443 | inspect_complex | manifest-field:manifest["model_number"] | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:446 | inspect_complex | getattr(req, field) | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+backend/mw/workflows.py:449 | inspect_complex | call:tools/structural.structure_residues( | refuse |  | POST /runs/{rid}/inspect_complex fixed pipeline (NOT M13, NOT in spec 5.2 list); input_handle may be a prepared_structure
+
+== 2. per-function summary (category counts)
+blocked_upstream      backend/mw/analysis_executions.py:902 _dispatch_record (1 hits)
+blocked_upstream      backend/mw/analysis_executions.py:870 _identity_check (2 hits)
+blocked_upstream      backend/mw/analysis_executions.py:1242 _report_outcome (1 hits)
+blocked_upstream      backend/mw/analysis_plans.py:73 <module> (6 hits)
+blocked_upstream      backend/mw/analysis_plans.py:213 Preparation (3 hits)
+blocked_upstream      backend/mw/analysis_plans.py:543 _chemical (1 hits)
+blocked_upstream      backend/mw/analysis_plans.py:495 _compare (3 hits)
+blocked_upstream      backend/mw/analysis_plans.py:311 _compatibility (1 hits)
+blocked_upstream      backend/mw/analysis_plans.py:575 _find_cavities (3 hits)
+blocked_upstream      backend/mw/analysis_plans.py:425 _inspect_ligand (5 hits)
+blocked_upstream      backend/mw/analysis_plans.py:468 _measure_atoms (3 hits)
+blocked_upstream      backend/mw/analysis_plans.py:603 _minimize (3 hits)
+blocked_upstream      backend/mw/analysis_plans.py:385 _output (1 hits)
+blocked_upstream      backend/mw/analysis_plans.py:374 _structure_meta (1 hits)
+blocked_upstream      backend/mw/analysis_plans.py:656 compile_plan (1 hits)
+blocked_upstream      backend/mw/analysis_plans.py:707 validate_plan (1 hits)
+unrelated             backend/mw/api/app.py:384 _public_job (1 hits)
+refuse                backend/mw/api/app.py:744 analysis_plan_create (1 hits)
+read_only             backend/mw/api/app.py:2884 atoms (1 hits)
+refuse                backend/mw/api/app.py:535 chemical_preview (1 hits)
+read_only             backend/mw/api/app.py:2910 coordinates (3 hits)
+refuse                backend/mw/api/app.py:1266 create_report (1 hits)
+refuse                backend/mw/api/app.py:1256 inspection (1 hits)
+refuse                backend/mw/api/app.py:1473 job_preflight (1 hits)
+refuse                backend/mw/api/app.py:2832 pockets_preflight (1 hits)
+read_only             backend/mw/api/app.py:1652 reference_pdb_id_hint (1 hits)
+unrelated             backend/mw/api/app.py:1450 report_download (1 hits)
+read_only             backend/mw/api/app.py:2865 residues (3 hits)
+refuse                backend/mw/api/app.py:1011 viewer_scene_save (1 hits)
+refuse                backend/mw/api/app.py:965 viewer_session_create (1 hits)
+unrelated             backend/mw/chemical_bundle.py:127 prepare_selected (2 hits)
+unrelated             backend/mw/chemical_bundle.py:325 validated_graph (1 hits)
+unrelated             backend/mw/chemical_bundle.py:257 validated_source (1 hits)
+refuse                backend/mw/chemical_inputs.py:296 _source_rows (4 hits)
+refuse                backend/mw/chemical_inputs.py:570 preview (1 hits)
+blocked_upstream      backend/mw/comparison_reports.py:48 _catalog (1 hits)
+unrelated             backend/mw/core/contracts.py:39 <module> (1 hits)
+judgement             backend/mw/core/contracts.py:96 check_args (2 hits)
+receive               backend/mw/jev_constants.py:40 <module> (1 hits)
+receive               backend/mw/jev_loop_projection.py:390 _validate_header (1 hits)
+receive               backend/mw/jev_loop_store.py:894 _admit_setup (1 hits)
+receive               backend/mw/jev_loop_store.py:1161 step_job (1 hits)
+receive               backend/mw/jev_loops.py:215 parse_created (1 hits)
+receive               backend/mw/jev_projection.py:651 _validate_projection (1 hits)
+unrelated             backend/mw/jobs/queue.py:1870 JobQueue._publish_openmm (3 hits)
+unrelated             backend/mw/jobs/queue.py:565 JobQueue._state (1 hits)
+refuse                backend/mw/jobs/queue.py:672 JobQueue.submit (5 hits)
+receive          HASH backend/mw/jobs/sequence_ga_worker.py:149 <module> (1 hits)
+receive          HASH backend/mw/jobs/sequence_ga_worker.py:542 validate_manifest (2 hits)
+blocked_upstream      backend/mw/kinase_precedents.py:57 <module> (1 hits)
+blocked_upstream      backend/mw/kinase_precedents.py:686 _validate (1 hits)
+blocked_upstream      backend/mw/method_reports.py:55 _source_links (11 hits)
+blocked_upstream      backend/mw/method_reports.py:269 build_method_report (1 hits)
+blocked_upstream      backend/mw/method_reports.py:310 render_method_report (1 hits)
+blocked_upstream      backend/mw/method_reports.py:92 validated_sasa (1 hits)
+receive          HASH backend/mw/mutation_candidates.py:561 build_candidate_set (1 hits)
+receive          HASH backend/mw/mutation_candidates.py:893 validated_set (1 hits)
+receive               backend/mw/mutation_constants.py:19 <module> (1 hits)
+receive               backend/mw/mutation_model_bundle.py:409 _check_relations (1 hits)
+receive               backend/mw/mutation_model_bundle.py:170 _residues (1 hits)
+receive               backend/mw/mutation_model_bundle.py:188 selection (2 hits)
+receive          HASH backend/mw/mutation_model_constants.py:14 <module> (1 hits)
+receive               backend/mw/mutation_model_inputs.py:36 <module> (2 hits)
+receive               backend/mw/mutation_model_inputs.py:111 check_structure (1 hits)
+receive          HASH backend/mw/mutation_model_math.py:313 _validated (1 hits)
+read_only             backend/mw/numbering_reads.py:26 <module> (1 hits)
+read_only             backend/mw/numbering_reads.py:104 pdb_id_hint (3 hits)
+blocked_upstream      backend/mw/numbering_reports.py:277 validated_numbering_map (2 hits)
+blocked_upstream      backend/mw/openmm_bundle.py:52 _selected_source (14 hits)
+blocked_upstream      backend/mw/openmm_reports.py:159 _markdown (1 hits)
+blocked_upstream      backend/mw/openmm_reports.py:203 build_openmm_report (5 hits)
+blocked_upstream      backend/mw/openmm_reports.py:241 saved_openmm_report (3 hits)
+blocked_upstream      backend/mw/openmm_reports.py:33 validated_openmm (9 hits)
+blocked_upstream      backend/mw/pocket_bundle.py:42 <module> (2 hits)
+blocked_upstream      backend/mw/pocket_bundle.py:229 _check_source (1 hits)
+blocked_upstream      backend/mw/pocket_bundle.py:325 _reproject (1 hits)
+refuse                backend/mw/pocket_bundle.py:273 preflight (1 hits)
+blocked_upstream      backend/mw/pocket_bundle.py:431 publish (6 hits)
+refuse                backend/mw/pocket_bundle.py:301 submission (4 hits)
+refuse                backend/mw/pocket_input.py:48 <module> (2 hits)
+refuse                backend/mw/pocket_input.py:98 _load_source (5 hits)
+refuse                backend/mw/pocket_input.py:398 preflight (1 hits)
+refuse                backend/mw/pocket_input.py:385 project (1 hits)
+blocked_upstream      backend/mw/pocket_reports.py:209 render_pocket_report (2 hits)
+refuse                backend/mw/reaction_knowledge.py:59 <module> (1 hits)
+blocked_upstream      backend/mw/reaction_knowledge.py:830 _validate (1 hits)
+unrelated             backend/mw/reference_snapshots.py:133 _validate_manifest (1 hits)
+refuse                backend/mw/reports.py:334 _build_inspection_report (13 hits)
+blocked_upstream      backend/mw/reports.py:81 _science_links (11 hits)
+refuse                backend/mw/reports.py:313 build_inspection_report (1 hits)
+blocked_upstream      backend/mw/reports.py:448 render_report (2 hits)
+blocked_upstream      backend/mw/reports.py:121 validate_claim (4 hits)
+unrelated             backend/mw/runtime/orchestrator.py:981 Run.satisfy_precondition (2 hits)
+refuse                backend/mw/saved_scenes.py:50 <module> (2 hits)
+refuse                backend/mw/saved_scenes.py:179 SceneArtifact (2 hits)
+refuse                backend/mw/saved_scenes.py:264 _source (2 hits)
+refuse                backend/mw/saved_scenes.py:421 save_scene (1 hits)
+blocked_upstream      backend/mw/saved_scenes.py:408 scene_detail (1 hits)
+receive          HASH backend/mw/sequence_ga_bundle.py:359 _check_model (1 hits)
+receive          HASH backend/mw/sequence_ga_jobs.py:543 projection (1 hits)
+blocked_upstream      backend/mw/site_annotation_reports.py:344 validated_annotation (1 hits)
+refuse                backend/mw/tools/comparison.py:21 <module> (2 hits)
+unrelated             backend/mw/tools/comparison.py:45 AtomRefV1 (1 hits)
+judgement             backend/mw/tools/comparison.py:55 _source (1 hits)
+judgement             backend/mw/tools/comparison.py:68 atom_rows (2 hits)
+refuse                backend/mw/tools/comparison.py:218 register.align_structures (2 hits)
+refuse                backend/mw/tools/comparison.py:196 register.measure_distance (1 hits)
+refuse                backend/mw/tools/comparison.py:163 resolve (1 hits)
+receive               backend/mw/tools/jev.py:112 _structure (2 hits)
+receive               backend/mw/tools/mutations.py:116 _admit (3 hits)
+receive               backend/mw/tools/mutations.py:167 register.generate_mutation_candidates (1 hits)
+refuse                backend/mw/tools/numbering.py:25 <module> (1 hits)
+refuse                backend/mw/tools/numbering.py:71 _normalized (2 hits)
+refuse                backend/mw/tools/numbering.py:115 precheck (1 hits)
+receive          HASH backend/mw/tools/openmm_method.py:112 preflight (11 hits)
+refuse                backend/mw/tools/reaction_knowledge.py:85 _structure (3 hits)
+refuse                backend/mw/tools/sasa.py:139 calculate (1 hits)
+refuse                backend/mw/tools/site_annotation.py:65 register.annotate_reference_sites (1 hits)
+refuse                backend/mw/tools/structural.py:261 register.compute_interactions (1 hits)
+unrelated             backend/mw/tools/structural.py:221 register.prepare_structure (8 hits)
+judgement             backend/mw/tools/structural.py:113 structure_bytes (3 hits)
+judgement             backend/mw/tools/structural.py:95 structure_residues (1 hits)
+refuse                backend/mw/viewer_intents.py:195 create_session (3 hits)
+refuse                backend/mw/workflows.py:34 InspectionRequest (7 hits)
+blocked_upstream      backend/mw/workflows.py:128 _verified_content (17 hits)
+refuse                backend/mw/workflows.py:365 inspect_complex (19 hits)
+
+== 3. totals
+hits: 319; functions: 126; by category: blocked_upstream=136, judgement=9, read_only=12, receive=40, refuse=99, unrelated=23
+unclassified functions: 0
+
+== 4. hashed-file hits (manifest / kind reads inside call-key hashed files)
+backend/mw/jobs/sequence_ga_worker.py:149 | <module> | str:prepared_structure | BASELINE_BLOBS(27)
+backend/mw/jobs/sequence_ga_worker.py:542 | validate_manifest | alias:jobs/sequence_ga_worker.STRUCTURE_KIND | BASELINE_BLOBS(27)
+backend/mw/jobs/sequence_ga_worker.py:542 | validate_manifest | alias:jobs/sequence_ga_worker.STRUCTURE_KIND | BASELINE_BLOBS(27)
+backend/mw/mutation_candidates.py:561 | build_candidate_set | alias:mutation_constants.STRUCTURE_KIND | BASELINE_BLOBS(27)
+backend/mw/mutation_candidates.py:893 | validated_set | alias:mutation_constants.STRUCTURE_KIND | BASELINE_BLOBS(27)
+backend/mw/mutation_model_constants.py:14 | <module> | str:prepared_structure | BASELINE_BLOBS(27)
+backend/mw/mutation_model_math.py:313 | _validated | alias:mutation_model_constants.STRUCTURE_KIND | BASELINE_BLOBS(27)
+backend/mw/sequence_ga_bundle.py:359 | _check_model | alias:mutation_model_constants.STRUCTURE_KIND | BASELINE_BLOBS(27)
+backend/mw/sequence_ga_jobs.py:543 | projection | call:tools/openmm_method.preflight( | BASELINE_BLOBS(27)
+backend/mw/tools/openmm_method.py:112 | preflight | str:prepared_structure | golden also_hashed_files
+backend/mw/tools/openmm_method.py:112 | preflight | str:prepared_structure@1 | golden also_hashed_files
+backend/mw/tools/openmm_method.py:115 | preflight | sub:["manifest"] | golden also_hashed_files
+backend/mw/tools/openmm_method.py:116 | preflight | call:tools/structural._parse( | golden also_hashed_files
+backend/mw/tools/openmm_method.py:117 | preflight | call:tools/structural._parse( | golden also_hashed_files
+backend/mw/tools/openmm_method.py:117 | preflight | manifest-field:manifest["input"] | golden also_hashed_files
+backend/mw/tools/openmm_method.py:120 | preflight | manifest-field:manifest["waters"] | golden also_hashed_files
+backend/mw/tools/openmm_method.py:127 | preflight | manifest-field:manifest["hydrogens"] | golden also_hashed_files
+backend/mw/tools/openmm_method.py:213 | preflight | str:preparation_manifest | golden also_hashed_files
+backend/mw/tools/openmm_method.py:213 | preflight | manifest-field:manifest["source_handle"] | golden also_hashed_files
+backend/mw/tools/openmm_method.py:213 | preflight | sub:["manifest"] | golden also_hashed_files
+
+hashed files with no hit: backend/mw/docking_batch_bundle.py, backend/mw/docking_batch_constants.py, backend/mw/docking_batch_inputs.py, backend/mw/docking_batch_jobs.py, backend/mw/docking_batch_reads.py, backend/mw/docking_batch_reports.py, backend/mw/docking_constants.py, backend/mw/jobs/docking_batch_worker.py, backend/mw/jobs/docking_worker.py, backend/mw/jobs/ligand_ga_worker.py, backend/mw/jobs/openmm_mutation_worker.py, backend/mw/jobs/openmm_worker.py, backend/mw/jobs/sequence_model_worker.py, backend/mw/ligand_ga_bundle.py, backend/mw/ligand_ga_constants.py, backend/mw/ligand_ga_inputs.py, backend/mw/ligand_ga_jobs.py, backend/mw/ligand_ga_reads.py, backend/mw/ligand_ga_reports.py, backend/mw/sequence_ga_constants.py, backend/mw/sequence_ga_inputs.py, backend/mw/sequence_ga_reads.py, backend/mw/sequence_ga_reports.py, backend/mw/sequence_model_bundle.py
+
+== 5. config (tool contracts accepts / pipelines)
+config/tools.yaml:25 | tool=prepare_structure | emits: prepared_structure
+config/tools.yaml:30 | tool=prepare_structure | missing_residues: { type: str, enum: [leave_gaps], default: leave_gaps }
+config/tools.yaml:39 | tool=detect_pockets | accepts: { structure: [prepared_structure, chemical_structure, openmm_minimized_structure] }
+config/tools.yaml:120 | tool=compute_interactions | accepts: { structure: [prepared_structure, relaxed_structure] }
+config/tools.yaml:133 | tool=compute_interface_sasa | accepts: { structure: [prepared_structure] }
+config/tools.yaml:143 | tool=measure | accepts: { structure: [structure, prepared_structure, relaxed_structure] }
+config/tools.yaml:152 | tool=measure_distance | accepts: { structure: [structure, prepared_structure, openmm_minimized_structure] }
+config/tools.yaml:164 | tool=align_structures | reference: [structure, prepared_structure, openmm_minimized_structure]
+config/tools.yaml:165 | tool=align_structures | moving: [structure, prepared_structure, openmm_minimized_structure]
+config/tools.yaml:177 | tool=map_residue_numbering | accepts: { structure: [structure, prepared_structure] }
+config/tools.yaml:205 | tool=generate_mutation_candidates | accepts: { structure: [prepared_structure] }
+config/tools.yaml:255 | tool=link_reaction_knowledge | accepts: { structure: [structure, prepared_structure] }
+config/tools.yaml:284 | tool=align | accepts: { mobile: [structure, prepared_structure, relaxed_structure], reference: [structure, prepared_structure, relaxed_structure] }
+config/tools.yaml:292 | tool=openmm_protein_minimize | accepts: { structure: [prepared_structure] }
+config/tools.yaml:324 | tool=relax_structure | accepts: { structure: [prepared_structure] }
+config/tools.yaml:345 | tool=score_interface | accepts: { structure: [prepared_structure, relaxed_structure] }
+config/tools.yaml:360 | tool=define_mutations | accepts: { structure: [prepared_structure, relaxed_structure] }
+config/tools.yaml:368 | tool=compile_state | accepts: { inputs: [structure, prepared_structure, relaxed_structure, pocket_set, interaction_set, energy_table, interface_scores] }
+config/pipelines/inspect_complex.yaml:11 | missing_residues: leave_gaps
+config/pipelines/inspect_complex.yaml:16 | - prepare_structure
+config/pipelines/inspect_complex.yaml:18 | - compute_interactions
+
+== 5b. tool contracts accepting prepared_structure x HTTP lane
+detect_pockets               accepts prepared_structure | POST /jobs protocol fpocket_detect_v1
+compute_interactions         accepts prepared_structure | POST /commands (SUPPORTED_TOOLS)
+compute_interface_sasa       accepts prepared_structure | POST /commands (SUPPORTED_TOOLS)
+measure                      accepts prepared_structure | no HTTP lane
+measure_distance             accepts prepared_structure | POST /commands (SUPPORTED_TOOLS)
+align_structures             accepts prepared_structure | POST /commands (SUPPORTED_TOOLS)
+map_residue_numbering        accepts prepared_structure | POST /commands (SUPPORTED_TOOLS)
+generate_mutation_candidates accepts prepared_structure | POST /commands (SUPPORTED_TOOLS)
+link_reaction_knowledge      accepts prepared_structure | POST /commands (SUPPORTED_TOOLS)
+align                        accepts prepared_structure | no HTTP lane
+openmm_protein_minimize      accepts prepared_structure | POST /jobs protocol openmm_protein_minimize
+relax_structure              accepts prepared_structure | POST /jobs protocol relax
+score_interface              accepts prepared_structure | POST /jobs protocol interface_analyzer
+define_mutations             accepts prepared_structure | no HTTP lane
+compile_state                accepts prepared_structure | POST /commands (SUPPORTED_TOOLS)
+
+== 6. frontend structure-handle senders (src + app, gallery/mock excluded)
+frontend/src/components/ChemicalWorkspace.tsx:134 | kind filter prepared_structure | event.type === "object_created" && ["structure", "prepared_structure"].includes(event.kind))
+frontend/src/components/ChemicalWorkspace.tsx:243 | kind filter prepared_structure | (source.kind === "prepared_structure" && source.meta.schema === "prepared_structure@1"))
+frontend/src/lib/analysis.ts:35 | kind filter prepared_structure | case "inspect_ligand": return ["structure", "prepared_structure"];
+frontend/src/lib/analysis.ts:36 | kind filter prepared_structure | case "measure_atoms": case "compare_structures": return ["structure", "prepared_structure", "openmm_minimized_structure"];
+frontend/src/lib/analysis.ts:38 | kind filter prepared_structure | case "minimize_protein": return ["prepared_structure"];
+frontend/src/lib/api.ts:205 | /chemical/preview | request<ChemicalPreview>(runPath(id, "/chemical/preview"), {
+frontend/src/lib/api.ts:210 | /jobs POST protocol | body: JSON.stringify({ protocol_id: "prolif_prepare_v1", args, timeout_s: 120 }) }),
+frontend/src/lib/api.ts:231 | /viewer/scenes POST | request<SavedSceneDetail>(runPath(id, "/viewer/scenes"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+frontend/src/lib/api.ts:234 | /viewer/figures POST | saveFigure: (id: string, body: FigureSaveBody) => request<SavedFigureDetail>(runPath(id, "/viewer/figures"),
+frontend/src/lib/api.ts:241 | /viewer/sessions POST | request<ViewerSession>(runPath(id, "/viewer/sessions"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) 
+frontend/src/lib/api.ts:251 | /viewer/intents POST | request<ViewerIntent>(runPath(id, "/viewer/intents"),
+frontend/src/lib/api.ts:254 | /viewer/intents POST | viewerIntents: (id: string) => request<ViewerIntent[]>(runPath(id, "/viewer/intents")),
+frontend/src/lib/api.ts:269 | /commands | request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args,
+frontend/src/lib/api.ts:286 | /reference/pdb_id_hint | request<PdbIdHint>(runPath(id, `/reference/pdb_id_hint?structure=${encodeURIComponent(structure)}`), { signal }),
+frontend/src/lib/api.ts:348 | /jobs POST protocol | request<DockingSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "qvina_dock_v1", args,
+frontend/src/lib/api.ts:440 | /jobs POST protocol | request<MutationModelSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "openmm_mutation_model_v1", args,
+frontend/src/lib/api.ts:473 | /jobs POST protocol | request<SequenceGaSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "sequence_ga_dock_v1", args,
+frontend/src/lib/api.ts:581 | /structures/residues | residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
+frontend/src/lib/api.ts:583 | /structures/atoms | request<AtomCatalog>(runPath(id, `/structures/atoms?${handleParam(handle)}&offset=${offset}&limit=${limit}`), { signal }),
+frontend/src/lib/api.ts:600 | /jobs/preflight | excluded: { residue: ResidueRef; atom_count: number; reason: string }[] }>(runPath(id, `/jobs/preflight?structure=${encodeURIComponent(structure)}`)),
+frontend/src/lib/api.ts:605 | /jobs POST protocol | body: JSON.stringify({ protocol_id: "openmm_protein_minimize", args: { structure, selection_policy: "protein_only", hydrogen_policy: "rebuild_pH7" }, 
+frontend/src/lib/api.ts:615 | /reports POST | createReport: (id: string, interactionHandle: string) => request<ReportArtifact>(runPath(id, "/reports"), {
+frontend/src/lib/api.ts:628 | /pockets/preflight | request<PocketPreflight>(runPath(id, `/pockets/preflight?structure=${encodeURIComponent(structure)}${
+frontend/src/lib/api.ts:651 | /jobs POST protocol | body: JSON.stringify({ protocol_id: "fpocket_detect_v1", args: { structure, chains }, timeout_s: 120 }) }),
+frontend/src/lib/api.ts:667 | /analysis/plans POST | signal?: AbortSignal) => request<AnalysisPlanRecord>(runPath(id, "/analysis/plans"), jsonPost(body, signal)),
+frontend/src/lib/api.ts:683 | /structures/bytes | const response = await fetch(`/api${runPath(id, `/structures/bytes?${handleParam(handle)}`)}`, { cache: "no-store", signal });
+frontend/src/lib/event-model.ts:73 | kind filter prepared_structure | e.output.kind === "prepared_structure" && inputOf(e) === loaded.output.handle);
+frontend/src/lib/mutations.ts:267 | kind filter prepared_structure | if (event.tool !== "prepare_structure" || event.output.kind !== "prepared_structure" || seen.has(event.output.handle))
+frontend/src/lib/numbering.ts:13 | kind filter prepared_structure | export const NUMBERING_STRUCTURE_KINDS = ["structure", "prepared_structure"] as const;
+frontend/src/lib/pockets.ts:146 | kind filter prepared_structure | const main = sourceKind === "prepared_structure" || sourceKind === "openmm_minimized_structure";
+frontend/src/lib/reaction-knowledge.ts:56 | kind filter prepared_structure | export const STRUCTURE_KINDS = ["structure", "prepared_structure"] as const;
+frontend/src/lib/site-annotation.ts:139 | kind filter prepared_structure | export const ANNOTATABLE_SOURCE_KINDS = ["structure", "prepared_structure"] as const;
+frontend/app/page.tsx:432 | kind filter prepared_structure | ["structure", "prepared_structure", "openmm_minimized_structure"].includes(e.kind))
+frontend/app/page.tsx:581 | kind filter prepared_structure | item.kind === "prepared_structure" || item.kind === "openmm_minimized_structure");
+frontend/app/page.tsx:649 | kind filter prepared_structure | const openmmInput = displayData?.kind === "prepared_structure" ? displayData.source.handle : handles.prepared?.handle;
+frontend/app/page.tsx:932 | kind filter prepared_structure | if (active && meta.handle === handle && meta.kind === "prepared_structure") setPipelineResidues({ key, residues });
+frontend/app/page.tsx:1885 | kind filter prepared_structure | {selectedStructure && expectedKind === "prepared_structure" && objectMeta?.kind === "prepared_structure" &&

@@ -67,9 +67,16 @@ export interface NumberingChain {
   counts: Record<NumberingStatus, number>;
 }
 
-/** Structure handles of this run that the numbering tool accepts, in creation order. */
+/**
+ * Structure handles of this run that the numbering tool accepts, in creation order. M29 (spec 5.2): a repaired
+ * structure (one a `structure_repair_published` event names; the same rule as `structure-repair.ts`
+ * `repairedStructureHandles`) is a modelling input only and is left out (the numbering and reaction knowledge lists).
+ */
 export function numberingStructures(events: RunEvent[]): { handle: string; kind: NumberingStructureKind }[] {
   const seen = new Set<string>();
+  for (const event of events as readonly { type: string; prepared_structure?: unknown }[])
+    if (event.type === "structure_repair_published" && typeof event.prepared_structure === "string")
+      seen.add(event.prepared_structure);
   const result: { handle: string; kind: NumberingStructureKind }[] = [];
   for (const event of events) {
     if (event.type !== "object_created") continue;

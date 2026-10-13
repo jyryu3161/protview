@@ -15,6 +15,14 @@ run, kind and schema first.
 * ``docking_pairs()`` (spec 7, same-condition docking): this run's single M18 jobs whose ``receptor_source`` is this
   model, grouped by condition, every group listed (never one picked). See its docstring for the key and the rules.
   M25 (spec .dryforge/spec.md 10): a group whose mutant job a JEV loop docking step approved carries ``loop``.
+
+M29 T8b (spec .dryforge/spec.md 6.1): a model whose structure (the one its candidate set holds, which
+``validated_result`` keeps equal) is a repaired structure also carries ``structure_origin`` in its list row (valid
+rows), its detail, its contact page and its docking pairs (``structure_origin_reads``: record and structure handles,
+the record's ``counts``, SO1), after the downstream reports' check (the link, the record's publication and its
+re-derivation from the original structure); a repaired structure that fails it is ``MutationEvidenceError`` (a list
+row ``valid: false`` with null fields); an unavailable environment is raised as its ``precondition`` ``ToolFailure``.
+Any other model gets no key (its bytes are what they were).
 """
 from __future__ import annotations
 
@@ -24,6 +32,7 @@ from typing import Any
 from . import docking_bundle, docking_inputs, jev_loops
 from . import docking_constants as DC
 from . import mutation_model_bundle as bundle
+from . import structure_origin_reads as origin_reads
 from .core.handles import canonical_json
 from .jobs.queue import JobQueue
 from .mutation_model_bundle import MutationEvidenceError
@@ -65,21 +74,33 @@ def _created(run: Any) -> dict[str, int]:
     return found
 
 
+def _origin(origins: origin_reads.Origins, content: dict[str, Any]) -> dict[str, Any] | None:
+    """The ``structure_origin`` field of a validated model (None unless its structure is a repaired structure)."""
+    try:
+        return origins.of_structure(content["structure"]["handle"])
+    except origin_reads.OriginInvalid as exc:
+        raise MutationEvidenceError("the repaired structure of the model does not validate") from exc
+
+
 def list_models(run: Any, offset: int, limit: int) -> dict[str, Any]:
     created = _created(run)
     newest = list(reversed(created))
     rows = []
+    origins = origin_reads.Origins(run)
     for handle in newest[offset:offset + limit]:
         row: dict[str, Any] = {"handle": handle, "created_seq": created[handle]}
         try:
             if run.store.meta(handle)["schema"] != SCHEMA:
                 raise MutationEvidenceError("unexpected schema")
             content = bundle.validated_result(run, handle)
+            origin = _origin(origins, content)
             candidate = content["candidate"]
             row.update(valid=True,
                        candidate={key: candidate[key] for key in ("candidate_set", "candidate_index", "residue",
                                                                   "from", "to", "mutant_resname")},
                        structure=content["structure"], parameters=content["parameters"])
+            if origin is not None:
+                row[origin_reads.KEY] = origin
         except MutationEvidenceError:
             row.update(valid=False, **dict.fromkeys(_LIST_FIELDS))
         rows.append(row)
@@ -90,19 +111,27 @@ def model_detail(run: Any, handle: str) -> dict[str, Any]:
     content = bundle.validated_result(run, handle)
     result = {key: value for key, value in content.items() if key != "structures"}
     result["structures"] = {side: structure_summary(content["structures"][side]) for side in STRUCTURE_SIDES}
-    return {"schema": "mutation_model_detail@1", "handle": handle, "result": result}
+    detail = {"schema": "mutation_model_detail@1", "handle": handle, "result": result}
+    origin = _origin(origin_reads.Origins(run), content)
+    if origin is not None:
+        detail[origin_reads.KEY] = origin
+    return detail
 
 
 def contact_page(run: Any, handle: str, *, structure: Any, page: int, page_size: int) -> dict[str, Any]:
     side = _side(structure, "structure")
     content = bundle.validated_result(run, handle)
+    origin = _origin(origin_reads.Origins(run), content)
     contacts = content["structures"][side]["contacts"]
     start = (page - 1) * page_size
     rows = [{"index": index, **row} for index, row in enumerate(contacts["rows"])][start:start + page_size]
-    return {"schema": "mutation_model_contact_page@1", "handle": handle, "structure": side,
-            "mutated_residue": content["structures"][side]["sasa"]["residue"], "cutoff_A": contacts["cutoff_A"],
-            "excluded_bond_distance": contacts["excluded_bond_distance"], "total": contacts["count"],
-            "page": page, "page_size": page_size, "rows": rows}
+    out = {"schema": "mutation_model_contact_page@1", "handle": handle, "structure": side,
+           "mutated_residue": content["structures"][side]["sasa"]["residue"], "cutoff_A": contacts["cutoff_A"],
+           "excluded_bond_distance": contacts["excluded_bond_distance"], "total": contacts["count"],
+           "page": page, "page_size": page_size, "rows": rows}
+    if origin is not None:
+        out[origin_reads.KEY] = origin
+    return out
 
 
 def structure_download(run: Any, handle: str, side: Any) -> tuple[bytes, str]:
@@ -181,7 +210,7 @@ def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
     and a ``PAIR_REASONS`` code. Groups are ordered by the earliest submission event of their jobs. Nothing is
     subtracted, ranked or chosen. M25: a group whose mutant job is a JEV loop docking step's (``_loop_docking``) also
     has ``loop: {loop_id, iteration}`` (no new reason; every other group is unchanged, without the key)."""
-    bundle.validated_result(run, handle)
+    origin = _origin(origin_reads.Origins(run), bundle.validated_result(run, handle))
     jobs = [job for job in JobQueue(run).list()
             if job["protocol_id"] == DC.PROTOCOL and job["tool_id"] == DC.TOOL and
             type(job["parameters"]) is dict and type(job["parameters"].get("receptor_source")) is dict and
@@ -226,5 +255,8 @@ def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
         if loop is not None:
             pair["loop"] = loop
         pairs.append(pair)
-    return {"schema": "mutation_model_docking_pairs@1", "handle": handle, "score_label": DC.SCORE_LABEL,
-            "total": len(pairs), "pairs": pairs, "starts_job": False}
+    out = {"schema": "mutation_model_docking_pairs@1", "handle": handle, "score_label": DC.SCORE_LABEL,
+           "total": len(pairs), "pairs": pairs, "starts_job": False}
+    if origin is not None:
+        out[origin_reads.KEY] = origin
+    return out

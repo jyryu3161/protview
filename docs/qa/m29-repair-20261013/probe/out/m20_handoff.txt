@@ -1,0 +1,24 @@
+## S1 ligand_shell 5 A (the 8VF6 probe request)
+original M20: positions=20 candidates=247 klifs_key_site=['A145/LYS', 'A192/MET', 'A193/GLU', 'A194/LEU', 'A195/CYS', 'A264/THR', 'A265/ASP']
+1. product tool on repaired + original references: input_invalid structure_mismatch (the numbering map was made for another structure)
+2. build_candidate_set(repaired, original numbering+annotation): validated_set OK; positions=20 candidates=247 klifs_key_site=['A145/LYS', 'A192/MET', 'A193/GLU', 'A194/LEU', 'A195/CYS', 'A264/THR', 'A265/ASP']
+   klifs_key_site exclusions identical to the original set: True
+   positions only in repaired: []; only in original: []
+   original protection reasons lost on observed residues: []
+   gap-residue positions (stored numbering.status, klifs_sites, catalytic): []
+3. modeled_basis (pure re-derivation): positions=20 true=0; metals in structure=0; disulfide threshold 2.5 A
+## S2 ligand_shell 12 A + user residues (side-chain-repaired, OXT, one gap residue)
+original M20: positions=83 candidates=1387 klifs_key_site=['A145/LYS', 'A163/GLU', 'A192/MET', 'A193/GLU', 'A194/LEU', 'A195/CYS', 'A264/THR', 'A265/ASP', 'A266/PHE', 'A267/GLY']
+1. product tool on repaired + original references: input_invalid structure_mismatch (the numbering map was made for another structure)
+2. build_candidate_set(repaired, original numbering+annotation): validated_set OK; positions=86 candidates=1444 klifs_key_site=['A145/LYS', 'A163/GLU', 'A192/MET', 'A193/GLU', 'A194/LEU', 'A195/CYS', 'A264/THR', 'A265/ASP', 'A266/PHE', 'A267/GLY']
+   klifs_key_site exclusions identical to the original set: True
+   positions only in repaired: ['A280/LEU', 'B283/THR', 'B284/CYS']; only in original: []
+   original protection reasons lost on observed residues: []
+   gap-residue positions (stored numbering.status, klifs_sites, catalytic): [('A280/LEU', 'not_in_map', [], None), ('B283/THR', 'not_in_map', [], None), ('B284/CYS', 'not_in_map', [], None)]
+3. modeled_basis (pure re-derivation): positions=86 true=5; metals in structure=0; disulfide threshold 2.5 A
+   A100/LYS: ['modeled_atoms_in_residue']
+   A280/LEU: ['modeled_atoms_in_residue']
+   A382/THR: ['modeled_atoms_in_residue']
+   B283/THR: ['modeled_atoms_in_residue', 'ligand_shell_depends_on_modeled_atoms']
+   B284/CYS: ['modeled_atoms_in_residue', 'ligand_shell_depends_on_modeled_atoms', 'sg_is_modeled']
+# non_loopback_connect_attempts=0

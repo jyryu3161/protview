@@ -10,6 +10,15 @@ a null result), ``numbering_map`` and ``annotation``; ``catalytic_annotation`` (
 ``annotation_map_mismatch``. Every failure is ``input_invalid`` with ``detail.reason_code``. The hook returns the
 normalized args (the call key, ``catalytic_annotation`` always included) and no bound.
 
+M29 (spec 5.3): a repaired structure (manifest ``repair`` key) is accepted as ``structure`` only when it passes the
+check the reads and the reports make (``mutation_handoff.validated_origin``: its repair record's completed publication
+and the record re-derived from its original prepared structure; M29 T8b; else ``structure_invalid``, a repaired
+structure without publication evidence included, while an environment failure such as ``openmm_unavailable`` stays
+its own ``precondition``),
+and for it ``structure_mismatch`` also accepts a reference result made on that original
+structure (``repair.source``); the rows then join by the exact 7-field identity in ``mutation_candidates`` as before.
+For any other structure the checks are unchanged.
+
 The implementation reads only this run's stored objects (structure bytes, pocket set, numbering map, annotation,
 reaction knowledge result); every set it builds is v2. The reaction result is validated here, in the tool layer, and
 ``catalytic_input`` hands ``mutation_candidates`` only the plain per-chain values the protection needs. More than
@@ -21,6 +30,7 @@ from __future__ import annotations
 from typing import Any
 
 from .. import mutation_candidates as mc
+from .. import mutation_handoff
 from .. import reaction_knowledge as rk
 from .. import reaction_knowledge_constants as RK
 from ..core.errors import FailureClass, ToolFailure
@@ -110,10 +120,24 @@ def catalytic_input(result: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return chains
 
 
+def _origin(store: Any, structure: str) -> dict[str, Any] | None:
+    """M29 spec 5.3: None, or the validated repair link of a repaired structure; a record, publication or structure
+    mismatch is ``structure_invalid``, an environment failure (class ``precondition``, e.g. ``openmm_unavailable``) is
+    raised as it is (spec 4.6: unavailable with its reason, never an invalid structure)."""
+    try:
+        return mutation_handoff.validated_origin(store, structure)
+    except ToolFailure as exc:
+        if exc.cls is FailureClass.precondition:
+            raise
+        raise _invalid("the repaired structure does not validate against its repair record",
+                       "structure_invalid") from None
+
+
 def _admit(store: Any, args: dict[str, Any]) -> dict[str, Any]:
     mc.check_fields(args)
     structure = args.get("structure")
     _same_run(store, structure, STRUCTURE_TYPE, "structure_invalid")
+    accepted = mutation_handoff.reference_structures(structure, _origin(store, structure))
     listing = structure_residues(store, structure)
     params = mc.normalize_request(args, listing["residues"], listing["ligands"])
     if params["ligand"] is not None:
@@ -126,13 +150,13 @@ def _admit(store: Any, args: dict[str, Any]) -> dict[str, Any]:
                           if params["annotation"] is not None else None)
     catalytic_content = (_catalytic(store, params["catalytic_annotation"])
                          if params["catalytic_annotation"] is not None else None)
-    if pocket_content is not None and pocket_content["source_handle"] != structure:
+    if pocket_content is not None and pocket_content["source_handle"] not in accepted:
         raise _invalid("the pocket set was detected on another structure", "structure_mismatch")
-    if map_content is not None and map_content["structure"]["handle"] != structure:
+    if map_content is not None and map_content["structure"]["handle"] not in accepted:
         raise _invalid("the numbering map was made for another structure", "structure_mismatch")
-    if annotation_content is not None and annotation_content["structure"]["handle"] != structure:
+    if annotation_content is not None and annotation_content["structure"]["handle"] not in accepted:
         raise _invalid("the annotation was made for another structure", "structure_mismatch")
-    if catalytic_content is not None and catalytic_content["structure"]["handle"] != structure:
+    if catalytic_content is not None and catalytic_content["structure"]["handle"] not in accepted:
         raise _invalid("the catalytic annotation was made for another structure", "structure_mismatch")
     if pocket_content is not None:
         mc.pocket_lining(pocket_content, pocket["ranks"], listing["residues"])

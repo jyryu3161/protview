@@ -37,6 +37,7 @@ SCRIPT_TESTS = [
     "scripts/test_import_precedent_snapshots.py", "scripts/test_m27_offscreen_acceptance.py",
     "scripts/test_m28_offscreen_acceptance.py", "scripts/test_m28_branch_a.py",
     "scripts/test_m28_branch_b.py", "scripts/test_m28_branch_c.py",
+    "scripts/test_m29_acceptance.py",
 ]
 
 # test_sequence_ga_jobs.py alone takes about 540 s, more than one group's bound, so its tests are split by node id.
@@ -90,8 +91,21 @@ PYTEST_GROUPS = [
     [T + "test_jev_loops_compute.py"],
     [T + "test_precedent_constants.py", T + "test_precedent_snapshots.py", T + "test_kinase_precedents.py",
      T + "test_kinase_precedents_tool.py", T + "test_kinase_precedents_api.py",
-     T + "test_kinase_precedents_reports.py", T + "test_kinase_precedents_ast.py"],
+     T + "test_kinase_precedents_reports.py", T + "test_kinase_precedents_ast.py",
+     # moved out of the rest group after M29 (372 s alone, 414 s with every group running; this group ran 44 s)
+     T + "test_jobs.py", T + "test_ligand_worker.py", T + "test_ligand_jobs.py", T + "test_mutation_tool.py",
+     T + "test_jev_ast.py", T + "test_site_annotation_reports.py"],
     [T + "test_analysis_workflows.py", T + "test_jev_loop_reports.py"],
+    # M29 structure repair job lane: real PDBFixer worker processes (8VF6 about 25-35 s alone); T8a downstream reports
+    # (two real repairs, two M21 models and dockings, about 100 s alone).
+    [T + "test_structure_repair_jobs.py", T + "test_structure_repair_lane.py", T + "test_structure_repair_worker.py",
+     T + "test_structure_repair_reports_downstream.py"],
+    # M29 T8b downstream reads: a real repair, M21 and qvina workers on 1UBQ (about 75 s alone; the group above is
+    # about 175 s and the rest group is near its bound); T9 repair report (three published repairs, about 20 s alone);
+    # T7 hand-off (M20 over real repairs, about 65 s alone, moved out of the rest group after T13: the rest group was
+    # 372 s alone and timed out at 480 s under load).
+    [T + "test_structure_repair_downstream_reads.py", T + "test_structure_repair_report.py",
+     T + "test_structure_repair_handoff.py"],
 ]
 
 

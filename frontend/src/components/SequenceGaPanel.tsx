@@ -45,6 +45,8 @@ export interface SequenceGaPanelProps {
   capability: SequenceGaCapability | null | undefined;
   /** After a report was created: the page re-reads the knowledge-tab report list. */
   onReportCreated: (runId: string) => void;
+  /** M29: "보완 기록 열기" of a GA on a repaired structure (screen only; the M23 report is unchanged). */
+  onOpenRepairRecord?: (runId: string, record: string) => void;
 }
 
 type Load<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string };
@@ -95,11 +97,13 @@ export function SequenceGaPanel(p: SequenceGaPanelProps) {
         : <p className="mw-mutation-note" aria-busy="true">기능 상태를 확인하는 중</p>}
     </section>;
   }
-  return <GaWorkspace run={p.run} capability={p.capability} onReportCreated={p.onReportCreated} />;
+  return <GaWorkspace run={p.run} capability={p.capability} onReportCreated={p.onReportCreated}
+    onOpenRepairRecord={p.onOpenRepairRecord} />;
 }
 
-function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; capability: SequenceGaCapability;
-  onReportCreated: (runId: string) => void }) {
+function GaWorkspace({ run, capability, onReportCreated, onOpenRepairRecord }: { run: RunSummary;
+  capability: SequenceGaCapability; onReportCreated: (runId: string) => void;
+  onOpenRepairRecord?: (runId: string, record: string) => void }) {
   const runId = run.run_id;
   // ---- inputs ----
   const [form, setForm] = useState<GaForm>(initialGaForm);
@@ -490,9 +494,11 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
             onChange={event => update({ candidateSet: event.target.value || null })}>
             <option value="">선택</option>
             {options.map(option => {
-              const badge = catalyticBadge(setRows?.find(row => row.handle === option.handle)?.catalytic_status);
+              const row = setRows?.find(item => item.handle === option.handle);
+              const badge = catalyticBadge(row?.catalytic_status);
               return <option key={option.handle} value={option.handle} disabled={!option.selectable}>
-                {`${shortHandle(option.handle)} · ${option.text}${badge ? ` · ${badge.text}` : ""}`}</option>;
+                {`${shortHandle(option.handle)} · ${option.text}${badge ? ` · ${badge.text}` : ""}${row?.structure_origin
+                  ? " · 보완 구조" : ""}`}</option>;
             })}
           </select></label>
         <Button size="sm" data-testid="sequence-ga-candidate-sets-refresh" disabled={sets.status === "loading"}
@@ -622,7 +628,10 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
             <input type="radio" name={`sequence-ga-summary-${runId}`} checked={selected === row.handle}
               disabled={!row.valid || (!!switchBlocked && selected !== row.handle)}
               aria-label={`서열 GA 요약 ${shortHandle(row.handle)}`} onChange={() => openSummary(row.handle)} />
-            <span className="mw-mono">{shortHandle(row.handle)} · {gaListRowText(row)}</span></label>)}
+            <span className="mw-mono">{shortHandle(row.handle)} · {gaListRowText(row)}</span>
+            {row.structure_origin && <span className="mw-catalytic-mark" data-testid="sequence-ga-list-repaired"
+              data-repair-record={row.structure_origin.repair_record}><span className="mw-catalytic-badge">보완 구조</span></span>}
+          </label>)}
         </fieldset>)}
       {switchBlocked && results.status === "ready" && results.value.length > 0 && <p className="mw-mutation-note" role="status"
         data-testid="sequence-ga-switch-blocked">{switchBlocked}</p>}
@@ -632,6 +641,17 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
         서열 GA 요약을 읽는 중</p>}
       {detail?.handle === selected && detail.load.status === "error" && <ErrorLine message={detail.load.message}
         onRetry={() => selected && openSummary(selected)} testId="sequence-ga-detail-error" />}
+      {opened?.structure_origin && <div className="mw-mutation-notice" role="status" data-testid="sequence-ga-repair-origin"
+        data-repair-record={opened.structure_origin.repair_record}
+        data-repaired-structure={opened.structure_origin.repaired_structure}>
+        <span className="mw-catalytic-badge">보완 구조</span>
+        {opened.structure_origin.statements.map(item => <p key={item.id} data-statement={item.id}>{item.text}</p>)}
+        <p className="mw-mono">보완 기록 {shortHandle(opened.structure_origin.repair_record)} · 원본{" "}
+          {shortHandle(opened.structure_origin.source_structure)} (화면 표시만, 서열 GA 보고서에는 이 사실이 들어가지 않음)</p>
+        {onOpenRepairRecord && <Button size="sm" data-testid="sequence-ga-repair-origin-open"
+          onClick={() => opened.structure_origin && onOpenRepairRecord(runId, opened.structure_origin.repair_record)}>
+          보완 기록 열기</Button>}
+      </div>}
       {opened && <GaResult detail={opened} generation={generation}
         onGeneration={index => { setGeneration(index); setSort(null); }}
         sort={sort} onSort={key => setSort(previous => nextIndividualSort(previous, key))} onOpen={openIndividual}

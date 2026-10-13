@@ -21,7 +21,9 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   JevLoopProjectionArgs, JevLoopReportArtifact, JevLoopV1, ReactionKnowledgeArgs, ReactionKnowledgeCapability,
   ReactionKnowledgeDetail, ReactionKnowledgeList, ReactionKnowledgeReportArtifact, ReactionPdbEntries,
   ReactionReferenceStatus, KinasePrecedentsArgs, KinasePrecedentsCapability, KinasePrecedentsDetail,
-  KinasePrecedentsList, KinasePrecedentsReportArtifact, PrecedentReferenceStatus } from "./contracts";
+  KinasePrecedentsList, KinasePrecedentsReportArtifact, PrecedentReferenceStatus, StructureRepairAtomPage,
+  StructureRepairCapability, StructureRepairDetail, StructureRepairJob, StructureRepairList, StructureRepairPreflight,
+  StructureRepairReportArtifact, StructureRepairSubmission } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
@@ -75,7 +77,9 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     /** M26: the pinned + decoded local reaction reference set (no network); same five keys as residue_numbering. */
     reaction_knowledge?: ReactionKnowledgeCapability;
     /** M27: the pinned local precedent reference set with its records decoded (no network); same five keys as M26. */
-    kinase_precedents?: KinasePrecedentsCapability } }
+    kinase_precedents?: KinasePrecedentsCapability;
+    /** M29: the fixed OpenMM force field, PDBFixer and the process-identity adapter; reasons only when unavailable. */
+    structure_repair?: StructureRepairCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -455,6 +459,34 @@ export const api = {
   /** Stored mmCIF of one side, byte for byte (a link the person clicks; never fetched automatically). */
   mutationModelStructureUrl: (id: string, handle: string, side: MutationModelSide) =>
     `/api${runPath(id, `/mutation_models/${encodeURIComponent(handle)}/structure?side=${side}`)}`,
+  // ---- M29 structure repair (reads write no event and start no job; the record handle goes in the path) ----
+  /** The free preflight read of one prepared structure (defects, budget, admission); refusals answer 200. */
+  structureRepairPreflight: (id: string, structure: string, signal?: AbortSignal) =>
+    request<StructureRepairPreflight>(runPath(id, `/structure_repair/preflight?structure=${encodeURIComponent(structure)}`),
+      { signal }),
+  /** Start, approval (`approveOpenmm`) and cancel use the shared job routes; `timeoutS` is the top-level field. */
+  submitStructureRepair: (id: string, structure: string, timeoutS: number) =>
+    request<StructureRepairSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "pdbfixer_repair_v1",
+      args: { structure, repair_policy: "complete_missing_atoms_v1" }, timeout_s: timeoutS })),
+  structureRepairJob: (id: string, jobId: string, signal?: AbortSignal) =>
+    request<StructureRepairJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  /** Every job of the run (read only); the repair area re-attaches to its own queued or running job. */
+  structureRepairJobs: (id: string, signal?: AbortSignal) => request<StructureRepairJob[]>(runPath(id, "/jobs"), { signal }),
+  /** Newest first; `limit` 1–100. */
+  structureRepairs: (id: string, offset = 0, limit = 50, signal?: AbortSignal) =>
+    request<StructureRepairList>(runPath(id, `/structure_repairs?offset=${offset}&limit=${limit}`), { signal }),
+  structureRepair: (id: string, handle: string, signal?: AbortSignal) =>
+    request<StructureRepairDetail>(runPath(id, `/structure_repairs/${encodeURIComponent(handle)}`), { signal }),
+  /** `query` from `atomQuery` (structure-repair.ts): page (1-based) and page_size 1–200. */
+  structureRepairAtoms: (id: string, handle: string, query: string, signal?: AbortSignal) =>
+    request<StructureRepairAtomPage>(runPath(id, `/structure_repairs/${encodeURIComponent(handle)}/atoms?${query}`),
+      { signal }),
+  /** The stored repaired mmCIF, byte for byte (a link the person clicks; never fetched automatically). */
+  structureRepairStructureUrl: (id: string, handle: string) =>
+    `/api${runPath(id, `/structure_repairs/${encodeURIComponent(handle)}/structure`)}`,
+  /** Report `analysis_type: "structure_repair"` of one stored record (the repair is not run again). */
+  createStructureRepairReport: (id: string, recordHandle: string, signal?: AbortSignal) =>
+    request<StructureRepairReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: recordHandle }, signal)),
   mutationModelDockingPairs: (id: string, handle: string, signal?: AbortSignal) =>
     request<MutationModelDockingPairs>(runPath(id, `/mutation_models/${encodeURIComponent(handle)}/docking_pairs`),
       { signal }),

@@ -1,0 +1,255 @@
+{
+  "schema": "m20_case_ledger_row@1",
+  "mode": "catalytic",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "X-m20": "pass",
+    "X-no-zero": "pass",
+    "X-picker-marks": "pass",
+    "X-wording": "pass"
+  },
+  "runId": "run_165b05389c9f4561abe131c291f00d83",
+  "runs": {
+    "A": "run_165b05389c9f4561abe131c291f00d83"
+  },
+  "handles": {
+    "prepared": "obj://run_165b05389c9f4561abe131c291f00d83/prepared_structure/191d88763873d9166488e1163dc9fd082d1f32b6703ec5054ea19ff85b999985",
+    "s0": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/88ec8a2423cb6f1273dd352d6a1723833035e8b0742192a5d424de81ad8bb349",
+    "rPartial": "obj://run_165b05389c9f4561abe131c291f00d83/reaction_knowledge/8f7cb884b49974810d0ccbd4d9cfe5c90c484eb3d9bc87a637efe6cd69dadd0c",
+    "rAll": "obj://run_165b05389c9f4561abe131c291f00d83/reaction_knowledge/b1124c71c3338ced92cf0507c0d95bdcee41c4ee40402ea318383927ebfefa2a",
+    "s1": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/10b097ea789210ed648eae09a261b4bf6d10d808c08e8bf6176f5ab957b3ee9c",
+    "s2": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/f867e0fac6af5824d8cb535e9427b4450ceaeb70c858617e6b43b5179bfbc654",
+    "s3": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/acf0571dc357768fc5de150ce7fba5d58f1da00051e66a8b80547503e51748f1",
+    "derivedPrepared": "obj://run_165b05389c9f4561abe131c291f00d83/prepared_structure/30fc58d21fd9a9dae49fc4befff28d058f41231d0608ea8bc601503d266f47f1",
+    "rDerived": "obj://run_165b05389c9f4561abe131c291f00d83/reaction_knowledge/fba485bdd3b2ef6333287e99f788ade86ebd6c891d52075a6bc4a097872d388a",
+    "s4": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/bf505bce21e124181ebf84d7bca3d1fc937e60781b1e915854885993ae252786"
+  },
+  "inputs": [
+    {
+      "name": "public_1a30.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1a30.cif",
+      "bytes": 222024,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, T9a download)"
+    },
+    {
+      "name": "derived_1s9i_A194_asp_to_glu.cif",
+      "path": "<repo>/backend/tests/fixtures/reaction/t9/derived_1s9i_A194_asp_to_glu.cif",
+      "bytes": 565129,
+      "sha256": "c7ffea5813ae8b74d8e457a9e04ab97d16d2d2d023f0eabdef958d31251969ad",
+      "provenance": "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
+    }
+  ],
+  "fixtureLabels": [
+    "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
+  ],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_165b05389c9f4561abe131c291f00d83/prepared_structure/191d88763873d9166488e1163dc9fd082d1f32b6703ec5054ea19ff85b999985"
+      },
+      {
+        "checked": "obj://run_165b05389c9f4561abe131c291f00d83/prepared_structure/191d88763873d9166488e1163dc9fd082d1f32b6703ec5054ea19ff85b999985"
+      },
+      {
+        "checked": "obj://run_165b05389c9f4561abe131c291f00d83/prepared_structure/30fc58d21fd9a9dae49fc4befff28d058f41231d0608ea8bc601503d266f47f1"
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ARG A:8 · label A:8"
+      },
+      {
+        "picked": "ASP A:25 · label A:25"
+      },
+      {
+        "picked": "THR A:26 · label A:26"
+      },
+      {
+        "picked": "ASP B:25 · label B:25"
+      },
+      {
+        "picked": "GLY B:27 · label B:27"
+      },
+      {
+        "picked": "ARG A:8 · label A:8"
+      },
+      {
+        "picked": "ASP A:25 · label A:25"
+      },
+      {
+        "picked": "THR A:26 · label A:26"
+      },
+      {
+        "picked": "ASP B:25 · label B:25"
+      },
+      {
+        "picked": "GLY B:27 · label B:27"
+      },
+      {
+        "picked": "GLU A:194 · label A:140"
+      },
+      {
+        "picked": "ASP A:221 · label A:167"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-catalytic-annotation": [
+      {
+        "value": "obj://run_165b05389c9f4561abe131c291f00d83/reaction_knowledge/8f7cb884b49974810d0ccbd4d9cfe5c90c484eb3d9bc87a637efe6cd69dadd0c"
+      },
+      {
+        "value": "obj://run_165b05389c9f4561abe131c291f00d83/reaction_knowledge/b1124c71c3338ced92cf0507c0d95bdcee41c4ee40402ea318383927ebfefa2a"
+      }
+    ],
+    "mutation-pick-release": [
+      {
+        "picked": "ASP A:25 · label A:25"
+      }
+    ],
+    "mutation-sets": [
+      {
+        "checked": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/10b097ea789210ed648eae09a261b4bf6d10d808c08e8bf6176f5ab957b3ee9c"
+      },
+      {
+        "checked": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/f867e0fac6af5824d8cb535e9427b4450ceaeb70c858617e6b43b5179bfbc654"
+      },
+      {
+        "checked": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/f867e0fac6af5824d8cb535e9427b4450ceaeb70c858617e6b43b5179bfbc654"
+      }
+    ],
+    "mutation-candidate-model": [
+      {
+        "set": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/10b097ea789210ed648eae09a261b4bf6d10d808c08e8bf6176f5ab957b3ee9c"
+      },
+      {
+        "set": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/f867e0fac6af5824d8cb535e9427b4450ceaeb70c858617e6b43b5179bfbc654"
+      }
+    ],
+    "sequence-ga-candidate-set": [
+      {
+        "chosen": "obj://run_165b05389c9f4561abe131c291f00d83/mutation_candidate_set/10b097ea789210ed648eae09a261b4bf6d10d808c08e8bf6176f5ab957b3ee9c"
+      }
+    ],
+    "jev-kind-mutation": [
+      {
+        "checked": true
+      }
+    ]
+  },
+  "repro": null,
+  "buildId": "zHxijM08Zpd_R8U7RDu8X",
+  "harness": {
+    "mutation-flow.cjs": "e971c3571d4a26b0584ddd29c58df76730e08a9d1d7385fb9992514fae200165",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": null,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 355,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m26/real-mutation/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 569,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 6,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m26/real-mutation/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 59,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_165b05389c9f4561abe131c291f00d83",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "mutation-catalytic.jsonl",
+  "startedAt": "2026-10-13T16:05:55.517Z",
+  "finishedAt": "2026-10-13T16:06:09.692Z"
+}

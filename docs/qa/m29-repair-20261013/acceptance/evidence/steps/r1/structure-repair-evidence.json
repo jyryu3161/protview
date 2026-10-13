@@ -1,0 +1,182 @@
+{
+  "schema": "m29_harness_evidence@1",
+  "mode": "r1",
+  "run": "run_b712fb03c11848f899f96ca598ae486d",
+  "parts": {
+    "r1-load": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:14:31.453Z",
+      "finishedAt": "2026-10-13T15:14:34.727Z"
+    },
+    "r1-preflight": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:14:34.727Z",
+      "finishedAt": "2026-10-13T15:15:04.138Z"
+    },
+    "r1-job": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:15:04.138Z",
+      "finishedAt": "2026-10-13T15:15:04.138Z"
+    },
+    "r1-result": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:15:04.138Z",
+      "finishedAt": "2026-10-13T15:15:05.329Z"
+    },
+    "r1-download": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:15:05.329Z",
+      "finishedAt": "2026-10-13T15:15:06.018Z"
+    },
+    "r1-report": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:15:06.018Z",
+      "finishedAt": "2026-10-13T15:15:07.619Z"
+    }
+  },
+  "observed": {
+    "r1": {
+      "run": "run_b712fb03c11848f899f96ca598ae486d",
+      "source": "obj://run_b712fb03c11848f899f96ca598ae486d/structure/540c0114de62fbe711873de0ce528d68c84c32cf0639665bff588f99a40f3420",
+      "prepared": "obj://run_b712fb03c11848f899f96ca598ae486d/prepared_structure/3282f8f80dd75f022057b10e2d43ecf86c70b6c60cf8a6c77bdfb901035fa413",
+      "args": {
+        "structure": "obj://run_b712fb03c11848f899f96ca598ae486d/structure/540c0114de62fbe711873de0ce528d68c84c32cf0639665bff588f99a40f3420",
+        "altloc": "highest_occupancy",
+        "waters": "strip_all",
+        "hydrogens": "strip",
+        "missing_residues": "leave_gaps",
+        "symmetry_mates": "ignore"
+      },
+      "job": {
+        "jobId": "job_69d20e9c8ca1451fb991a8153d2d9db7",
+        "phases": [
+          "awaiting_approval",
+          "started",
+          "queued",
+          "running",
+          "done"
+        ],
+        "record": "obj://run_b712fb03c11848f899f96ca598ae486d/structure_repair/6181da0c27dd479a3a5b2cd4ea4f090eb8599ce97154965554acbd9d2b0257a7",
+        "repaired": "obj://run_b712fb03c11848f899f96ca598ae486d/prepared_structure/738c60961ec98efa312ec13ee3f63d7754458aaa812dcf449e0728b5c26cdc24",
+        "approved": true,
+        "timeoutS": 120
+      },
+      "preflight": {
+        "repairable": "true",
+        "admitted": "true",
+        "sideChainRows": 23,
+        "oxtRows": 2,
+        "gapRows": 2,
+        "gapLengths": [
+          13,
+          11
+        ],
+        "chainPartRows": 2,
+        "nonstandardRows": 0,
+        "blockerRows": 0,
+        "statements": [
+          "보완 구조의 추가 원자는 PDBFixer가 만든 모델링 좌표이며 실험으로 관측한 좌표가 아니다.",
+          "실험으로 관측한 원자의 좌표는 입력 그대로이며 추가·치환·원자 순서 변경만 기록했다.",
+          "메운 틈 구간은 단순한 기하로 놓은 가상 좌표이며 실제 구조가 아니다.",
+          "사슬의 관측된 끝이 서열의 끝과 다른 곳에도 말단 원자를 두었으므로 그 끝의 화학은 실제와 다를 수 있다.",
+          "같은 저자 체인 이름의 조각을 한 체인으로 합쳐 원자 순서가 바뀌었다. 잔기 식별자와 좌표는 그대로이다."
+        ],
+        "expectedText": "더할 잔기 24개 · 더할 중원자 266개 (사전 검사 값)",
+        "confirmChecked": false,
+        "submitDisabled": true,
+        "blockedShown": true
+      },
+      "record": "obj://run_b712fb03c11848f899f96ca598ae486d/structure_repair/6181da0c27dd479a3a5b2cd4ea4f090eb8599ce97154965554acbd9d2b0257a7",
+      "repaired": "obj://run_b712fb03c11848f899f96ca598ae486d/prepared_structure/738c60961ec98efa312ec13ee3f63d7754458aaa812dcf449e0728b5c26cdc24",
+      "detail": {
+        "shown": {
+          "heavy": 4538,
+          "residues": 24,
+          "atoms": 266,
+          "classes": [
+            [
+              "chain_parts_merged",
+              "true"
+            ],
+            [
+              "side_chain_atoms_added",
+              "true"
+            ],
+            [
+              "terminal_oxt_added",
+              "true"
+            ],
+            [
+              "internal_gap_filled",
+              "true"
+            ],
+            [
+              "nonstandard_replaced",
+              "false"
+            ]
+          ],
+          "gaps": 2,
+          "atomsTotal": 266,
+          "atomRows": 100,
+          "replaced": 0,
+          "replacedRows": [],
+          "chainEnds": 2,
+          "collisions": 5,
+          "zero": 0,
+          "limitations": [
+            "보완 구조의 추가 원자는 PDBFixer가 만든 모델링 좌표이며 실험으로 관측한 좌표가 아니다.",
+            "실험으로 관측한 원자의 좌표는 입력 그대로이며 추가·치환·원자 순서 변경만 기록했다.",
+            "메운 틈 구간은 단순한 기하로 놓은 가상 좌표이며 실제 구조가 아니다.",
+            "사슬의 관측된 끝이 서열의 끝과 다른 곳에도 말단 원자를 두었으므로 그 끝의 화학은 실제와 다를 수 있다.",
+            "같은 저자 체인 이름의 조각을 한 체인으로 합쳐 원자 순서가 바뀌었다. 잔기 식별자와 좌표는 그대로이다."
+          ],
+          "repairedAttr": "obj://run_b712fb03c11848f899f96ca598ae486d/prepared_structure/738c60961ec98efa312ec13ee3f63d7754458aaa812dcf449e0728b5c26cdc24"
+        },
+        "published": 35
+      },
+      "panelText": {
+        "name": "r1-repair-panel",
+        "bytes": 15447,
+        "sha256": "a3149be38f5971ff599e7732494002471a157e6e0a40c755c1acdc88845bfc66"
+      },
+      "download": {
+        "sha256": "5993c6614ddf8da542daff2464cad0deb87a6217ac6308a94ebb8c21cfa5a799",
+        "bytes": 559041,
+        "filename": "protview-structure-repair-6181da0c27dd.cif"
+      },
+      "report": {
+        "handle": "obj://run_b712fb03c11848f899f96ca598ae486d/method_report_manifest/300795507e2cfab4980a0796378f1f4ffd1690cec350db42412a671d4a5f7f33",
+        "renderVersion": "structure_repair_markdown@1"
+      }
+    }
+  },
+  "texts": {
+    "r1-repair-panel": "texts/r1-repair-panel.screentext"
+  },
+  "planSha256": "ec8c94aa66b07332ba3960cc82d1c080de7c7696d1e369d269dfa679a36721b9",
+  "startedAt": "2026-10-13T15:14:29.094Z",
+  "finishedAt": "2026-10-13T15:15:07.667Z",
+  "error": null,
+  "requestCount": 177,
+  "postPaths": [
+    "/api/runs",
+    "/api/runs/<run>/commands",
+    "/api/runs/<run>/jobs",
+    "/api/runs/<run>/jobs/approve",
+    "/api/runs/<run>/jobs/job_69d20e9c8ca1451fb991a8153d2d9db7/start",
+    "/api/runs/<run>/method_reports",
+    "/api/runs/<run>/uploads",
+    "/api/runs/<run>/viewer/sessions"
+  ],
+  "requestedPostPaths": [
+    "/api/runs",
+    "/api/runs/<run>/commands",
+    "/api/runs/<run>/jobs",
+    "/api/runs/<run>/jobs/approve",
+    "/api/runs/<run>/jobs/job_69d20e9c8ca1451fb991a8153d2d9db7/start",
+    "/api/runs/<run>/method_reports",
+    "/api/runs/<run>/uploads",
+    "/api/runs/<run>/viewer/sessions"
+  ],
+  "serverErrors": []
+}

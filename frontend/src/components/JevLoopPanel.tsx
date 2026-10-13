@@ -74,6 +74,8 @@ export interface JevLoopPanelProps {
   onReportCreated: (runId: string) => void;
   /** Every science-send status this area reads or sets: the page's global "과학 전송 허용" mark follows it. */
   onStatus?: (runId: string, status: JevStatusV1) => void;
+  /** M29: "보완 기록 열기" of a protein loop on a repaired structure (the page opens it in the repair area). */
+  onOpenRepairRecord?: (runId: string, record: string) => void;
 }
 
 type Load<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string };
@@ -136,12 +138,13 @@ export function JevLoopPanel(p: JevLoopPanelProps) {
     </section>;
   }
   return <LoopWorkspace branch={p.branch} run={p.run} capability={p.capability} title={title}
-    onReportCreated={p.onReportCreated} onStatus={p.onStatus} />;
+    onReportCreated={p.onReportCreated} onStatus={p.onStatus} onOpenRepairRecord={p.onOpenRepairRecord} />;
 }
 
-function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStatus }: { branch: JevLoopBranch;
-  run: RunSummary; capability: JevLoopCapability; title: string; onReportCreated: (runId: string) => void;
-  onStatus?: (runId: string, status: JevStatusV1) => void }) {
+function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStatus, onOpenRepairRecord }: {
+  branch: JevLoopBranch; run: RunSummary; capability: JevLoopCapability; title: string;
+  onReportCreated: (runId: string) => void; onStatus?: (runId: string, status: JevStatusV1) => void;
+  onOpenRepairRecord?: (runId: string, record: string) => void }) {
   const runId = run.run_id;
   const kind = LOOP_KIND_FOR_BRANCH[branch];
   // ---- run-wide reads ----
@@ -864,6 +867,10 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
                 {badge && <span className="mw-catalytic-mark" data-testid="jev-loop-source-catalytic">
                   <span className="mw-catalytic-badge">{badge.text}</span>
                   <span className="mw-catalytic-detail" data-testid="jev-loop-source-catalytic-detail">{badge.detail}</span></span>}
+                {branch === "protein" && sets.status === "ready" &&
+                  sets.value.find(row => row.handle === option.handle)?.structure_origin &&
+                  <span className="mw-catalytic-mark" data-testid="jev-loop-source-repaired">
+                    <span className="mw-catalytic-badge">보완 구조</span></span>}
               </label>;
             })}
           </fieldset>)}
@@ -963,7 +970,10 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
           <input type="radio" name={`jev-loop-open-${branch}-${runId}`} data-testid="jev-loop-open"
             data-loop-id={row.loopId} checked={openedId === row.loopId}
             disabled={row.loopId !== openedId && switchBlocked !== null} onChange={() => openLoop(row.loopId)} />
-          <span>{row.text}</span></label>)}
+          <span>{row.text}</span>
+          {listRows?.find(item => item.loop_id === row.loopId)?.structure_origin &&
+            <span className="mw-catalytic-mark" data-testid="jev-loop-list-repaired">
+              <span className="mw-catalytic-badge">보완 구조</span></span>}</label>)}
       </fieldset>}
       {switchBlocked && openedId !== null && loopRows.length > 1 &&
         <p className="mw-jev-note" data-testid="jev-loop-switch-blocked">{switchBlocked}</p>}
@@ -977,6 +987,17 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
 
     {recordValue && view && statusOfLoop && <>
       <Section area="progress" title="④ 루프 진행">
+        {recordValue.structure_origin && <div className="mw-jev-note" role="status" data-testid="jev-loop-repair-origin"
+          data-repair-record={recordValue.structure_origin.repair_record}
+          data-repaired-structure={recordValue.structure_origin.repaired_structure}>
+          <span className="mw-catalytic-badge">보완 구조</span>
+          {recordValue.structure_origin.statements.map(item => <p key={item.id} data-statement={item.id}>{item.text}</p>)}
+          <p className="mw-mono">보완 기록 {shortSha(recordValue.structure_origin.repair_record)} · 원본{" "}
+            {shortSha(recordValue.structure_origin.source_structure)}</p>
+          {onOpenRepairRecord && <Button size="sm" data-testid="jev-loop-repair-origin-open"
+            onClick={() => recordValue.structure_origin &&
+              onOpenRepairRecord(runId, recordValue.structure_origin.repair_record)}>보완 기록 열기</Button>}
+        </div>}
         <div className="mw-jev-loop-record" data-testid="jev-loop-record" data-loop-id={recordValue.loop_id}
           data-status={recordValue.status} data-action={view.action} data-phase={recordValue.current.phase ?? undefined}
           data-iteration={view.iteration ?? undefined} data-step={recordValue.current.step ?? undefined}
@@ -1045,7 +1066,13 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
             onRetry={() => readPreview(projectionShown.handle)} testId="jev-loop-preview-error" />}
           {previewValue && <LoopPreview preview={previewValue} record={recordValue} laterStatus={laterStatus}
             onReload={() => readPreview(projectionShown.handle)} />}
+          {previewValue?.repair_warning && <p className="mw-jev-unavailable" role="status"
+            data-testid="jev-loop-preview-repair-warning" data-statement={previewValue.repair_warning.id}>
+            {previewValue.repair_warning.text}</p>}
         </>}
+        {previewValue?.repair_warning && <p className="mw-jev-unavailable" role="status"
+          data-testid="jev-loop-approval-repair-warning" data-statement={previewValue.repair_warning.id}>
+          {previewValue.repair_warning.text}</p>}
         <label className="mw-jev-check">
           <input type="checkbox" data-testid="jev-loop-confirm" checked={confirmed} disabled={previewValue === null || sending}
             onChange={event => setConfirmedFor(event.target.checked && previewValue ? previewValue.body_sha256 : null)} />
@@ -1065,6 +1092,9 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
           {JEV_TEXT.sendRecorded}: {sendStatusText(lastRecord.status)}
           {sendReasonText(lastRecord.status, lastRecord.reason_code) ? ` · ${sendReasonText(lastRecord.status,
             lastRecord.reason_code)}` : ""}</p>}
+        {lastRecord?.repair_warning && <p className="mw-jev-unavailable" role="status"
+          data-testid="jev-loop-send-repair-warning" data-statement={lastRecord.repair_warning.id}>
+          {lastRecord.repair_warning.text}</p>}
       </Section>}
 
       {(selectionRef !== null || openedSend !== null) && <Section area="choice" title="⑥ JEV 판정(모델 선택)">

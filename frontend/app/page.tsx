@@ -28,6 +28,7 @@ import { LigandPanel } from "@/components/LigandPanel";
 import { MutationPanel } from "@/components/MutationPanel";
 import { MutationModelPanel, type ModelStartRequest } from "@/components/MutationModelPanel";
 import { SequenceGaPanel } from "@/components/SequenceGaPanel";
+import { StructureRepairPanel } from "@/components/StructureRepairPanel";
 import { DockingPanel } from "@/components/DockingPanel";
 import { DockingBatchPanel } from "@/components/DockingBatchPanel";
 import { LigandGaPanel } from "@/components/LigandGaPanel";
@@ -39,6 +40,7 @@ import { chemicalEntryBlockedReason } from "@/lib/chemical";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
 import { globalScienceBadge, scienceMarkFromStatus, scienceMarkGate, type ScienceConsentMark } from "@/lib/jev";
 import { loopSendHistoryMark } from "@/lib/jev-loop";
+import { repairedStructureHandles, withoutRepaired, type RepairOpenRequest } from "@/lib/structure-repair";
 import { DEFAULT_WORKSPACE_TAB, type WorkspaceTabId } from "@/lib/workspace-tabs";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
 import type { ViewerSession } from "@/lib/viewer-agent";
@@ -142,6 +144,10 @@ export default function WorkspacePage() {
   /** M19: a batch row's "상세 열기" hands its per-row result handle to the M18 docking area (same run only). */
   const [dockingOpenRequest, setDockingOpenRequest] = useState<{ runId: string; handle: string; seq: number } | null>(null);
   const [modelStartRequest, setModelStartRequest] = useState<ModelStartRequest | null>(null);
+  // M29: "보완 기록 열기" of a result on a repaired structure opens that record in the protein tab's repair area.
+  const [repairOpenRequest, setRepairOpenRequest] = useState<RepairOpenRequest | null>(null);
+  // M29: a new repaired structure makes the M20 area re-read the run's event log (its structure choices).
+  const [repairObjectsToken, setRepairObjectsToken] = useState(0);
   // M16: numbering maps are made in the 지식·보고서 tab while the structure screen stays mounted; entering the structure
   // tab re-reads the annotation panel's map list (a read only; no event or tool).
   const [structureTabEntries, setStructureTabEntries] = useState(0);
@@ -428,9 +434,11 @@ export default function WorkspacePage() {
   const selectedInteraction = selectedTool === "compute_interactions" && !!selectedHandle;
   const selectedSasa = selectedTool === "compute_interface_sasa" && !!selectedHandle;
   const selectedMeasurement = selectedInteraction || selectedSasa;
-  const sourceOptions = [...new Map(events.filter((e): e is Extract<RunEvent, { type: "object_created" }> => e.type === "object_created" &&
+  // M29 (spec 5.2, 8): a repaired structure is a modelling input only; it is never offered to the viewer, comparison,
+  // analysis workflow or pocket lists built from these options.
+  const sourceOptions = withoutRepaired([...new Map(events.filter((e): e is Extract<RunEvent, { type: "object_created" }> => e.type === "object_created" &&
     ["structure", "prepared_structure", "openmm_minimized_structure"].includes(e.kind))
-    .map(e => [e.handle, { handle: e.handle, kind: e.kind }])).values()];
+    .map(e => [e.handle, { handle: e.handle, kind: e.kind }])).values()], repairedStructureHandles(events));
   const measurementOptions = [...new Map(events.filter((e): e is Extract<RunEvent, { type: "object_created" }> => e.type === "object_created" &&
     ["atom_distance", "rigid_alignment"].includes(e.kind))
     .map(e => [e.handle, { handle: e.handle, kind: e.kind }])).values()];
@@ -2063,6 +2071,13 @@ export default function WorkspacePage() {
     </>}
   />;
 
+  /** M29: "보완 기록 열기" from any area: the protein tab's repair area opens the record once (same run only). */
+  function openRepairRecord(requestRunId: string, record: string) {
+    if (!hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current)) return;
+    setRepairOpenRequest(previous => ({ runId: requestRunId, record, seq: (previous?.seq ?? 0) + 1, handled: false }));
+    if (workspaceTab !== "protein") { setWorkspaceTab("protein"); refreshGlobalBudget(requestRunId); }
+  }
+
   return <WorkspaceTabs active={workspaceTab} runId={runId ?? null} budget={budget} structure={structureScreen}
     scienceBadge={globalScienceBadge(scienceMark, runId ?? null)}
     reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} reloadToken={reportsReloadToken} />}
@@ -2082,11 +2097,22 @@ export default function WorkspacePage() {
         setReportsReloadToken(token => token + 1); }}
       onStatus={(statusRunId, status) => { if (hostRequestAccepted({ runId: statusRunId }, analysisHostRef.current)) {
         scienceMarkOrder.current.report(); setScienceMark(scienceMarkFromStatus(statusRunId, status)); } }}
+      onOpenRepairRecord={openRepairRecord}
       sendHistoryMark={loopSendHistoryMark} />}
     protein={<>
+      <StructureRepairPanel key={`structure-repair-${run?.run_id ?? "none"}`} run={run}
+        capability={capabilities ? capabilities.methods?.structure_repair ?? null : undefined}
+        onObjectsChanged={changedRunId => { refreshEventsFromAnalysis(changedRunId);
+          if (hostRequestAccepted({ runId: changedRunId }, analysisHostRef.current)) setRepairObjectsToken(token => token + 1); }}
+        onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+          setReportsReloadToken(token => token + 1); }}
+        openRequest={repairOpenRequest}
+        onOpenHandled={seq => setRepairOpenRequest(previous => previous && previous.seq === seq
+          ? { ...previous, handled: true } : previous)} />
       <MutationPanel key={`mutation-${run?.run_id ?? "none"}`} run={run}
         capability={capabilities ? capabilities.methods?.mutation_candidates ?? null : undefined}
         onObjectsChanged={refreshEventsFromAnalysis}
+        onOpenRepairRecord={openRepairRecord} structuresReloadToken={repairObjectsToken}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
           setReportsReloadToken(token => token + 1); }}
         onModelCandidate={pick => { if (hostRequestAccepted({ runId: pick.runId }, analysisHostRef.current))
@@ -2095,15 +2121,18 @@ export default function WorkspacePage() {
         capability={capabilities ? capabilities.methods?.mutation_model ?? null : undefined}
         dockingCapability={capabilities ? capabilities.methods?.ligand_docking ?? null : undefined}
         startRequest={modelStartRequest}
+        onOpenRepairRecord={openRepairRecord}
         onObjectsChanged={refreshEventsFromAnalysis}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
           setReportsReloadToken(token => token + 1); }} />
       <SequenceGaPanel key={`sequence-ga-${run?.run_id ?? "none"}`} run={run}
         capability={capabilities ? capabilities.methods?.sequence_ga_design ?? null : undefined}
+        onOpenRepairRecord={openRepairRecord}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
           setReportsReloadToken(token => token + 1); }} />
       <JevLoopPanel key={`jev-loop-protein-${run?.run_id ?? "none"}`} branch="protein" run={run}
         capability={capabilities ? capabilities.methods?.jev_loop ?? null : undefined}
+        onOpenRepairRecord={openRepairRecord}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
           setReportsReloadToken(token => token + 1); }}
         onStatus={(statusRunId, status) => { if (hostRequestAccepted({ runId: statusRunId }, analysisHostRef.current)) {
@@ -2118,7 +2147,8 @@ export default function WorkspacePage() {
         capability={capabilities ? capabilities.methods?.ligand_docking ?? null : undefined}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
           setReportsReloadToken(token => token + 1); }}
-        openRequest={dockingOpenRequest} />
+        openRequest={dockingOpenRequest}
+        onOpenRepairRecord={openRepairRecord} />
       <DockingBatchPanel key={`docking-batch-${run?.run_id ?? "none"}`} run={run}
         capability={capabilities ? capabilities.methods?.ligand_docking_batch ?? null : undefined}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
