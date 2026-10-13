@@ -210,27 +210,69 @@ def hold_job_engine(worker_pid: int, name: str, *, start: Path | None = None, en
         time.sleep(gap_s)
 
 
-def cancel_when_engine_runs(original, name: str, start: str, ended: str, held: list):
-    """A ``JobQueue._record_control`` wrapper (an internal test hook; ``original`` is the unwrapped method): on
-    STARTED, a thread holds the worker's ``name`` engine from ``<attempt>/<start>`` on (``hold_job_engine``;
-    ``<attempt>/<ended>`` must not exist yet), then requests the cancel through the queue's own cancel path. What it
-    held, or why it could not, goes to ``held`` for the test to check. Under Stop-hook load the cancel took longer to
-    reach the worker than a short step lasts (the guardian lists every system process for each memory sample and again
-    before it signals), so a cancel sent when the step started could land in a later step; a held step cannot end
-    before the cancel reaches it."""
+def _gone(process: psutil.Process) -> bool:
+    try:
+        return not process.is_running() or process.status() == psutil.STATUS_ZOMBIE
+    except psutil.NoSuchProcess:
+        return True
+
+
+def hold_then_cancel(patch, name: str, start: str, ended: str, held: list) -> None:
+    """Install, with ``patch`` (a pytest MonkeyPatch), two internal test hooks on ``mw.jobs.queue`` for the one queue
+    job that then runs: a cancel that reaches the step's running engine, in a fixed order.
+
+    On STARTED a thread (1) holds the worker's ``name`` engine from ``<attempt>/<start>`` on (``hold_job_engine``;
+    ``<attempt>/<ended>`` must not exist yet) and waits until the worker blocks on it, (2) holds the guardian, (3)
+    requests the cancel through the queue and waits until the queue has sent the guardian STOP (the ``_send``
+    wrapper), (4) sends the worker the SIGTERM the guardian sends on STOP and waits until the worker has ended its
+    engine, (5) resumes the guardian, which then stops the group as usual. What it held, or why it could not, goes to
+    ``held`` for the test to check.
+
+    Why (M29 T2): a short step (a qvina2 run of about a second) used to end before the cancel reached it, because
+    under Stop-hook load the guardian lists every system process for each memory sample and again before it signals.
+    With the engine held the step cannot end; but the guardian signals the group in pid order, so after a pid wrap the
+    held engine can get SIGTERM before the worker, and the worker then records the engine's death (``engine_failed``)
+    instead of the cancel (seen once: a product race, recorded in docs/qa/m29-repair-20261013/t2-flaky-tests.md).
+    Here the worker gets its SIGTERM first, as when its pid is the lower one."""
+    from mw.jobs import queue as queue_module
+
+    stopped = threading.Event()
+    original_send, original_record = queue_module._send, queue_module.JobQueue._record_control
+
+    def send(sock, value):
+        original_send(sock, value)
+        if value.get("kind") == "STOP":
+            stopped.set()
+
     def record(self, message, job_id, attempt_id, nonce):
-        done = original(self, message, job_id, attempt_id, nonce)
+        done = original_record(self, message, job_id, attempt_id, nonce)
         if message and message.get("kind") == "STARTED":
             attempt = self.run.run_dir / "jobs" / job_id / attempt_id
+            worker_pid = message["pid"]
 
             def watch() -> None:
+                guardian = None
                 try:
-                    engine, looks = hold_job_engine(message["pid"], name, start=attempt / start, ended=attempt / ended)
-                    held.append({"pid": engine.pid, "looks": looks, "cpu_s": cpu(engine)})
+                    engine, looks = hold_job_engine(worker_pid, name, start=attempt / start, ended=attempt / ended)
+                    wait_blocked(psutil.Process(worker_pid))
+                    guardian = psutil.Process(os.getpgid(worker_pid))
+                    assert hold(guardian), "the guardian ended before the cancel"
+                    self.request_cancel(job_id)
+                    assert stopped.wait(120), "the queue never sent the guardian STOP"
+                    os.kill(worker_pid, signal.SIGTERM)
+                    end = time.monotonic() + 60
+                    while not _gone(engine):
+                        assert time.monotonic() < end, f"the worker did not end its {name}"
+                        time.sleep(0.01)
+                    held.append({"pid": engine.pid, "looks": looks})
                 except (AssertionError, OSError, psutil.Error) as exc:
                     held.append({"error": f"{type(exc).__name__}: {exc}"})
-                self.request_cancel(job_id)
+                    self.request_cancel(job_id)
+                finally:
+                    if guardian is not None:
+                        guardian.resume()
             threading.Thread(target=watch, daemon=True).start()
         return done
 
-    return record
+    patch.setattr(queue_module, "_send", send)
+    patch.setattr(queue_module.JobQueue, "_record_control", record)

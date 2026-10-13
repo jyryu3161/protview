@@ -117,10 +117,9 @@ def build_world(root: Path, monkeypatch_context) -> dict[str, Any]:
     plans["partial"] = args_for(world, IDS, include_parent=True, params={**FAST, "seed": 2})
     held: list[dict[str, Any]] = []
     with monkeypatch_context() as patch:
-        # M29 T2: row 2's qvina2 is held until the cancel reaches the worker (engine_hold.cancel_when_engine_runs);
-        # a row here ends in about a second and under Stop-hook load the cancel landed in a later row or after the last.
-        patch.setattr(JobQueue, "_record_control", EH.cancel_when_engine_runs(
-            JobQueue._record_control, "qvina2", "rows/2.started", "rows/2.status.json", held))
+        # M29 T2: row 2's qvina2 is held until the cancel reaches the worker (engine_hold.hold_then_cancel): a row
+        # here ends in about a second and under Stop-hook load the cancel landed in a later row or after the last.
+        EH.hold_then_cancel(patch, "qvina2", "rows/2.started", "rows/2.status.json", held)
         jobs["partial"] = batch(run, plans["partial"])
     assert len(held) == 1 and "error" not in held[0], (held, jobs["partial"])
     assert jobs["partial"]["status"] == "cancelled", (held, jobs["partial"])

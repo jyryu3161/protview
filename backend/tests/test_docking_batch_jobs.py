@@ -459,10 +459,9 @@ def test_cancel_mid_batch_keeps_finished_rows_then_a_rerun_reuses_them(base, tmp
     args = _args(base, IDS)
     held: list[dict] = []
     with monkeypatch.context() as patch:
-        # M29 T2: row 1's qvina2 is held until the cancel reaches the worker (engine_hold.cancel_when_engine_runs): a
-        # row here ends in about a second, and under Stop-hook load the cancel can take longer to reach the worker.
-        patch.setattr(JobQueue, "_record_control", EH.cancel_when_engine_runs(
-            JobQueue._record_control, "qvina2", "rows/1.started", "rows/1.status.json", held))
+        # M29 T2: row 1's qvina2 is held until the cancel reaches the worker (engine_hold.hold_then_cancel): a row
+        # here ends in about a second, and under Stop-hook load the cancel can take longer to reach the worker.
+        EH.hold_then_cancel(patch, "qvina2", "rows/1.started", "rows/1.status.json", held)
         cancelled = _batch(run, args)
     assert len(held) == 1 and "error" not in held[0], (held, cancelled)
     assert cancelled["status"] == "cancelled" and cancelled["output_handles"] == [], cancelled

@@ -469,11 +469,9 @@ def test_cancel_mid_run_keeps_published_individuals_and_a_partial_summary(base, 
     used = run.budget.expensive_calls
     held: list[dict] = []
     with monkeypatch.context() as patch:
-        # M29 T2: individual 1's qvina2 is held until the cancel reaches the worker
-        # (engine_hold.cancel_when_engine_runs): its docking (exhaustiveness 1) is short, and under Stop-hook load
-        # the cancel can take longer to reach the worker.
-        patch.setattr(JobQueue, "_record_control", EH.cancel_when_engine_runs(
-            JobQueue._record_control, "qvina2", "individuals/1.started", "individuals/1.status.json", held))
+        # M29 T2: individual 1's qvina2 is held until the cancel reaches the worker (engine_hold.hold_then_cancel):
+        # its docking (exhaustiveness 1) is short, and under Stop-hook load the cancel can take longer to reach it.
+        EH.hold_then_cancel(patch, "qvina2", "individuals/1.started", "individuals/1.status.json", held)
         cancelled = run_ga(run, ga_args(base, seed=3))
     assert len(held) == 1 and "error" not in held[0], (held, cancelled)
     assert cancelled["status"] == "cancelled" and cancelled["output_handles"] == [], cancelled
